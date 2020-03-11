@@ -12,7 +12,6 @@ require 'pub_sub_model_sync/runner'
 require 'pub_sub_model_sync/connector'
 require 'pub_sub_model_sync/message_processor'
 
-
 module PubSubModelSync
   class Error < StandardError; end
   # Your code goes here...

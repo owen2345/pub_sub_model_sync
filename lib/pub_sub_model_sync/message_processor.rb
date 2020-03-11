@@ -30,7 +30,7 @@ module PubSubModelSync
     def call_class_listener(listener)
       model_class = listener[:class].constantize
       model_class.send(listener[:action], data)
-    rescue => e # rubocop:disable Style/RescueStandardError
+    rescue => e
       log("Error listener (#{listener}): #{e.message}", :error)
     end
 
@@ -44,7 +44,7 @@ module PubSubModelSync
         populate_model(model, listener)
         model.save!
       end
-    rescue => e # rubocop:disable Style/RescueStandardError
+    rescue => e
       log("Error listener (#{listener}): #{e.message}", :error)
     end
 

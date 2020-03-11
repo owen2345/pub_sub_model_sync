@@ -43,7 +43,7 @@ module PubSubModelSync
 
       data = JSON.parse(message.data).symbolize_keys
       PubSubModelSync::MessageProcessor.new(data, attrs).process
-    rescue => e # rubocop:disable Style/RescueStandardError
+    rescue => e
       log("Error processing message: #{[received_message, e.message]}")
     ensure
       received_message.acknowledge!

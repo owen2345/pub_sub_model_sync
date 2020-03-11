@@ -1,0 +1,26 @@
+# This is the configuration used to check the rubocop source code.
+
+AllCops:
+  Exclude:
+    - 'spec/spec_helper.rb'
+    - 'Gemfile'
+    - 'Rakefile'
+
+Metrics/LineLength:
+  Exclude:
+    - 'spec/spec_init_model.rb'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*.rb'
+
+
+Style/SymbolArray:
+  Exclude:
+    - 'Gemfile'
+
+Style/Documentation:
+  Enabled: false
+
+Style/RescueStandardError:
+  EnforcedStyle: implicit
