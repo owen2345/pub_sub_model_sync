@@ -6,33 +6,48 @@ module PubSubModelSync
       base.extend(ClassMethods)
     end
 
+    def ps_msync_skip_for?(_action)
+      false
+    end
+
     module ClassMethods
-      def ps_msync_publish(attrs:, actions: nil, as_class: nil, id: nil)
+      # @param settings (Hash): { actions: nil, as_class: nil, id: nil }
+      def ps_msync_publish(attrs, settings = {})
         actions ||= %i[create update destroy]
-        ps_msync_register_callbacks(as_class, actions, attrs, id)
+        ps_msync_register_callbacks(actions)
+        ps_msync_save_crud_settings(attrs, settings)
+      end
+
+      def ps_msync_publisher_settings
+        @ps_msync_publisher_settings || {}
       end
 
       def ps_msync_class_publish(data, action:, as_class: nil)
-        ps_msync_publisher.publish_data(as_class || name, data, action)
+        as_class = (as_class || name).to_s
+        ps_msync_publisher.publish_data(as_class, data, action.to_s)
+      end
+
+      def ps_msync_publisher
+        PubSubModelSync::Publisher.new
       end
 
       private
 
-      def ps_msync_register_callbacks(as_class, actions, attrs, id)
-        publisher = ps_msync_publisher
+      def ps_msync_save_crud_settings(attrs, settings)
+        settings[:as_class] = (settings[:as_class] || name).to_s
+        @ps_msync_publisher_settings = settings.merge(attrs: attrs)
+      end
+
+      def ps_msync_register_callbacks(actions)
         actions.each do |action|
           after_commit(on: action) do |model|
-            skip_sync = model.respond_to?(:ps_msync_skip_for?) &&
-                        model.ps_msync_skip_for?(action)
-            unless skip_sync
-              publisher.publish_model(model, action, attrs, as_class, id)
+            unless model.ps_msync_skip_for?(action)
+              publisher = model.class.ps_msync_publisher
+              puts "@@@@ publishereeer: #{publisher.inspect}"
+              publisher.publish_model(model, action.to_s)
             end
           end
         end
-      end
-
-      def ps_msync_publisher
-        @ps_msync_publisher ||= PubSubModelSync::Publisher.new
       end
 
       def log(msg)

@@ -30,7 +30,7 @@ module PubSubModelSync
     end
 
     def preload_framework!
-      Rails.application.eager_load! if defined?(Rails)
+      Rails.application&.eager_load! if defined?(Rails)
       Zeitwerk::Loader.eager_load_all if defined?(Zeitwerk::Loader)
     end
   end

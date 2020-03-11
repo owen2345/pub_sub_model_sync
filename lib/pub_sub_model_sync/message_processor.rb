@@ -36,6 +36,7 @@ module PubSubModelSync
 
     # support for: create, update, destroy
     def call_listener(listener)
+      listener_add_crud_settings(listener)
       model = find_model(listener)
       if attrs[:action].to_s == 'destroy'
         model.destroy!
@@ -49,12 +50,12 @@ module PubSubModelSync
 
     def find_model(listener)
       model_class = listener[:class].constantize
-      identifier = listener[:id] || :id
+      identifier = listener[:settings][:id] || :id
       model_class.where(identifier => attrs[:id]).first || model_class.new
     end
 
     def populate_model(model, listener)
-      values = data.slice(listener[:attrs])
+      values = data.slice(*listener[:settings][:attrs])
       values.each do |attr, value|
         model.send("#{attr}=", value)
       end
@@ -66,6 +67,11 @@ module PubSubModelSync
         listener[:as_class].to_s == attrs[:class].to_s &&
           listener[:as_action].to_s == attrs[:action].to_s
       end
+    end
+
+    def listener_add_crud_settings(listener)
+      model_class = listener[:class].constantize
+      listener[:settings] = model_class.ps_msync_subscriber_settings
     end
 
     def log(message, kind = :info)
