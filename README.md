@@ -67,7 +67,7 @@ User.ps_msync_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_msync_publish(%i[name], actions: %i[update], as_class: 'Client', id: :client_id)
+  ps_msync_publish(%i[name], actions: %i[update], as_klass: 'Client', id: :client_id)
   
   def ps_msync_skip_for?(_action)
     false # here logic with action to skip push message
@@ -78,8 +78,8 @@ end
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'Client', id: :custom_id)
-  ps_msync_class_subscribe(:greeting, as_action: :custom_greeting, as_class: 'CustomUser')
+  ps_msync_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: :custom_id)
+  ps_msync_class_subscribe(:greeting, as_action: :custom_greeting, as_klass: 'CustomUser')
   
   def self.greeting(data)
     puts 'Class message called through custom_greeting'
@@ -106,7 +106,7 @@ end
       data = { name: 'name' }
       user_id = 999
       attrs = PubSubModelSync::Publisher.build_attrs('User', action, user_id)
-      publisher = PubSubModelSync::MessageProcessor.new(data, klass: 'User', action: action, id: user_id)
+      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action, id: user_id)
       publisher.process
       expect(User.where(id: user_id).any?).to be_truth
     end
@@ -114,7 +114,7 @@ end
     it 'receive class message' do
       action = :greeting
       data = { msg: 'hello' }
-      publisher = PubSubModelSync::MessageProcessor.new(data, klass: 'User', action: action)
+      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
       publisher.process
       expect(User).to receive(action)
     end

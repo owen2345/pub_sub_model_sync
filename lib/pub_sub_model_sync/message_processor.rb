@@ -2,13 +2,14 @@
 
 module PubSubModelSync
   class MessageProcessor
-    attr_accessor :data, :attrs
+    attr_accessor :data, :attrs, :settings
 
     # @param data (Hash): any hash value to deliver
-    # @param id (optional) id value
-    def initialize(data, klass:, action:, id: nil)
+    # @param settings (optional): { id: id_val }
+    def initialize(data, klass, action, settings = {})
       @data = data
-      @attrs = PubSubModelSync::Publisher.build_attrs(klass, action, id)
+      @settings = settings
+      @attrs = settings.merge(klass: klass, action: action)
     end
 
     def process
@@ -31,7 +32,7 @@ module PubSubModelSync
     end
 
     def call_class_listener(listener)
-      model_class = listener[:class].constantize
+      model_class = listener[:klass].constantize
       model_class.send(listener[:action], data)
     rescue => e
       log("Error listener (#{listener}): #{e.message}", :error)
@@ -52,7 +53,7 @@ module PubSubModelSync
     end
 
     def find_model(listener)
-      model_class = listener[:class].constantize
+      model_class = listener[:klass].constantize
       identifier = listener[:settings][:id] || :id
       model_class.where(identifier => attrs[:id]).first ||
         model_class.new(identifier => attrs[:id])
@@ -68,13 +69,13 @@ module PubSubModelSync
     def filter_listeners
       listeners = PubSubModelSync::Config.listeners
       listeners.select do |listener|
-        listener[:as_class].to_s == attrs[:class].to_s &&
+        listener[:as_klass].to_s == attrs[:klass].to_s &&
           listener[:as_action].to_s == attrs[:action].to_s
       end
     end
 
     def listener_add_crud_settings(listener)
-      model_class = listener[:class].constantize
+      model_class = listener[:klass].constantize
       listener[:settings] = model_class.ps_msync_subscriber_settings
     end
 

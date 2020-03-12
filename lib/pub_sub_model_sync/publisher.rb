@@ -12,7 +12,7 @@ module PubSubModelSync
       publish(data, attributes)
     end
 
-    # @param settings (Hash): { attrs: [], as_class: nil, id: nil }
+    # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
     def publish_model(model, action, settings = nil)
       settings ||= model.class.ps_msync_publisher_settings
       attributes = build_model_attrs(model, action, settings)
@@ -25,7 +25,7 @@ module PubSubModelSync
 
     def self.build_attrs(klass, action, id = nil)
       {
-        class: klass.to_s,
+        klass: klass.to_s,
         action: action.to_sym,
         id: id,
         service_model_sync: true
@@ -40,9 +40,9 @@ module PubSubModelSync
     end
 
     def build_model_attrs(model, action, settings)
-      as_class = (settings[:as_class] || model.class.name).to_s
+      as_klass = (settings[:as_klass] || model.class.name).to_s
       id_val = model.send(settings[:id] || :id)
-      self.class.build_attrs(as_class, action, id_val)
+      self.class.build_attrs(as_klass, action, id_val)
     end
 
     def log(msg)

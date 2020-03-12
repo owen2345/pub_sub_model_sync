@@ -7,7 +7,7 @@ RSpec.describe PubSubModelSync::Publisher do
   it '.publish_data' do
     data = { message: 'hello' }
     action = :greeting
-    attributes = hash_including(action: action, class: publisher_klass)
+    attributes = hash_including(action: action, klass: publisher_klass)
     expect(topic).to receive(:publish).with(data.to_json, attributes)
     inst.publish_data(publisher_klass, data, action)
   end
@@ -22,7 +22,7 @@ RSpec.describe PubSubModelSync::Publisher do
     end
     it 'custom class name' do
       custom_klass = 'User'
-      attrs = hash_including(action: action, class: custom_klass)
+      attrs = hash_including(action: action, klass: custom_klass)
       expect(topic).to receive(:publish).with(anything, attrs)
       inst.publish_model(model, action)
     end

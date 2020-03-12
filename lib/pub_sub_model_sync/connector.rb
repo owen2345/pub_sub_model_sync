@@ -42,7 +42,8 @@ module PubSubModelSync
       return unless attrs[:service_model_sync]
 
       data = JSON.parse(message.data).symbolize_keys
-      PubSubModelSync::MessageProcessor.new(data, attrs).process
+      args = [data, attrs[:klass], attrs[:action], attrs]
+      PubSubModelSync::MessageProcessor.new(*args).process
     rescue => e
       log("Error processing message: #{[received_message, e.message]}")
     ensure

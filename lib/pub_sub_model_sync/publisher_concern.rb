@@ -13,7 +13,7 @@ module PubSubModelSync
 
     module ClassMethods
       # Permit to publish crud actions (:create, :update, :destroy)
-      # @param settings (Hash): { actions: nil, as_class: nil, id: nil }
+      # @param settings (Hash): { actions: nil, as_klass: nil, id: nil }
       def ps_msync_publish(attrs, settings = {})
         actions = settings.delete(:actions) || %i[create update destroy]
         @ps_msync_publisher_settings = settings.merge(attrs: attrs)
@@ -24,9 +24,9 @@ module PubSubModelSync
         @ps_msync_publisher_settings
       end
 
-      def ps_msync_class_publish(data, action:, as_class: nil)
-        as_class = (as_class || name).to_s
-        ps_msync_publisher.publish_data(as_class, data, action.to_sym)
+      def ps_msync_class_publish(data, action:, as_klass: nil)
+        as_klass = (as_klass || name).to_s
+        ps_msync_publisher.publish_data(as_klass, data, action.to_sym)
       end
 
       def ps_msync_publisher

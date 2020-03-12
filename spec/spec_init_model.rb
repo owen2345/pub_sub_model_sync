@@ -46,7 +46,7 @@ class SubscriberUser < ActiveRecord::Base
   ps_msync_class_subscribe(:greeting)
   ps_msync_class_subscribe(:greeting, as_action: :greeting2)
   ps_msync_class_subscribe(:greeting, as_action: :greeting3,
-                                      as_class: 'User')
+                                      as_klass: 'User')
 
   def self.greeting(args)
     puts args
@@ -58,7 +58,7 @@ class PublisherUser2 < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
   ps_msync_publish(%i[name custom_name], actions: %i[update],
-                                         as_class: 'User', id: :custom_id)
+                                         as_klass: 'User', id: :custom_id)
   def custom_id
     99
   end
@@ -75,6 +75,6 @@ end
 class SubscriberUser2 < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'User', id: :id)
+  ps_msync_subscribe(%i[name], actions: %i[update], as_klass: 'User', id: :id)
   attr_accessor :custom_name
 end

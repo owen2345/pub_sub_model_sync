@@ -4,7 +4,7 @@ RSpec.describe PublisherUser do
   it 'crud publisher settings' do
     settings = PublisherUser2.ps_msync_publisher_settings
     expected_settings = { attrs: %i[name custom_name],
-                          as_class: 'User', id: :custom_id }
+                          as_klass: 'User', id: :custom_id }
     expect(settings).to include expected_settings
   end
 
@@ -18,11 +18,11 @@ RSpec.describe PublisherUser do
         described_class.ps_msync_class_publish(data, action: action)
       end
       it 'custom class name' do
-        as_class = 'User'
-        args = [as_class, data, action]
+        as_klass = 'User'
+        args = [as_klass, data, action]
         expect_publish_data(args)
         described_class
-          .ps_msync_class_publish(data, action: action, as_class: as_class)
+          .ps_msync_class_publish(data, action: action, as_klass: as_klass)
       end
     end
   end
