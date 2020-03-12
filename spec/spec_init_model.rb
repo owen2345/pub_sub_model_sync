@@ -57,7 +57,8 @@ end
 class PublisherUser2 < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_msync_publish(%i[name custom_name], actions: %i[update], as_class: 'User', id: :custom_id)
+  ps_msync_publish(%i[name custom_name], actions: %i[update],
+                                         as_class: 'User', id: :custom_id)
   def custom_id
     99
   end
