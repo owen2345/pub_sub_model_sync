@@ -4,9 +4,11 @@ require 'active_record'
 def prepare_database!
   root_path = File.dirname __dir__
   db = 'db/test.sqlite3'
-  ActiveRecord::Base.logger = Logger.new(STDERR)
-  File.delete(File.join(root_path, db))
+  db_path = File.join(root_path, db)
+  File.delete(db_path) if File.exist?(db_path)
+
   # ActiveRecord::Base.colorize_logging = false
+  ActiveRecord::Base.logger = Logger.new(STDERR)
   ActiveRecord::Base.establish_connection(
     adapter: 'sqlite3',
     database: db
