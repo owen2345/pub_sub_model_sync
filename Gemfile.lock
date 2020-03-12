@@ -209,7 +209,7 @@ DEPENDENCIES
   pub_sub_model_sync!
   rake
   rspec
-  rubocop
+  rubocop (~> 0.80.1)
   sqlite3
 
 BUNDLED WITH
