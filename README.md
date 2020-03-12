@@ -1,34 +1,150 @@
 # PubSubModelSync
+Permit to sync models between rails apps through google (Proximately RabbitMQ) pub/sub service. 
+Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_man) which for now looks unmaintained.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/pub_sub_model_sync`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+# Features
+- Sync CRUD operation between Rails apps. So, all changes made on App1, will be reflected on App2.
+    Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
+- Ability to make class level communication 
+    Example: If User from App1 wants to generate_email, this can be listened on App2 to make corresponding actions
 
 ## Installation
-
 Add this line to your application's Gemfile:
-
 ```ruby
 gem 'pub_sub_model_sync'
 ```
+And then execute: $ bundle install
 
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install pub_sub_model_sync
 
 ## Usage
 
-TODO: Write usage instructions here
+- Configure pub/sub service (Google pub/sub)
+    ```ruby
+        # initializers/pub_sub_config.rb
+        PubSubModelSync::Config.project = ''
+        PubSubModelSync::Config.credentials = ''
+        PubSubModelSync::Config.topic_name = ''
+        PubSubModelSync::Config.subscription_name = ''
+    ```
+    See details here:
+    https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
 
-## Development
+- Add publishers/subscribers to your models (See examples below)
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+- Start listening for publishers (Only if the app has subscribers)
+    ```ruby
+    rake pub_sub_model_sync:start
+    ```
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+## Examples
+```ruby
+# App 1
+# attributes: name email age 
+class User < ActiveRecord::Base
+  include PubSubModelSync::PublisherConcern
+  ps_msync_publish(%i[name email])
+end
+
+# App 2
+class User < ActiveRecord::Base
+  include PubSubModelSync::SubscriberConcern
+  ps_msync_subscribe(%i[name])
+  ps_msync_class_subscribe(:greeting)
+  ps_msync_class_subscribe(:greeting2, as_action: :greeting)
+
+  def self.greeting(data)
+    puts 'Class message called'
+  end
+
+  def self.greeting2(data)
+    puts 'Class message called through custom action'
+  end
+end
+
+# Samples
+User.create(name: 'test user') # Review your App 2 to see the created user (only name will be saved)
+User.ps_msync_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
+```
+
+## Advanced Example
+```ruby
+# App 1
+class User < ActiveRecord::Base
+  self.table_name = 'publisher_users'
+  include PubSubModelSync::PublisherConcern
+  ps_msync_publish(%i[name], actions: %i[update], as_class: 'Client', id: :client_id)
+  
+  def ps_msync_skip_for?(_action)
+    false # here logic with action to skip push message
+  end
+end
+
+# App 2
+class User < ActiveRecord::Base
+  self.table_name = 'subscriber_users'
+  include PubSubModelSync::SubscriberConcern
+  ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'Client')
+end
+```
+
+## Testing
+- Rspec:
+    ```ruby
+      # mock google service
+      # rails_helper.rb
+      require 'pub_sub_model_sync/mock_google_service'
+      config.before(:each) do
+        pub_sub_mock = PubSubModelSync::MockGoogleService.new
+        allow(Google::Cloud::Pubsub).to receive(:new).and_return(pub_sub_mock)
+      end
+    ```
+- Examples:
+    ```ruby
+    # Subscriber
+    it 'receive class message' do
+      action = :create
+      data = { name: 'name' }
+      user_id = 999
+      attrs = PubSubModelSync::Publisher.build_attrs('User', action, user_id)
+      publisher = PubSubModelSync::MessageProcessor.new(data, attrs)
+      publisher.process
+      expect(User.where(id: user_id).any?).to be_truth
+    end
+      
+    it 'receive class message' do
+      action = :greeting
+      data = { msg: 'hello' }
+      attrs = PubSubModelSync::Publisher.build_attrs('User', action)
+      publisher = PubSubModelSync::MessageProcessor.new(data, attrs)
+      publisher.process
+      expect(User).to receive(action)
+    end
+  
+    # Publisher
+    it 'publish class message' do
+      publisher = PubSubModelSync::Publisher  
+      data = {msg: 'hello'}
+      action = :greeting
+      User.ps_msync_class_publish(data, action: action)
+      expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
+    end
+    
+    it 'publish model action' do
+      publisher = PubSubModelSync::Publisher  
+      data = { name: 'hello'}
+      action = :create
+      User.ps_msync_class_publish(data, action: action)
+      user = User.create(name: 'name', email: 'email')
+      expect_any_instance_of(publisher).to receive(:publish_model).with(user, :create, anything)
+    end
+    ```
+    
+    There are two special methods to extract configured crud settings (attrs, id, ...):
+    Subscribers: ```User.ps_msync_subscriber_settings```
+    Publishers: ```User.ps_msync_publisher_settings```
+    
+    Inspect all listeners configured with: 
+    ``` PubSubModelSync::Config.listeners ```
 
 ## Contributing
 
