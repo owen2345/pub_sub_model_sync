@@ -28,7 +28,7 @@ RSpec.describe PubSubModelSync::Connector do
       inst.listen_messages
     end
     it 'subscription listen for new messages' do
-      expect(inst.topic.subscription).to receive(:listen)
+      expect(inst.topic.subscription).to receive(:listen).and_call_original
       inst.listen_messages
     end
     it 'start subscriber' do

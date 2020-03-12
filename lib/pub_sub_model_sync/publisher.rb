@@ -13,20 +13,21 @@ module PubSubModelSync
       connector.topic.publish(data.to_json, attributes)
     end
 
-    def publish_model(model, action)
-      crud_settings = model.class.ps_msync_publisher_settings
-      attributes = build_model_attrs(model, action, crud_settings)
+    # @param settings (Hash): { attrs: [], as_class: nil, id: nil }
+    def publish_model(model, action, settings = nil)
+      settings ||= model.class.ps_msync_publisher_settings
+      attributes = build_model_attrs(model, action, settings)
       data = {}
-      data = model.as_json(only: crud_settings[:attrs]) if action != 'destroy'
+      data = model.as_json(only: settings[:attrs]) if action != 'destroy'
       log("Publishing model data: #{[data, attributes]}")
       connector.topic.publish(data.to_json, attributes)
     end
 
     private
 
-    def build_model_attrs(model, action, crud_settings)
-      as_class = (crud_settings[:as_class] || model.class.name).to_s
-      id_val = model.send(crud_settings[:id] || :id)
+    def build_model_attrs(model, action, settings)
+      as_class = (settings[:as_class] || model.class.name).to_s
+      id_val = model.send(settings[:id] || :id)
       build_attrs(as_class, action, id_val)
     end
 

@@ -51,7 +51,8 @@ module PubSubModelSync
     def find_model(listener)
       model_class = listener[:class].constantize
       identifier = listener[:settings][:id] || :id
-      model_class.where(identifier => attrs[:id]).first || model_class.new
+      model_class.where(identifier => attrs[:id]).first ||
+        model_class.new(identifier => attrs[:id])
     end
 
     def populate_model(model, listener)

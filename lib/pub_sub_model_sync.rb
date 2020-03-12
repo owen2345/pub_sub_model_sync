@@ -5,7 +5,7 @@ require 'active_support'
 
 require 'pub_sub_model_sync/railtie'
 require 'pub_sub_model_sync/config'
-require 'pub_sub_model_sync/subscriber'
+require 'pub_sub_model_sync/subscriber_concern'
 require 'pub_sub_model_sync/publisher'
 require 'pub_sub_model_sync/publisher_concern'
 require 'pub_sub_model_sync/runner'

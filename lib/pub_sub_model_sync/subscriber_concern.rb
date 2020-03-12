@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PubSubModelSync
-  module Subscriber
+  module SubscriberConcern
     def self.included(base)
       base.extend(ClassMethods)
     end
