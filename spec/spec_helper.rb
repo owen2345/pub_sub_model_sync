@@ -4,6 +4,7 @@ require 'bundler/setup'
 require 'pub_sub_model_sync'
 require 'active_record'
 require 'spec_init_model'
+require 'pub_sub_model_sync/mock_google_service'
 
 root_path = File.dirname __dir__
 Dir[File.join(root_path, 'spec', 'support', '**', '*.rb')].each do |f|
@@ -19,5 +20,11 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  # mock google service
+  config.before(:each) do
+    pub_sub_mock = PubSubModelSync::MockGoogleService.new
+    allow(Google::Cloud::Pubsub).to receive(:new).and_return(pub_sub_mock)
   end
 end
