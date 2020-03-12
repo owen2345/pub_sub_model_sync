@@ -9,6 +9,7 @@ module PubSubModelSync
     module ClassMethods
       # @param settings (Hash): { as_class: nil, actions: nil, id: nil }
       def ps_msync_subscribe(attrs, settings = {})
+        settings[:as_class] = (settings[:as_class] || name).to_s
         actions = settings.delete(:actions) || %i[create update destroy]
         @ps_msync_subscriber_settings = { attrs: attrs }.merge(settings)
         actions.each do |action|

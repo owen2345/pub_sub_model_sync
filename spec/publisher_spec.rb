@@ -18,7 +18,7 @@ RSpec.describe PubSubModelSync::Publisher do
     it 'filter to only accepted attributes' do
       expected_data = { name: model.name }
       expect(topic).to receive(:publish).with(expected_data.to_json, anything)
-      inst.publish_model(model, action)
+      inst.publish_model(model, action, { attrs: [:name] })
     end
     it 'custom class name' do
       custom_klass = 'User'

@@ -13,10 +13,10 @@ RSpec.describe SubscriberUser do
       describe 'create' do
         let(:id_model) { 10 }
         let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
-        let(:attrs) do
-          pub_sub_attrs_builder('SubscriberUser', :create, id_model)
+        let(:sender) do
+          message_processor
+            .new(data, klass: 'SubscriberUser', action: :create, id: id_model)
         end
-        let(:sender) { message_processor.new(data, attrs) }
         let(:model_klass) { SubscriberUser }
         it 'save only accepted attrs' do
           sender.process
@@ -40,10 +40,10 @@ RSpec.describe SubscriberUser do
         let(:model_klass) { SubscriberUser }
         let(:model) { model_klass.create(name: 'name', email: 'email') }
         let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
-        let(:attrs) do
-          pub_sub_attrs_builder('SubscriberUser', :update, model.id)
+        let(:sender) do
+          message_processor
+            .new(data, klass: 'SubscriberUser', action: :update, id: model.id)
         end
-        let(:sender) { message_processor.new(data, attrs) }
         before { sender.process }
         it 'save only accepted attrs' do
           model.reload
@@ -59,10 +59,10 @@ RSpec.describe SubscriberUser do
         let(:model_klass) { SubscriberUser }
         let(:model) { model_klass.create(name: 'name', email: 'email') }
         let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
-        let(:attrs) do
-          pub_sub_attrs_builder('SubscriberUser', :destroy, model.id)
+        let(:sender) do
+          message_processor
+            .new(data, klass: 'SubscriberUser', action: :destroy, id: model.id)
         end
-        let(:sender) { message_processor.new(data, attrs) }
         it 'destroy model' do
           sender.process
           expect { model.reload }.to raise_error(ActiveRecord::RecordNotFound)
@@ -74,16 +74,16 @@ RSpec.describe SubscriberUser do
       let(:model_klass) { SubscriberUser2 }
       let(:model) { model_klass.create(name: 'orig_name', email: 'orig_email') }
       let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
-      let(:destroy_attrs) { pub_sub_attrs_builder('User', :destroy, model.id) }
-      let(:update_attrs) { pub_sub_attrs_builder('User', :update, model.id) }
       it 'do not call non accepted actions (excluded destroy)' do
-        sender = message_processor.new(data, destroy_attrs)
+        sender = message_processor
+                 .new(data, klass: 'User', action: :destroy, id: model.id)
         sender.process
         expect_any_instance_of(model_klass).not_to receive(:destroy!)
       end
 
       it 'Listen to custom class name (SubscriberUser2 from Class User)' do
-        sender = message_processor.new(data, update_attrs)
+        sender = message_processor
+                 .new(data, klass: 'User', action: :update, id: model.id)
         sender.process
         model.reload
         expect(model.name).to eq data[:name]
@@ -95,20 +95,19 @@ RSpec.describe SubscriberUser do
       let(:data) { { msg: 'Hello' } }
       it 'basic listener' do
         expect(model_klass).to receive(:greeting).with(data)
-        msg_attrs = pub_sub_attrs_builder(model_klass.name, :greeting)
-        sender = message_processor.new(data, msg_attrs)
+        sender = message_processor
+                 .new(data, klass: model_klass.name, action: :greeting)
         sender.process
       end
       it 'custom action_name (:greeting2 into :greeting)' do
         expect(model_klass).to receive(:greeting).with(data)
-        msg_attrs = pub_sub_attrs_builder(model_klass.name, :greeting2)
-        sender = message_processor.new(data, msg_attrs)
+        sender = message_processor
+                 .new(data, klass: model_klass.name, action: :greeting2)
         sender.process
       end
       it 'custom class_name (User as SubscriberUser)' do
         expect(model_klass).to receive(:greeting).with(data)
-        msg_attrs = pub_sub_attrs_builder('User', :greeting3)
-        sender = message_processor.new(data, msg_attrs)
+        sender = message_processor.new(data, klass: 'User', action: :greeting3)
         sender.process
       end
     end

@@ -106,7 +106,7 @@ end
       data = { name: 'name' }
       user_id = 999
       attrs = PubSubModelSync::Publisher.build_attrs('User', action, user_id)
-      publisher = PubSubModelSync::MessageProcessor.new(data, attrs)
+      publisher = PubSubModelSync::MessageProcessor.new(data, klass: 'User', action: action, id: user_id)
       publisher.process
       expect(User.where(id: user_id).any?).to be_truth
     end
@@ -114,8 +114,7 @@ end
     it 'receive class message' do
       action = :greeting
       data = { msg: 'hello' }
-      attrs = PubSubModelSync::Publisher.build_attrs('User', action)
-      publisher = PubSubModelSync::MessageProcessor.new(data, attrs)
+      publisher = PubSubModelSync::MessageProcessor.new(data, klass: 'User', action: action)
       publisher.process
       expect(User).to receive(action)
     end

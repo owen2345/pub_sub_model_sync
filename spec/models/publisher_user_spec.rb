@@ -3,7 +3,8 @@
 RSpec.describe PublisherUser do
   it 'crud publisher settings' do
     settings = PublisherUser2.ps_msync_publisher_settings
-    expected_settings = { attrs: %i[name], as_class: 'User', id: :custom_id }
+    expected_settings = { attrs: %i[name custom_name],
+                          as_class: 'User', id: :custom_id }
     expect(settings).to include expected_settings
   end
 
@@ -49,7 +50,22 @@ RSpec.describe PublisherUser do
       model.destroy!
     end
 
-    describe 'limit to update action only' do
+    describe 'publish only specified attrs' do
+      let(:model) { PublisherUser2.create(name: 'name') }
+      after { model.update(name: 'changed name') }
+      it 'model attributes (PublisherUser2 limited to name, custom_name)' do
+        expected_data = hash_including(:name)
+        expected_attrs = hash_including(action: :update)
+        expect_publish([expected_data, expected_attrs])
+      end
+      it 'ability to use methods as attributes' do
+        expected_data = hash_including(:custom_name)
+        expected_attrs = hash_including(action: :update)
+        expect_publish([expected_data, expected_attrs])
+      end
+    end
+
+    describe 'limit actions (PublisherUser2 is :update only)' do
       it 'when update, then publish message' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
@@ -91,5 +107,10 @@ RSpec.describe PublisherUser do
   def expect_no_publish_model(args)
     expect_any_instance_of(PubSubModelSync::Publisher)
       .not_to receive(:publish_model).with(*args)
+  end
+
+  def expect_publish(args)
+    expect_any_instance_of(PubSubModelSync::Publisher)
+      .to receive(:publish).with(*args)
   end
 end

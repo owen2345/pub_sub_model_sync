@@ -57,10 +57,13 @@ end
 class PublisherUser2 < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_msync_publish(%i[name], actions: %i[update], as_class: 'User',
-                             id: :custom_id)
+  ps_msync_publish(%i[name custom_name], actions: %i[update], as_class: 'User', id: :custom_id)
   def custom_id
     99
+  end
+
+  def custom_name
+    'custom_name'
   end
 
   def ps_msync_skip_for?(_action)
@@ -72,4 +75,5 @@ class SubscriberUser2 < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
   ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'User', id: :id)
+  attr_accessor :custom_name
 end

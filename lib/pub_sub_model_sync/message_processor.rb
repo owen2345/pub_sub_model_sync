@@ -3,9 +3,12 @@
 module PubSubModelSync
   class MessageProcessor
     attr_accessor :data, :attrs
-    def initialize(data, attrs)
+
+    # @param data (Hash): any hash value to deliver
+    # @param id (optional) id value
+    def initialize(data, klass:, action:, id: nil)
       @data = data
-      @attrs = attrs
+      @attrs = PubSubModelSync::Publisher.build_attrs(klass, action, id)
     end
 
     def process

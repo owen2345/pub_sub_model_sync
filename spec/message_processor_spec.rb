@@ -5,20 +5,19 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   describe 'class message' do
     let(:data) { { greeting: 'Hello' } }
     let(:listener_action) { :greeting } # subscribed in SubscriberUser model
-    let(:attrs) { pub_sub_attrs_builder(listener_klass, listener_action) }
-    let(:inst) { described_class.new(data, attrs) }
+    let(:inst) do
+      described_class.new(data, klass: listener_klass, action: listener_action)
+    end
     describe '.filter_listeners' do
       it 'with listeners' do
         expect(inst.send(:filter_listeners).any?).to be_truthy
       end
       it 'without class listeners' do
-        attrs = pub_sub_attrs_builder('InvalidClass', 'greeting')
-        inst = described_class.new(data, attrs)
+        inst = described_class.new(data, klass: 'Invalid', action: 'greeting')
         expect(inst.send(:filter_listeners).any?).to be_falsey
       end
       it 'without action listeners' do
-        attrs = pub_sub_attrs_builder('SubscriberUser', 'invalid_action')
-        inst = described_class.new(data, attrs)
+        inst = described_class.new(data, klass: 'SubscriberUser', action: 'inv')
         expect(inst.send(:filter_listeners).any?).to be_falsey
       end
     end
@@ -53,26 +52,22 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       let(:listener_klass) { 'SubscriberUser2' }
       let(:listener_klass) { 'User' }
       it 'listeners only for enabled actions' do
-        attrs = pub_sub_attrs_builder(listener_klass, action)
-        inst = described_class.new(data, attrs)
+        inst = described_class.new(data, klass: listener_klass, action: action)
         expect(inst.send(:filter_listeners).any?).to be_truthy
       end
       it 'no listeners for excluded actions' do
-        attrs = pub_sub_attrs_builder(listener_klass, 'create')
-        inst = described_class.new(data, attrs)
+        inst = described_class.new(data, klass: listener_klass, action: :create)
         expect(inst.send(:filter_listeners).any?).to be_falsey
       end
       it 'no listeners for non subscribed models' do
-        attrs = pub_sub_attrs_builder('UnknownModel', 'create')
-        inst = described_class.new(data, attrs)
+        inst = described_class.new(data, klass: 'Unknown', action: :create)
         expect(inst.send(:filter_listeners).any?).to be_falsey
       end
     end
 
     describe '.eval_message' do
       let(:listener_klass) { 'SubscriberUser2' }
-      let(:attrs) { pub_sub_attrs_builder('User', action) }
-      let(:inst) { described_class.new(data, attrs) }
+      let(:inst) { described_class.new(data, klass: 'User', action: action) }
       it 'receive listener to call action' do
         listener_info = hash_including(class: listener_klass, action: action)
         expect(inst).to receive(:call_listener).with(listener_info)
