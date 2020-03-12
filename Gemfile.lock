@@ -53,6 +53,7 @@ GEM
     addressable (2.7.0)
       public_suffix (>= 2.0.2, < 5.0)
     arel (9.0.0)
+    ast (2.4.0)
     builder (3.2.4)
     concurrent-ruby (1.1.6)
     crass (1.0.6)
@@ -100,6 +101,7 @@ GEM
       grpc (~> 1.0)
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
+    jaro_winkler (1.5.4)
     jwt (2.2.1)
     loofah (2.4.0)
       crass (~> 1.0.2)
@@ -120,6 +122,9 @@ GEM
     nokogiri (1.10.9)
       mini_portile2 (~> 2.4.0)
     os (1.0.1)
+    parallel (1.19.1)
+    parser (2.7.0.4)
+      ast (~> 2.4.0)
     public_suffix (4.0.3)
     rack (2.2.2)
     rack-test (1.1.0)
@@ -148,7 +153,9 @@ GEM
       method_source
       rake (>= 0.8.7)
       thor (>= 0.19.0, < 2.0)
+    rainbow (3.0.0)
     rake (13.0.1)
+    rexml (3.2.4)
     rly (0.2.3)
     rspec (3.9.0)
       rspec-core (~> 3.9.0)
@@ -163,6 +170,15 @@ GEM
       diff-lcs (>= 1.2.0, < 2.0)
       rspec-support (~> 3.9.0)
     rspec-support (3.9.2)
+    rubocop (0.80.1)
+      jaro_winkler (~> 1.5.1)
+      parallel (~> 1.10)
+      parser (>= 2.7.0.1)
+      rainbow (>= 2.2.2, < 4.0)
+      rexml
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (>= 1.4.0, < 1.7)
+    ruby-progressbar (1.10.1)
     signet (0.11.0)
       addressable (~> 2.3)
       faraday (~> 0.9)
@@ -180,6 +196,7 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.6)
       thread_safe (~> 0.1)
+    unicode-display_width (1.6.1)
     websocket-driver (0.7.1)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.4)
@@ -189,10 +206,10 @@ PLATFORMS
 
 DEPENDENCIES
   bundler
-  google-cloud-pubsub
   pub_sub_model_sync!
   rake
   rspec
+  rubocop
   sqlite3
 
 BUNDLED WITH

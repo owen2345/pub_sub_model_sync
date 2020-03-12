@@ -5,6 +5,7 @@ AllCops:
     - 'spec/spec_helper.rb'
     - 'Gemfile'
     - 'Rakefile'
+    - 'bin/*'
 
 Metrics/LineLength:
   Exclude:
