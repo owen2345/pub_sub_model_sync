@@ -50,14 +50,9 @@ class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
   ps_msync_subscribe(%i[name])
   ps_msync_class_subscribe(:greeting)
-  ps_msync_class_subscribe(:greeting2, as_action: :greeting)
 
   def self.greeting(data)
     puts 'Class message called'
-  end
-
-  def self.greeting2(data)
-    puts 'Class message called through custom action'
   end
 end
 
@@ -83,7 +78,12 @@ end
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'Client')
+  ps_msync_subscribe(%i[name], actions: %i[update], as_class: 'Client', id: :custom_id)
+  ps_msync_class_subscribe(:greeting, as_action: :custom_greeting, as_class: 'CustomUser')
+  
+  def self.greeting(data)
+    puts 'Class message called through custom_greeting'
+  end
 end
 ```
 
@@ -101,7 +101,7 @@ end
 - Examples:
     ```ruby
     # Subscriber
-    it 'receive class message' do
+    it 'receive model message' do
       action = :create
       data = { name: 'name' }
       user_id = 999
@@ -121,14 +121,6 @@ end
     end
   
     # Publisher
-    it 'publish class message' do
-      publisher = PubSubModelSync::Publisher  
-      data = {msg: 'hello'}
-      action = :greeting
-      User.ps_msync_class_publish(data, action: action)
-      expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
-    end
-    
     it 'publish model action' do
       publisher = PubSubModelSync::Publisher  
       data = { name: 'hello'}
@@ -137,13 +129,23 @@ end
       user = User.create(name: 'name', email: 'email')
       expect_any_instance_of(publisher).to receive(:publish_model).with(user, :create, anything)
     end
+       
+    it 'publish class message' do
+      publisher = PubSubModelSync::Publisher  
+      data = {msg: 'hello'}
+      action = :greeting
+      User.ps_msync_class_publish(data, action: action)
+      expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
+    end
     ```
     
     There are two special methods to extract configured crud settings (attrs, id, ...):
+    
     Subscribers: ```User.ps_msync_subscriber_settings```
+    
     Publishers: ```User.ps_msync_publisher_settings```
     
-    Inspect all listeners configured with: 
+    Note: Inspect all configured listeners with: 
     ``` PubSubModelSync::Config.listeners ```
 
 ## Contributing
