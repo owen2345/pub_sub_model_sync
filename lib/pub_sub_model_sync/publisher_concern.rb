@@ -26,7 +26,7 @@ module PubSubModelSync
 
       def ps_msync_class_publish(data, action:, as_class: nil)
         as_class = (as_class || name).to_s
-        ps_msync_publisher.publish_data(as_class, data, action.to_s)
+        ps_msync_publisher.publish_data(as_class, data, action.to_sym)
       end
 
       def ps_msync_publisher
@@ -40,7 +40,7 @@ module PubSubModelSync
           after_commit(on: action) do |model|
             unless model.ps_msync_skip_for?(action)
               publisher = model.class.ps_msync_publisher
-              publisher.publish_model(model, action.to_s)
+              publisher.publish_model(model, action.to_sym)
             end
           end
         end

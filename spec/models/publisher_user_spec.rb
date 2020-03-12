@@ -9,7 +9,7 @@ RSpec.describe PublisherUser do
 
   describe 'class messages' do
     describe '.ps_msync_class_publish' do
-      let(:action) { 'greeting' }
+      let(:action) { :greeting }
       let(:data) { { msg: 'Hello' } }
       it 'default values' do
         args = [described_class.name, data, action]
@@ -29,7 +29,7 @@ RSpec.describe PublisherUser do
   describe 'callbacks' do
     it '.create' do
       model = described_class.new(name: 'name')
-      args = [be_a(model.class), 'create']
+      args = [be_a(model.class), :create]
       expect_publish_model(args)
       model.save!
     end
@@ -37,14 +37,14 @@ RSpec.describe PublisherUser do
     it '.update' do
       model = described_class.create(name: 'name')
       model.name = 'Changed'
-      args = [model, 'update']
+      args = [model, :update]
       expect_publish_model(args)
       model.save!
     end
 
     it '.destroy' do
       model = described_class.create(name: 'name')
-      args = [model, 'destroy']
+      args = [model, :destroy]
       expect_publish_model(args)
       model.destroy!
     end
@@ -53,7 +53,7 @@ RSpec.describe PublisherUser do
       it 'when update, then publish message' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
-        args = [anything, 'update']
+        args = [anything, :update]
         expect_publish_model(args)
         model.save!
       end

@@ -6,7 +6,7 @@ RSpec.describe PubSubModelSync::Publisher do
   let(:topic) { inst.connector.topic }
   it '.publish_data' do
     data = { message: 'hello' }
-    action = 'greeting'
+    action = :greeting
     attributes = hash_including(action: action, class: publisher_klass)
     expect(topic).to receive(:publish).with(data.to_json, attributes)
     inst.publish_data(publisher_klass, data, action)
@@ -14,7 +14,7 @@ RSpec.describe PubSubModelSync::Publisher do
 
   describe '.publish_model' do
     let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
-    let(:action) { 'create' }
+    let(:action) { :create }
     it 'filter to only accepted attributes' do
       expected_data = { name: model.name }
       expect(topic).to receive(:publish).with(expected_data.to_json, anything)

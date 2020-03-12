@@ -38,7 +38,7 @@ module PubSubModelSync
     def call_listener(listener)
       listener_add_crud_settings(listener)
       model = find_model(listener)
-      if attrs[:action].to_s == 'destroy'
+      if attrs[:action].to_sym == :destroy
         model.destroy!
       else
         populate_model(model, listener)

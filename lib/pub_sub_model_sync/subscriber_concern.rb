@@ -30,8 +30,8 @@ module PubSubModelSync
         listener = {
           class: name,
           as_class: (as_class || name).to_s,
-          action: action.to_s,
-          as_action: (as_action || action).to_s,
+          action: action.to_sym,
+          as_action: (as_action || action).to_sym,
           direct_mode: direct_mode
         }
         PubSubModelSync::Config.listeners << listener

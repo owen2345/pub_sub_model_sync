@@ -25,7 +25,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
     describe '.eval_message' do
       it 'receive listener to call action' do
         listener_info = hash_including(class: listener_klass,
-                                       action: listener_action.to_s)
+                                       action: listener_action)
         allow(inst).to receive(:call_class_listener)
         expect(inst).to receive(:call_class_listener).with(listener_info)
         inst.process
@@ -48,7 +48,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
   describe 'crud message' do
     let(:data) { {} }
-    let(:action) { 'update' }
+    let(:action) { :update }
     describe '.filter_listeners' do
       let(:listener_klass) { 'SubscriberUser2' }
       let(:listener_klass) { 'User' }
