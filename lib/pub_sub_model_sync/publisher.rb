@@ -9,7 +9,7 @@ module PubSubModelSync
 
     def publish_data(klass, data, action)
       attributes = self.class.build_attrs(klass, action)
-      publish(data, attributes)
+      connector.publish(data, attributes)
     end
 
     # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
@@ -20,7 +20,7 @@ module PubSubModelSync
       if action != 'destroy'
         data = model.as_json(only: settings[:attrs], methods: settings[:attrs])
       end
-      publish(data.symbolize_keys, attributes)
+      connector.publish(data.symbolize_keys, attributes)
     end
 
     def self.build_attrs(klass, action, id = nil)
@@ -33,11 +33,6 @@ module PubSubModelSync
     end
 
     private
-
-    def publish(data, attributes)
-      log("Publishing: #{[data, attributes]}")
-      connector.topic.publish(data.to_json, attributes)
-    end
 
     def build_model_attrs(model, action, settings)
       as_klass = (settings[:as_klass] || model.class.name).to_s

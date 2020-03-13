@@ -3,10 +3,8 @@
 RSpec.describe PubSubModelSync::Runner do
   let(:inst) { described_class.new }
   let(:connector_klass) { PubSubModelSync::Connector }
-  before do
-    allow_any_instance_of(connector_klass).to receive(:sleep)
-    inst.connector = connector_klass.new
-  end
+  let(:connector) { inst.connector }
+  before { allow(inst.connector).to receive(:listen_messages) }
   after { inst.run }
 
   it '.trap_signals' do
@@ -19,12 +17,12 @@ RSpec.describe PubSubModelSync::Runner do
   end
 
   it '.start_listeners' do
-    expect_any_instance_of(connector_klass).to receive(:listen_messages)
+    expect(connector).to receive(:listen_messages)
   end
 
   it 'shutdown' do
     error_klass = PubSubModelSync::Runner::ShutDown
     allow(inst).to receive(:trap_signals!).and_raise(error_klass)
-    expect(inst.connector).to receive(:stop)
+    expect(connector).to receive(:stop)
   end
 end

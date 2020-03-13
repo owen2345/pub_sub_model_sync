@@ -110,7 +110,7 @@ RSpec.describe PublisherUser do
   end
 
   def expect_publish(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
+    expect_any_instance_of(PubSubModelSync::Connector)
       .to receive(:publish).with(*args)
   end
 end

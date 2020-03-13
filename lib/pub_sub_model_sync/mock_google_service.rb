@@ -7,6 +7,7 @@ module PubSubModelSync
         true
       end
     end
+
     class MockSubscriber
       def start
         true
@@ -15,12 +16,15 @@ module PubSubModelSync
       def stop
         @stop ||= MockStop.new
       end
+      alias stop! stop
     end
+
     class MockSubscription
       def listen(*_args)
         @listen ||= MockSubscriber.new
       end
     end
+
     class MockTopic
       def subscription(*_args)
         @subscription ||= MockSubscription.new
@@ -31,6 +35,7 @@ module PubSubModelSync
         true
       end
     end
+
     def topic(*_args)
       @topic ||= MockTopic.new
     end

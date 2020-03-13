@@ -6,6 +6,10 @@ module PubSubModelSync
     class ShutDown < StandardError; end
     attr_accessor :connector
 
+    def initialize
+      @connector = PubSubModelSync::Connector.new
+    end
+
     def run
       trap_signals!
       preload_framework!
@@ -17,7 +21,6 @@ module PubSubModelSync
     private
 
     def start_listeners
-      @connector = PubSubModelSync::Connector.new
       connector.listen_messages
     end
 
