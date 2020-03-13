@@ -1,33 +1,46 @@
 # PubSubModelSync
-Permit to sync models between rails apps through google (Proximately RabbitMQ) pub/sub service. 
+Permit to sync models data and made calls between rails apps using google or rabbitmq pub/sub service. 
+
 Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_man) which for now looks unmaintained.
 
-# Features
+## Features
 - Sync CRUD operation between Rails apps. So, all changes made on App1, will be reflected on App2.
     Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
-- Ability to make class level communication 
-    Example: If User from App1 wants to generate_email, this can be listened on App2 to make corresponding actions
+- Ability to make class level communication
+    Example: If User from App1 wants to generate_email, this can be listened on App2, App3, ... to make corresponding actions
+- Have control of the messages to re-publish if failed or call it through background jobs    
 
 ## Installation
 Add this line to your application's Gemfile:
 ```ruby
 gem 'pub_sub_model_sync'
+gem 'google-cloud-pubsub' # to use google pub/sub service
+gem 'bunny' # to use rabbit-mq pub/sub service
 ```
 And then execute: $ bundle install
 
 
 ## Usage
 
-- Configure pub/sub service (Google pub/sub)
+- Configuration for google pub/sub (You need google pub/sub service account)
     ```ruby
-        # initializers/pub_sub_config.rb
-        PubSubModelSync::Config.project = ''
-        PubSubModelSync::Config.credentials = ''
-        PubSubModelSync::Config.topic_name = ''
-        PubSubModelSync::Config.subscription_name = ''
+    # initializers/pub_sub_config.rb
+    PubSubModelSync::Config.service_name = :google 
+    PubSubModelSync::Config.project = 'project-id'
+    PubSubModelSync::Config.credentials = 'path-to-the-config'
+    PubSubModelSync::Config.topic_name = 'sample-topic'
+    PubSubModelSync::Config.subscription_name = 'p1-subscriber'
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
+
+- configuration for RabbitMq (You need rabbitmq installed)
+    ```ruby
+    PubSubModelSync::Config.service_name = :rabbitmq
+    PubSubModelSync::Config.bunny_connection = 'amqp://guest:guest@localhost'
+    PubSubModelSync::Config.queue_name = ''
+    PubSubModelSync::Config.topic_name = 'sample-topic'
+    ```
 
 - Add publishers/subscribers to your models (See examples below)
 
@@ -88,15 +101,23 @@ end
 ```
 
 ## Testing
-- Rspec:
+- Rspec: (spec/rails_helper.rb)
     ```ruby
-      # mock google service
-      # rails_helper.rb
+      
+      # when using google service
       require 'pub_sub_model_sync/mock_google_service'
       config.before(:each) do
         pub_sub_mock = PubSubModelSync::MockGoogleService.new
         allow(Google::Cloud::Pubsub).to receive(:new).and_return(pub_sub_mock)
       end
+      
+      # when using rabbitmq service
+      require 'pub_sub_model_sync/mock_rabbit_service' 
+      config.before(:each) do
+        bunny_mock = PubSubModelSync::MockRabbitService.new
+        allow(Bunny).to receive(:new).and_return(bunny_mock)
+      end
+  
     ```
 - Examples:
     ```ruby
@@ -138,7 +159,7 @@ end
     end
     ```
     
-    There are two special methods to extract configured crud settings (attrs, id, ...):
+    There are two special methods to extract crud configuration settings (attrs, id, ...):
     
     Subscribers: ```User.ps_msync_subscriber_settings```
     

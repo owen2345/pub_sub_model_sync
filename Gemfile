@@ -1,6 +1,8 @@
 source "https://rubygems.org"
 
-gem 'rubocop', '~> 0.80.1', require: false
+gem 'rubocop'
+gem 'bunny' # rabbit-mq
+gem 'google-cloud-pubsub' # google pub/sub
 
 # Specify your gem's dependencies in pub_sub_model_sync.gemspec
 gemspec
