@@ -16,9 +16,5 @@ module PubSubModelSync
       msg = "PS_MSYNC ==> #{msg}"
       logger ? logger.send(kind, msg) : puts(msg)
     end
-
-    def self.message_publisher_thread(connector, data, attributes)
-      # TODO
-    end
   end
 end

@@ -12,7 +12,7 @@ RSpec.describe PubSubModelSync::Connector do
     %i[listen_messages publish stop].each do |action|
       it "delegate .#{action} to service" do
         expect(inst.service).to receive(action)
-        inst.send(action)
+        inst.send(action, {}, {})
       end
     end
   end
@@ -26,7 +26,7 @@ RSpec.describe PubSubModelSync::Connector do
     %i[listen_messages publish stop].each do |action|
       it "delegate .#{action} to service" do
         expect(inst.service).to receive(action)
-        inst.send(action)
+        inst.send(action, {}, {})
       end
     end
   end

@@ -8,7 +8,7 @@ Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_
     Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
 - Ability to make class level communication
     Example: If User from App1 wants to generate_email, this can be listened on App2, App3, ... to make corresponding actions
-- Have control of the messages to re-publish if failed or call it through background jobs    
+- Change pub/sub service at any time    
 
 ## Installation
 Add this line to your application's Gemfile:

@@ -7,12 +7,18 @@ module PubSubModelSync
     delegate :listen_messages, :publish, :stop, to: :service
 
     def initialize
-      @service =  case Config.service_name
-                  when :google
-                    PubSubModelSync::ServiceGoogle.new
-                  else # :rabbit_mq
-                    PubSubModelSync::ServiceRabbit.new
-                  end
+      @service = build_service
+    end
+
+    private
+
+    def build_service
+      case Config.service_name
+      when :google
+        PubSubModelSync::ServiceGoogle.new
+      else # :rabbit_mq
+        PubSubModelSync::ServiceRabbit.new
+      end
     end
   end
 end
