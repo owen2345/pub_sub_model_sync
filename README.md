@@ -1,14 +1,14 @@
 # PubSubModelSync
-Permit to sync models data and made calls between rails apps using google or rabbitmq pub/sub service. 
+Permit to sync models data and make calls between rails apps using google or rabbitmq pub/sub service. 
 
 Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_man) which for now looks unmaintained.
 
 ## Features
-- Sync CRUD operation between Rails apps. So, all changes made on App1, will be reflected on App2.
+- Sync CRUD operations between Rails apps. So, all changes made on App1, will be reflected on App2, App3.
     Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
 - Ability to make class level communication
     Example: If User from App1 wants to generate_email, this can be listened on App2, App3, ... to make corresponding actions
-- Change pub/sub service at any time    
+- Change pub/sub service at any time
 
 ## Installation
 Add this line to your application's Gemfile:
@@ -41,13 +41,15 @@ And then execute: $ bundle install
     PubSubModelSync::Config.queue_name = ''
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
+    See details here: https://github.com/ruby-amqp/bunny
 
 - Add publishers/subscribers to your models (See examples below)
 
-- Start listening for publishers (Only if the app has subscribers)
+- Start listening for publishers (Only in the app that has subscribers)
     ```ruby
     rake pub_sub_model_sync:start
     ```
+    Note: Publishers do not need todo this
 
 ## Examples
 ```ruby
@@ -170,7 +172,7 @@ end
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/pub_sub_model_sync. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
+Bug reports and pull requests are welcome on GitHub at https://github.com/owen2345/pub_sub_model_sync. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 ## License
 
