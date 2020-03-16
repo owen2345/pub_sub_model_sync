@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-require 'bunny'
+begin
+  require 'bunny'
+rescue LoadError # rubocop:disable Lint/SuppressedException
+end
+
 module PubSubModelSync
   class ServiceRabbit
     attr_accessor :service, :channel, :queue, :topic

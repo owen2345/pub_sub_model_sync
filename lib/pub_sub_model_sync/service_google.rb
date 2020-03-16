@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-require 'google/cloud/pubsub'
+begin
+  require 'google/cloud/pubsub'
+rescue LoadError # rubocop:disable Lint/SuppressedException
+end
+
 module PubSubModelSync
   class ServiceGoogle
     attr_accessor :service, :topic, :subscription, :config, :subscriber
