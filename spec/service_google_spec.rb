@@ -49,13 +49,13 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       inst.send(:process_message, mock_service_unknown_message)
     end
     it 'process message' do
-      expect(message_processor).to receive(:new)
+      expect(message_processor).to receive(:new).and_call_original
       inst.send(:process_message, mock_service_message)
     end
     it 'error processing' do
       error_msg = 'Invalid params'
       allow(message_processor).to receive(:new).and_raise(error_msg)
-      expect(inst).to receive(:log).with(include(error_msg))
+      expect(inst).to receive(:log).with(include(error_msg), :error)
       inst.send(:process_message, mock_service_message)
     end
 
@@ -67,6 +67,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       it 'when error' do
         expect(mock_service_message).to receive(:acknowledge!)
         allow(mock_message).to receive(:data).and_return('invalid_data')
+        allow(inst).to receive(:log)
         inst.send(:process_message, mock_service_message)
       end
       it 'when unknown message' do

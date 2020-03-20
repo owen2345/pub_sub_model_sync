@@ -14,7 +14,7 @@ module PubSubModelSync
 
     # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
     def publish_model(model, action, settings = nil)
-      settings ||= model.class.ps_msync_publisher_settings
+      settings ||= model.class.ps_publisher_settings
       attributes = build_model_attrs(model, action, settings)
       data = {}
       if action != 'destroy'

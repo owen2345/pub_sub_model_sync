@@ -54,13 +54,13 @@ module PubSubModelSync
       args = [data, attrs[:klass], attrs[:action], attrs]
       PubSubModelSync::MessageProcessor.new(*args).process
     rescue => e
-      log("Error processing message: #{[received_message, e.message]}")
+      log("Error processing message: #{[received_message, e.message]}", :error)
     ensure
       received_message.acknowledge!
     end
 
-    def log(msg)
-      config.log("Google Service ==> #{msg}")
+    def log(msg, kind = :info)
+      config.log("Google Service ==> #{msg}", kind)
     end
   end
 end

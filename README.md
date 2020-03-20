@@ -57,14 +57,14 @@ And then execute: $ bundle install
 # attributes: name email age 
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_msync_publish(%i[name email])
+  ps_publish(%i[name email])
 end
 
 # App 2
 class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
-  ps_msync_subscribe(%i[name])
-  ps_msync_class_subscribe(:greeting)
+  ps_subscribe(%i[name])
+  ps_class_subscribe(:greeting)
 
   def self.greeting(data)
     puts 'Class message called'
@@ -73,7 +73,7 @@ end
 
 # Samples
 User.create(name: 'test user') # Review your App 2 to see the created user (only name will be saved)
-User.ps_msync_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
+User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
 ```
 
 ## Advanced Example
@@ -82,9 +82,9 @@ User.ps_msync_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_msync_publish(%i[name], actions: %i[update], as_klass: 'Client', id: :client_id)
+  ps_publish(%i[name], actions: %i[update], as_klass: 'Client', id: :client_id)
   
-  def ps_msync_skip_for?(_action)
+  def ps_skip_for?(_action)
     false # here logic with action to skip push message
   end
 end
@@ -93,8 +93,8 @@ end
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_msync_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: :custom_id)
-  ps_msync_class_subscribe(:greeting, as_action: :custom_greeting, as_klass: 'CustomUser')
+  ps_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: :custom_id)
+  ps_class_subscribe(:greeting, as_action: :custom_greeting, as_klass: 'CustomUser')
   
   def self.greeting(data)
     puts 'Class message called through custom_greeting'
@@ -147,7 +147,7 @@ end
       publisher = PubSubModelSync::Publisher  
       data = { name: 'hello'}
       action = :create
-      User.ps_msync_class_publish(data, action: action)
+      User.ps_class_publish(data, action: action)
       user = User.create(name: 'name', email: 'email')
       expect_any_instance_of(publisher).to receive(:publish_model).with(user, :create, anything)
     end
@@ -156,16 +156,16 @@ end
       publisher = PubSubModelSync::Publisher  
       data = {msg: 'hello'}
       action = :greeting
-      User.ps_msync_class_publish(data, action: action)
+      User.ps_class_publish(data, action: action)
       expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
     end
     ```
     
     There are two special methods to extract crud configuration settings (attrs, id, ...):
     
-    Subscribers: ```User.ps_msync_subscriber_settings```
+    Subscribers: ```User.ps_subscriber_settings```
     
-    Publishers: ```User.ps_msync_publisher_settings```
+    Publishers: ```User.ps_publisher_settings```
     
     Note: Inspect all configured listeners with: 
     ``` PubSubModelSync::Config.listeners ```

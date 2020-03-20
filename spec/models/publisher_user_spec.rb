@@ -2,27 +2,27 @@
 
 RSpec.describe PublisherUser do
   it 'crud publisher settings' do
-    settings = PublisherUser2.ps_msync_publisher_settings
+    settings = PublisherUser2.ps_publisher_settings
     expected_settings = { attrs: %i[name custom_name],
                           as_klass: 'User', id: :custom_id }
     expect(settings).to include expected_settings
   end
 
   describe 'class messages' do
-    describe '.ps_msync_class_publish' do
+    describe '.ps_class_publish' do
       let(:action) { :greeting }
       let(:data) { { msg: 'Hello' } }
       it 'default values' do
         args = [described_class.name, data, action]
         expect_publish_data(args)
-        described_class.ps_msync_class_publish(data, action: action)
+        described_class.ps_class_publish(data, action: action)
       end
       it 'custom class name' do
         as_klass = 'User'
         args = [as_klass, data, action]
         expect_publish_data(args)
         described_class
-          .ps_msync_class_publish(data, action: action, as_klass: as_klass)
+          .ps_class_publish(data, action: action, as_klass: as_klass)
       end
     end
   end
@@ -78,7 +78,7 @@ RSpec.describe PublisherUser do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
-        allow(model).to receive(:ps_msync_skip_for?).and_return(true)
+        allow(model).to receive(:ps_skip_for?).and_return(true)
         expect_no_publish_model(args)
         model.save!
       end

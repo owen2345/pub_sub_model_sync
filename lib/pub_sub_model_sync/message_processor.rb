@@ -76,7 +76,7 @@ module PubSubModelSync
 
     def listener_add_crud_settings(listener)
       model_class = listener[:klass].constantize
-      listener[:settings] = model_class.ps_msync_subscriber_settings
+      listener[:settings] = model_class.ps_subscriber_settings
     end
 
     def log(message, kind = :info)

@@ -24,7 +24,7 @@ module PubSubModelSync
     rescue PubSubModelSync::Runner::ShutDown
       raise
     rescue => e
-      log("Error listening message: #{[e.message, e.backtrace]}")
+      log("Error listening message: #{[e.message, e.backtrace]}", :error)
     end
 
     def publish(data, attributes)
@@ -33,7 +33,8 @@ module PubSubModelSync
       payload = { data: data, attributes: attributes }
       topic.publish(payload.to_json, routing_key: queue.name, type: SERVICE_KEY)
     rescue => e
-      log("Error publishing: #{[data, attributes, e.message, e.backtrace]}")
+      info = [data, attributes, e.message, e.backtrace]
+      log("Error publishing: #{info}", :error)
     end
 
     def stop
@@ -51,7 +52,7 @@ module PubSubModelSync
       PubSubModelSync::MessageProcessor.new(*args).process
     rescue => e
       error = [payload, e.message, e.backtrace]
-      log("Error processing message: #{error}")
+      log("Error processing message: #{error}", :error)
     end
 
     def parse_message_payload(payload)
@@ -74,8 +75,8 @@ module PubSubModelSync
       queue.bind(topic, routing_key: queue.name)
     end
 
-    def log(msg)
-      config.log("Rabbit Service ==> #{msg}")
+    def log(msg, kind = :info)
+      config.log("Rabbit Service ==> #{msg}", kind)
     end
   end
 end

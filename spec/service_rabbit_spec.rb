@@ -44,14 +44,15 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       inst.send(:process_message, *args)
     end
     it 'process message' do
-      expect(message_processor).to receive(:new).with(data, any_args)
+      args = [data, any_args]
+      expect(message_processor).to receive(:new).with(*args).and_call_original
       args = [delivery_info, meta_info, message]
       inst.send(:process_message, *args)
     end
     it 'error processing' do
       error_msg = 'Invalid params'
       allow(message_processor).to receive(:new).and_raise(error_msg)
-      expect(inst).to receive(:log).with(include(error_msg))
+      expect(inst).to receive(:log).with(include(error_msg), :error)
 
       args = [delivery_info, meta_info, message]
       inst.send(:process_message, *args)
@@ -71,7 +72,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       error = 'Error msg'
       expect(channel.topic).to receive(:publish).and_raise(error)
       allow(inst).to receive(:log)
-      expect(inst).to receive(:log).with(include(error))
+      expect(inst).to receive(:log).with(include(error), :error)
       inst.publish('invalid data', {})
     end
   end
