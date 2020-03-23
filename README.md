@@ -45,7 +45,7 @@ And then execute: $ bundle install
 
 - Add publishers/subscribers to your models (See examples below)
 
-- Start listening for publishers (Only in the app that has subscribers)
+- Start subscribers to listen for publishers (Only in the app that has subscribers)
     ```ruby
     rake pub_sub_model_sync:start
     ```
@@ -53,14 +53,14 @@ And then execute: $ bundle install
 
 ## Examples
 ```ruby
-# App 1
+# App 1 (Publisher)
 # attributes: name email age 
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
   ps_publish(%i[name email])
 end
 
-# App 2
+# App 2 (Subscriber)
 class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
   ps_subscribe(%i[name])
@@ -72,13 +72,13 @@ class User < ActiveRecord::Base
 end
 
 # Samples
-User.create(name: 'test user') # Review your App 2 to see the created user (only name will be saved)
+User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
 User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
 ```
 
 ## Advanced Example
 ```ruby
-# App 1
+# App 1 (Publisher)
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
@@ -89,7 +89,7 @@ class User < ActiveRecord::Base
   end
 end
 
-# App 2
+# App 2 (Subscriber)
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
@@ -102,8 +102,8 @@ class User < ActiveRecord::Base
 end
 ```
 
-## Testing
-- Rspec: (spec/rails_helper.rb)
+## Testing with RSpec
+- Config: (spec/rails_helper.rb)
     ```ruby
       
       # when using google service
