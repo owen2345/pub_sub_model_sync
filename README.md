@@ -82,7 +82,7 @@ User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting metho
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[name], actions: %i[update], as_klass: 'Client', id: :client_id)
+  ps_publish(%i[name:full_name email], actions: %i[update], as_klass: 'Client', id: :client_id)
   
   def ps_skip_for?(_action)
     false # here logic with action to skip push message
