@@ -17,9 +17,7 @@ module PubSubModelSync
       settings ||= model.class.ps_publisher_settings
       attributes = build_model_attrs(model, action, settings)
       data = {}
-      if action != 'destroy'
-        data = model.as_json(only: settings[:attrs], methods: settings[:attrs])
-      end
+      data = build_model_data(model, settings[:attrs]) if action != 'destroy'
       connector.publish(data.symbolize_keys, attributes)
     end
 
@@ -33,6 +31,17 @@ module PubSubModelSync
     end
 
     private
+
+    def build_model_data(model, model_props)
+      source_props = model_props.map { |prop| prop.to_s.split(':').first }
+      data = model.as_json(only: source_props, methods: source_props)
+      aliased_props = model_props.select { |prop| prop.to_s.include?(':') }
+      aliased_props.each do |prop|
+        source, target = prop.to_s.split(':')
+        data[target] = data.delete(source)
+      end
+      data.symbolize_keys
+    end
 
     def build_model_attrs(model, action, settings)
       as_klass = (settings[:as_klass] || model.class.name).to_s

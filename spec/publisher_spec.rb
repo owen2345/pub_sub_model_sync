@@ -38,5 +38,10 @@ RSpec.describe PubSubModelSync::Publisher do
       expect(connector).to receive(:publish).with(expected_data, anything)
       inst.publish_model(model, 'destroy')
     end
+    it 'aliased attributes' do
+      expected_data = hash_including(full_name: model.name, email: model.email)
+      expect(connector).to receive(:publish).with(expected_data, anything)
+      inst.publish_model(model, action, attrs: %i[name:full_name email])
+    end
   end
 end
