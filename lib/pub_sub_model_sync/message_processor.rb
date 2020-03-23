@@ -40,7 +40,6 @@ module PubSubModelSync
 
     # support for: create, update, destroy
     def call_listener(listener)
-      listener_add_crud_settings(listener)
       model = find_model(listener)
       if attrs[:action].to_sym == :destroy
         model.destroy!
@@ -72,11 +71,6 @@ module PubSubModelSync
         listener[:as_klass].to_s == attrs[:klass].to_s &&
           listener[:as_action].to_s == attrs[:action].to_s
       end
-    end
-
-    def listener_add_crud_settings(listener)
-      model_class = listener[:klass].constantize
-      listener[:settings] = model_class.ps_subscriber_settings
     end
 
     def log(message, kind = :info)
