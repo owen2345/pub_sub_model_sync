@@ -21,11 +21,10 @@ module PubSubModelSync
         add_ps_subscriber(as_klass, action, as_action, true, {})
       end
 
-      def ps_subscriber_settings(action = :create)
-        listeners = PubSubModelSync::Config.listeners.select do |listener|
+      def ps_subscriber(action = :create)
+        PubSubModelSync::Config.listeners.select do |listener|
           listener[:klass] == name && listener[:action] == action
-        end
-        listeners.last ? listeners.last[:settings] : nil
+        end.last
       end
 
       private

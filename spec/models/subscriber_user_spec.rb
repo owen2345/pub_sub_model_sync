@@ -3,9 +3,8 @@
 RSpec.describe SubscriberUser do
   let(:message_processor) { PubSubModelSync::MessageProcessor }
   it 'crud publisher settings' do
-    settings = SubscriberUser2.ps_subscriber_settings(:update)
-    expected_settings = { attrs: %i[name], as_klass: 'User', id: :id }
-    expect(settings).to include expected_settings
+    subscriber = SubscriberUser2.ps_subscriber(:update)
+    expect(subscriber).not_to be_nil
   end
 
   describe 'subscriptions' do

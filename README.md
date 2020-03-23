@@ -163,9 +163,9 @@ end
     
     There are two special methods to extract crud configuration settings (attrs, id, ...):
     
-    Subscribers: ```User.ps_subscriber_settings```
+    Subscribers: ```User.ps_subscriber```
     
-    Publishers: ```User.ps_publisher_settings```
+    Publishers: ```User.ps_publisher```
     
     Note: Inspect all configured listeners with: 
     ``` PubSubModelSync::Config.listeners ```
