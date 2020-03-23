@@ -2,10 +2,8 @@
 
 RSpec.describe PublisherUser do
   it 'crud publisher settings' do
-    settings = PublisherUser2.ps_publisher_settings
-    expected_settings = { attrs: %i[name custom_name],
-                          as_klass: 'User', id: :custom_id }
-    expect(settings).to include expected_settings
+    info = PublisherUser2.ps_publisher_info(:update)
+    expect(info).not_to be_nil
   end
 
   describe 'class messages' do
@@ -30,7 +28,7 @@ RSpec.describe PublisherUser do
   describe 'callbacks' do
     it '.create' do
       model = described_class.new(name: 'name')
-      args = [be_a(model.class), :create]
+      args = [be_a(model.class), :create, anything]
       expect_publish_model(args)
       model.save!
     end
@@ -38,14 +36,14 @@ RSpec.describe PublisherUser do
     it '.update' do
       model = described_class.create(name: 'name')
       model.name = 'Changed'
-      args = [model, :update]
+      args = [model, :update, anything]
       expect_publish_model(args)
       model.save!
     end
 
     it '.destroy' do
       model = described_class.create(name: 'name')
-      args = [model, :destroy]
+      args = [model, :destroy, anything]
       expect_publish_model(args)
       model.destroy!
     end
@@ -69,7 +67,7 @@ RSpec.describe PublisherUser do
       it 'when update, then publish message' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
-        args = [anything, :update]
+        args = [anything, :update, anything]
         expect_publish_model(args)
         model.save!
       end

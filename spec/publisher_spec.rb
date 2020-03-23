@@ -14,7 +14,7 @@ RSpec.describe PubSubModelSync::Publisher do
 
   describe '.publish_model' do
     let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
-    let(:action) { :create }
+    let(:action) { :update }
     it 'filter to only accepted attributes' do
       expected_data = { name: model.name }
       expect(connector).to receive(:publish).with(expected_data, anything)
@@ -34,9 +34,10 @@ RSpec.describe PubSubModelSync::Publisher do
       inst.publish_model(model, action)
     end
     it 'empty data when action is destroy' do
+      model = PublisherUser.new(name: 'name')
       expected_data = {}
       expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, 'destroy')
+      inst.publish_model(model, :destroy)
     end
     it 'aliased attributes' do
       expected_data = hash_including(full_name: model.name, email: model.email)

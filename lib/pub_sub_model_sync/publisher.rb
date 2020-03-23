@@ -14,10 +14,10 @@ module PubSubModelSync
 
     # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
     def publish_model(model, action, settings = nil)
-      settings ||= model.class.ps_publisher_settings
+      settings ||= model.class.ps_publisher_info(action)
       attributes = build_model_attrs(model, action, settings)
       data = {}
-      data = build_model_data(model, settings[:attrs]) if action != 'destroy'
+      data = build_model_data(model, settings[:attrs]) if action != :destroy
       connector.publish(data.symbolize_keys, attributes)
     end
 

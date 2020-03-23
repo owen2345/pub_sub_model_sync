@@ -16,32 +16,35 @@ module PubSubModelSync
       # @param settings (Hash): { actions: nil, as_klass: nil, id: nil }
       def ps_publish(attrs, settings = {})
         actions = settings.delete(:actions) || %i[create update destroy]
-        @ps_publisher_settings = settings.merge(attrs: attrs)
-        ps_register_callbacks(actions)
+        actions.each do |action|
+          info = settings.merge(klass: name, action: action, attrs: attrs)
+          PubSubModelSync::Config.publishers << info
+          ps_register_callback(action.to_sym, info)
+        end
       end
 
-      def ps_publisher_settings
-        @ps_publisher_settings
+      def ps_publisher_info(action = :create)
+        PubSubModelSync::Config.publishers.select do |listener|
+          listener[:klass] == name && listener[:action] == action
+        end.last
       end
 
       def ps_class_publish(data, action:, as_klass: nil)
         as_klass = (as_klass || name).to_s
-        ps_publisher.publish_data(as_klass, data, action.to_sym)
+        ps_publisher_service.publish_data(as_klass, data, action.to_sym)
       end
 
-      def ps_publisher
+      def ps_publisher_service
         PubSubModelSync::Publisher.new
       end
 
       private
 
-      def ps_register_callbacks(actions)
-        actions.each do |action|
-          after_commit(on: action) do |model|
-            unless model.ps_skip_for?(action)
-              publisher = model.class.ps_publisher
-              publisher.publish_model(model, action.to_sym)
-            end
+      def ps_register_callback(action, info)
+        after_commit(on: action) do |model|
+          unless model.ps_skip_for?(action)
+            service = model.class.ps_publisher_service
+            service.publish_model(model, action.to_sym, info)
           end
         end
       end
