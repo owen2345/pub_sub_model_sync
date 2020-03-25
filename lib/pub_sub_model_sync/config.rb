@@ -13,6 +13,9 @@ module PubSubModelSync
     # rabbitmq service
     cattr_accessor :bunny_connection, :queue_name, :topic_name
 
+    # kafka service
+    cattr_accessor :kafka_connection, :topic_name
+
     def self.log(msg, kind = :info)
       msg = "PS_MSYNC ==> #{msg}"
       if logger == :raise_error

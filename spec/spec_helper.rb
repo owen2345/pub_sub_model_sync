@@ -6,6 +6,7 @@ require 'active_record'
 require 'spec_init_model'
 require 'pub_sub_model_sync/mock_google_service'
 require 'pub_sub_model_sync/mock_rabbit_service'
+require 'pub_sub_model_sync/mock_kafka_service'
 
 root_path = File.dirname __dir__
 Dir[File.join(root_path, 'spec', 'support', '**', '*.rb')].each do |f|
@@ -36,5 +37,11 @@ RSpec.configure do |config|
   config.before(:each) do
     bunny_mock = PubSubModelSync::MockRabbitService.new
     allow(Bunny).to receive(:new).and_return(bunny_mock)
+  end
+
+  # mock kafka service
+  config.before(:each) do
+    kafka_mock = PubSubModelSync::MockKafkaService.new
+    allow(Kafka).to receive(:new).and_return(kafka_mock)
   end
 end

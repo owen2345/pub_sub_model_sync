@@ -13,6 +13,7 @@ require 'pub_sub_model_sync/connector'
 require 'pub_sub_model_sync/message_processor'
 require 'pub_sub_model_sync/service_google'
 require 'pub_sub_model_sync/service_rabbit'
+require 'pub_sub_model_sync/service_kafka'
 
 module PubSubModelSync
   class Error < StandardError; end

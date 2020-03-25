@@ -1,5 +1,5 @@
 # PubSubModelSync
-Permit to sync models data and make calls between rails apps using google or rabbitmq pub/sub service. 
+Permit to sync models data and make calls between rails apps using google or rabbitmq or apache kafka pub/sub service. 
 
 Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_man) which for now looks unmaintained.
 
@@ -14,8 +14,10 @@ Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_
 Add this line to your application's Gemfile:
 ```ruby
 gem 'pub_sub_model_sync'
+
 gem 'google-cloud-pubsub' # to use google pub/sub service
 gem 'bunny' # to use rabbit-mq pub/sub service
+gem 'ruby-kafka' # to use apache kafka pub/sub service
 ```
 And then execute: $ bundle install
 
@@ -42,6 +44,14 @@ And then execute: $ bundle install
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
     See details here: https://github.com/ruby-amqp/bunny
+
+- configuration for Apache Kafka (You need kafka installed)
+    ```ruby
+    PubSubModelSync::Config.service_name = :kafka
+    PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "kafka2:9092"], logger: Rails.logger]
+    PubSubModelSync::Config.topic_name = 'sample-topic'
+    ```
+    See details here: https://github.com/zendesk/ruby-kafka    
 
 - Add publishers/subscribers to your models (See examples below)
 
@@ -109,15 +119,22 @@ end
       # when using google service
       require 'pub_sub_model_sync/mock_google_service'
       config.before(:each) do
-        pub_sub_mock = PubSubModelSync::MockGoogleService.new
-        allow(Google::Cloud::Pubsub).to receive(:new).and_return(pub_sub_mock)
+        google_mock = PubSubModelSync::MockGoogleService.new
+        allow(Google::Cloud::Pubsub).to receive(:new).and_return(google_mock)
       end
       
       # when using rabbitmq service
       require 'pub_sub_model_sync/mock_rabbit_service' 
       config.before(:each) do
-        bunny_mock = PubSubModelSync::MockRabbitService.new
-        allow(Bunny).to receive(:new).and_return(bunny_mock)
+        rabbit_mock = PubSubModelSync::MockRabbitService.new
+        allow(Bunny).to receive(:new).and_return(rabbit_mock)
+      end
+    
+      # when using apache kafka service
+      require 'pub_sub_model_sync/mock_kafka_service' 
+      config.before(:each) do
+        kafka_mock = PubSubModelSync::MockKafkaService.new
+        allow(Kafka).to receive(:new).and_return(kafka_mock)
       end
   
     ```
