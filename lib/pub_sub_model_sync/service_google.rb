@@ -6,7 +6,7 @@ rescue LoadError # rubocop:disable Lint/SuppressedException
 end
 
 module PubSubModelSync
-  class ServiceGoogle
+  class ServiceGoogle < ServiceBase
     attr_accessor :service, :topic, :subscription, :config, :subscriber
 
     def initialize
@@ -50,9 +50,8 @@ module PubSubModelSync
       attrs = message.attributes.symbolize_keys
       return unless attrs[:service_model_sync]
 
-      data = JSON.parse(message.data).symbolize_keys
-      args = [data, attrs[:klass], attrs[:action], attrs]
-      PubSubModelSync::MessageProcessor.new(*args).process
+      data = JSON.parse(message.data)
+      perform_message({ data: data, attributes: attrs }.to_json)
     rescue => e
       log("Error processing message: #{[received_message, e.message]}", :error)
     ensure

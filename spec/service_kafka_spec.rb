@@ -67,5 +67,9 @@ RSpec.describe PubSubModelSync::ServiceKafka do
       expect(inst.consumer).to receive(:stop)
       inst.stop
     end
+
+    xit 'stop producer at exit' do
+      pending 'TODO: make a test with exit 0 and listen for producer.shutdown'
+    end
   end
 end

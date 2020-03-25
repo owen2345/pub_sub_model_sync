@@ -6,7 +6,7 @@ rescue LoadError # rubocop:disable Lint/SuppressedException
 end
 
 module PubSubModelSync
-  class ServiceKafka
+  class ServiceKafka < ServiceBase
     cattr_accessor :producer
 
     attr_accessor :service, :consumer
@@ -63,19 +63,10 @@ module PubSubModelSync
     def process_message(message)
       return unless message.partition == SERVICE_KEY
 
-      data, attrs = parse_message_payload(message.value)
-      args = [data, attrs[:klass], attrs[:action], attrs]
-      PubSubModelSync::MessageProcessor.new(*args).process
+      perform_message(message.value)
     rescue => e
       error = [message, e.message, e.backtrace]
       log("Error processing message: #{error}", :error)
-    end
-
-    def parse_message_payload(payload)
-      message_payload = JSON.parse(payload).symbolize_keys
-      data = message_payload[:data].symbolize_keys
-      attrs = message_payload[:attributes].symbolize_keys
-      [data, attrs]
     end
 
     def log(msg, kind = :info)
