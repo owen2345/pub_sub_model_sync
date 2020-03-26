@@ -48,7 +48,7 @@ And then execute: $ bundle install
 - configuration for Apache Kafka (You need kafka installed)
     ```ruby
     PubSubModelSync::Config.service_name = :kafka
-    PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "kafka2:9092"], logger: Rails.logger]
+    PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "localhost:2121"], logger: Rails.logger]
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
     See details here: https://github.com/zendesk/ruby-kafka    
