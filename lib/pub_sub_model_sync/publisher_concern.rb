@@ -11,6 +11,11 @@ module PubSubModelSync
       false
     end
 
+    def ps_perform_sync(action = :create)
+      service = self.class.ps_publisher_service
+      service.publish_model(self, action, self.class.ps_publisher_info(action))
+    end
+
     module ClassMethods
       # Permit to publish crud actions (:create, :update, :destroy)
       # @param settings (Hash): { actions: nil, as_klass: nil, id: nil }

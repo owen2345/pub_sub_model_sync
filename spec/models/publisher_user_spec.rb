@@ -72,7 +72,18 @@ RSpec.describe PublisherUser do
         model.save!
       end
 
-      it 'when update, able to skip message' do
+      it 'when create, then do not publish' do
+        model = PublisherUser2.new(name: 'name')
+        args = [anything, 'create']
+        expect_no_publish_model(args)
+        model.save!
+      end
+    end
+  end
+
+  describe 'methods' do
+    describe '#ps_skip_for?' do
+      it 'cancel push notification' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
@@ -80,12 +91,21 @@ RSpec.describe PublisherUser do
         expect_no_publish_model(args)
         model.save!
       end
+    end
 
-      it 'when create, then do not publish' do
-        model = PublisherUser2.new(name: 'name')
-        args = [anything, 'create']
-        expect_no_publish_model(args)
-        model.save!
+    describe '.ps_perform_sync' do
+      it 'trigger manual create sync' do
+        model = PublisherUser.new(name: 'name')
+        args = [model, :create, anything]
+        expect_publish_model(args)
+        model.ps_perform_sync(:create)
+      end
+
+      it 'trigger manual create sync' do
+        model = PublisherUser.create(name: 'name')
+        args = [model, :update, anything]
+        expect_publish_model(args)
+        model.ps_perform_sync(:update)
       end
     end
   end

@@ -83,6 +83,8 @@ end
 
 # Samples
 User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
+User.new(name: 'test user').ps_perform_sync(:create) # similar to above to perform sync on demand
+
 User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
 PubSubModelSync::Publisher.new.publish_data(User, { msg: 'Hello' }, :greeting) # similar to above when not included publisher concern
 ```
@@ -113,6 +115,33 @@ class User < ActiveRecord::Base
 end
 ```
 
+## API
+- Perform sync on demand (:create, :update, :destroy):   
+  The target model will receive a notification to perform the indicated action  
+  ```my_model.ps_perform_sync(action_name)```
+    
+- Class level notification:     
+  ```User.ps_class_publish(data, action: action_name, as_klass: custom_klass_name)```
+  Target class ```User.action_name``` will be called when message is received    
+  * data: (required, :hash) message value to deliver    
+  * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)    
+  * as_klass: (optional, :string) same class name as defined in ps_class_subscribe(...)
+      
+- Class level notification (Same as above: on demand call)    
+  ```PubSubModelSync::Publisher.new.publish_data(Klass_name, data, action_name)```  
+  * klass_name: (required, Class) same class name as defined in ps_class_subscribe(...)
+  * data: (required, :hash) message value to deliver    
+  * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)
+  
+- Get crud subscription configured for the class   
+  ```User.ps_subscriber(action_name)```  
+  * action_name (default :create, :sym): can be :create, :update, :destroy
+- Get crud publisher configured for the class   
+  ```User.ps_publisher(action_name)```  
+  * action_name (default :create, :sym): can be :create, :update, :destroy
+- Inspect all listeners configured for a class  
+  ```PubSubModelSync::Config.listeners```
+  
 ## Testing with RSpec
 - Config: (spec/rails_helper.rb)
     ```ruby
@@ -178,15 +207,6 @@ end
       expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
     end
     ```
-    
-    There are two special methods to extract crud configuration settings (attrs, id, ...):
-    
-    Subscribers: ```User.ps_subscriber```
-    
-    Publishers: ```User.ps_publisher```
-    
-    Note: Inspect all configured listeners with: 
-    ``` PubSubModelSync::Config.listeners ```
 
 ## Contributing
 
