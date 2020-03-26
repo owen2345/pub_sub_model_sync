@@ -1,6 +1,6 @@
 # Change Log
 
-# 0.1.5
+# 0.2.0
 - Add apache kafka support
 - Add Service interface for future references
 - Improve Services to use a single/common message performer
