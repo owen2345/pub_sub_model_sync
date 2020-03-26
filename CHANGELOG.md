@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.2.1
+- Add on demand model sync method
+
 # 0.2.0
 - Add apache kafka support
 - Add Service interface for future references

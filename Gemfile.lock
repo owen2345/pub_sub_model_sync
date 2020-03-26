@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (0.2.0)
+    pub_sub_model_sync (0.2.1)
       activesupport
       rails
 
