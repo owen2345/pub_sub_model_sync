@@ -1,5 +1,10 @@
 # Change Log
 
+# 0.1.5
+- Add apache kafka support
+- Add Service interface for future references
+- Improve Services to use a single/common message performer
+
 # 0.1.4
 - Add attribute aliases when publishing, ```ps_publish(['name:full_name', 'email'])```
 - Ability to retrieve publisher/subscriber crud settings
