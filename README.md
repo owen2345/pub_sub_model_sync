@@ -84,6 +84,7 @@ end
 # Samples
 User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
 User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
+PubSubModelSync::Publisher.new.publish_data(User, { msg: 'Hello' }, :greeting) # similar to above when not included publisher concern
 ```
 
 ## Advanced Example

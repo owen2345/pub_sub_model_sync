@@ -9,7 +9,6 @@ module PubSubModelSync
   class ServiceRabbit < ServiceBase
     attr_accessor :service, :channel, :queue, :topic
     attr_accessor :config
-    SERVICE_KEY = 'service_model_sync'
 
     def initialize
       @config = PubSubModelSync::Config
@@ -31,7 +30,7 @@ module PubSubModelSync
       log("Publishing: #{[data, attributes]}")
       subscribe_to_queue
       payload = { data: data, attributes: attributes }
-      topic.publish(payload.to_json, routing_key: queue.name, type: SERVICE_KEY)
+      topic.publish(payload.to_json, message_settings)
     rescue => e
       info = [data, attributes, e.message, e.backtrace]
       log("Error publishing: #{info}", :error)
@@ -43,6 +42,10 @@ module PubSubModelSync
     end
 
     private
+
+    def message_settings
+      { routing_key: queue.name, type: SERVICE_KEY }
+    end
 
     def process_message(_delivery_info, meta_info, payload)
       return unless meta_info[:type] == SERVICE_KEY

@@ -2,6 +2,8 @@
 
 module PubSubModelSync
   class ServiceBase
+    SERVICE_KEY = 'service_model_sync'
+
     def listen_messages
       raise 'method :listen_messages must be defined in service'
     end

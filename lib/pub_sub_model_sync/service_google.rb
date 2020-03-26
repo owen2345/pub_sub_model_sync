@@ -30,7 +30,9 @@ module PubSubModelSync
 
     def publish(data, attributes)
       log("Publishing message: #{[data, attributes]}")
-      topic.publish(data.to_json, attributes)
+
+      payload = { data: data, attributes: attributes }.to_json
+      topic.publish(payload, { SERVICE_KEY => true })
     end
 
     def stop
@@ -47,11 +49,9 @@ module PubSubModelSync
 
     def process_message(received_message)
       message = received_message.message
-      attrs = message.attributes.symbolize_keys
-      return unless attrs[:service_model_sync]
+      return unless message.attributes[SERVICE_KEY]
 
-      data = JSON.parse(message.data)
-      perform_message({ data: data, attributes: attrs }.to_json)
+      perform_message(message.data)
     rescue => e
       log("Error processing message: #{[received_message, e.message]}", :error)
     ensure

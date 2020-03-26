@@ -4,9 +4,12 @@ RSpec.describe PubSubModelSync::ServiceKafka do
   let(:msg_attrs) { { klass: 'User', action: 'action' } }
   let(:message_data) { { data: { msg: 'Hello' }, attributes: msg_attrs } }
   let(:message) do
-    OpenStruct.new(value: message_data.to_json, partition: 'service_model_sync')
+    OpenStruct.new(value: message_data.to_json,
+                   headers: { 'service_model_sync' => true })
   end
-  let(:invalid_message) { OpenStruct.new(partition: 'invalid_partition') }
+  let(:invalid_message) do
+    OpenStruct.new(headers: { 'invalid_partition' => true })
+  end
   let(:inst) { described_class.new }
   let(:service) { inst.service }
   let(:producer) { inst.send(:producer) }
@@ -50,7 +53,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
 
   describe '.publish' do
     it 'produce' do
-      settings = hash_including(:topic, :partition_key)
+      settings = hash_including(:topic, :headers)
       data_regex = /"data":{(.*)"attributes":{/
       expect(producer).to receive(:produce).with(match(data_regex), settings)
       inst.publish(message_data[:data], msg_attrs)

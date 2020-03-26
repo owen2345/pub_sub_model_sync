@@ -1,13 +1,16 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::ServiceGoogle do
-  let(:msg_attrs) { { service_model_sync: true } }
-  let(:mock_message) { double('Message', data: '{}', attributes: msg_attrs) }
+  let(:msg_attrs) { { 'service_model_sync' => true } }
+  let(:message_data) { { data: {}, attributes: {} } }
+  let(:mock_message) do
+    double('Message', data: message_data.to_json, attributes: msg_attrs)
+  end
   let(:mock_service_message) do
     double('ServiceMessage', message: mock_message, acknowledge!: true)
   end
   let(:mock_service_unknown_message) do
-    mock_message.attributes[:service_model_sync] = nil
+    mock_message.attributes['service_model_sync'] = nil
     mock_service_message
   end
   let(:inst) { described_class.new }
@@ -81,7 +84,8 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
     it 'delivery message' do
       data = { name: 'test' }
       attrs = { id: 10 }
-      expect(inst.topic).to receive(:publish).with(data.to_json, attrs)
+      payload = { data: data, attributes: attrs }.to_json
+      expect(inst.topic).to receive(:publish).with(payload, anything)
       inst.publish(data, attrs)
     end
   end

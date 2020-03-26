@@ -11,7 +11,6 @@ module PubSubModelSync
 
     attr_accessor :service, :consumer
     attr_accessor :config
-    SERVICE_KEY = 'service_model_sync'
     CONSUMER_GROUP = 'service_model_sync'
 
     def initialize
@@ -22,7 +21,7 @@ module PubSubModelSync
     def listen_messages
       log('Listener starting...')
       start_consumer
-      consumer.each_message(topic: config.topic_name, &method(:process_message))
+      consumer.each_message(&method(:process_message))
     rescue PubSubModelSync::Runner::ShutDown
       raise
     rescue => e
@@ -47,7 +46,7 @@ module PubSubModelSync
     private
 
     def message_settings
-      { topic: config.topic_name, partition_key: SERVICE_KEY }
+      { topic: config.topic_name, headers: { SERVICE_KEY => true } }
     end
 
     def start_consumer
@@ -56,12 +55,14 @@ module PubSubModelSync
     end
 
     def producer
+      return self.class.producer if self.class.producer
+
       at_exit { self.class.producer.shutdown }
-      self.class.producer ||= service.producer
+      self.class.producer = service.producer
     end
 
     def process_message(message)
-      return unless message.partition == SERVICE_KEY
+      return unless message.headers[SERVICE_KEY]
 
       perform_message(message.value)
     rescue => e

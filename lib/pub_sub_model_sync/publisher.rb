@@ -25,8 +25,7 @@ module PubSubModelSync
       {
         klass: klass.to_s,
         action: action.to_sym,
-        id: id,
-        service_model_sync: true
+        id: id
       }
     end
 
