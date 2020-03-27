@@ -11,6 +11,10 @@ module PubSubModelSync
       false
     end
 
+    def ps_before_sync(_action, _data); end
+
+    def ps_after_sync(_action, _data); end
+
     def ps_perform_sync(action = :create)
       service = self.class.ps_publisher_service
       service.publish_model(self, action, self.class.ps_publisher_info(action))

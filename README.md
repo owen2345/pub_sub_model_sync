@@ -116,6 +116,14 @@ end
 ```
 
 ## API
+- To perform a callback before publishing message (CRUD)
+  ```model.ps_before_sync(action, data_to_deliver)```  
+  Note: If the method returns ```false```, the message will not be published
+
+- To perform a callback after publishing message (CRUD)
+  ```model.ps_after_sync(action, data_to_deliver)```  
+  Note: If the method returns ```false```, the message will not be published  
+
 - Perform sync on demand (:create, :update, :destroy):   
   The target model will receive a notification to perform the indicated action  
   ```my_model.ps_perform_sync(action_name)```
@@ -139,7 +147,7 @@ end
 - Get crud publisher configured for the class   
   ```User.ps_publisher(action_name)```  
   * action_name (default :create, :sym): can be :create, :update, :destroy
-- Inspect all listeners configured for a class  
+- Inspect all configured listeners
   ```PubSubModelSync::Config.listeners```
   
 ## Testing with RSpec

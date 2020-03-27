@@ -18,7 +18,11 @@ module PubSubModelSync
       attributes = build_model_attrs(model, action, settings)
       data = {}
       data = build_model_data(model, settings[:attrs]) if action != :destroy
+      res_before = model.ps_before_sync(action, data)
+      return if res_before == false
+
       connector.publish(data.symbolize_keys, attributes)
+      model.ps_after_sync(action, data)
     end
 
     def self.build_attrs(klass, action, id = nil)

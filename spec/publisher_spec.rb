@@ -44,5 +44,28 @@ RSpec.describe PubSubModelSync::Publisher do
       expect(connector).to receive(:publish).with(expected_data, anything)
       inst.publish_model(model, action, attrs: %i[name:full_name email])
     end
+
+    describe 'callbacks' do
+      describe '#ps_before_sync' do
+        it 'call method' do
+          expect(model).to receive(:ps_before_sync).with(action, anything)
+          inst.publish_model(model, action)
+        end
+
+        it 'does not publish if return false' do
+          allow(model).to receive(:ps_before_sync).and_return(false)
+          expect(connector).not_to receive(:publish)
+          expect(model).not_to receive(:ps_after_sync)
+          inst.publish_model(model, action)
+        end
+      end
+
+      describe '#ps_after_sync' do
+        it 'call method' do
+          expect(model).to receive(:ps_after_sync).with(action, anything)
+          inst.publish_model(model, action)
+        end
+      end
+    end
   end
 end
