@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.2.2 (March 27, 2020)
+- fix default value for cattr_accessor in ror < 5.2
+- add callbacks when publishing a message
+
 # 0.2.1
 - Add on demand model sync method
 
