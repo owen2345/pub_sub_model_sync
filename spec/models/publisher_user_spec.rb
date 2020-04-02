@@ -82,12 +82,12 @@ RSpec.describe PublisherUser do
   end
 
   describe 'methods' do
-    describe '#ps_skip_for?' do
+    describe '#ps_skip_callback?' do
       it 'cancel push notification' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
-        allow(model).to receive(:ps_skip_for?).and_return(true)
+        allow(model).to receive(:ps_skip_callback?).and_return(true)
         expect_no_publish_model(args)
         model.save!
       end

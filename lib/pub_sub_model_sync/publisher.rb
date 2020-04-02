@@ -14,12 +14,14 @@ module PubSubModelSync
 
     # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
     def publish_model(model, action, settings = nil)
+      return if model.ps_skip_sync?(action)
+
       settings ||= model.class.ps_publisher_info(action)
       attributes = build_model_attrs(model, action, settings)
       data = {}
       data = build_model_data(model, settings[:attrs]) if action != :destroy
       res_before = model.ps_before_sync(action, data)
-      return if res_before == false
+      return if res_before == :cancel
 
       connector.publish(data.symbolize_keys, attributes)
       model.ps_after_sync(action, data)

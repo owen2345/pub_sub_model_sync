@@ -97,9 +97,13 @@ class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
   ps_publish(%i[name:full_name email], actions: %i[update], as_klass: 'Client', id: :client_id)
   
-  def ps_skip_for?(_action)
+  def ps_skip_callback?(_action)
     false # here logic with action to skip push message
   end
+  
+  def ps_skip_sync?(_action)
+      false # here logic with action to skip push message
+    end
 end
 
 # App 2 (Subscriber)
@@ -116,13 +120,20 @@ end
 ```
 
 ## API
-- To perform a callback before publishing message (CRUD)
+- Permit to cancel sync called after create/update/destroy (Before initializing sync service)
+  ```model.ps_skip_callback?(action)```    
+  Note: Return true to cancel sync
+  
+- Permit to cancel the sync (Before preparing data)
+  ```model.ps_skip_sync?(action)```     
+  Note: return true to cancel sync
+  
+- To perform a callback before sync (After preparing data)
   ```model.ps_before_sync(action, data_to_deliver)```  
-  Note: If the method returns ```false```, the message will not be published
+  Note: If the method returns ```:cancel```, the message will not be published
 
-- To perform a callback after publishing message (CRUD)
-  ```model.ps_after_sync(action, data_to_deliver)```  
-  Note: If the method returns ```false```, the message will not be published  
+- To perform a callback after sync
+  ```model.ps_after_sync(action, data_delivered)```  
 
 - Perform sync on demand (:create, :update, :destroy):   
   The target model will receive a notification to perform the indicated action  

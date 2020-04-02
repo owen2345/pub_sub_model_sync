@@ -15,7 +15,9 @@ module PubSubModelSync
     def process
       log 'processing message'
       listeners = filter_listeners
-      eval_message(listeners) if listeners.any?
+      return log 'Skipped: No listeners' unless listeners.any?
+
+      eval_message(listeners)
       log 'processed message'
     end
 
@@ -54,8 +56,7 @@ module PubSubModelSync
     def find_model(listener)
       model_class = listener[:klass].constantize
       identifier = listener[:settings][:id] || :id
-      model_class.where(identifier => attrs[:id]).first ||
-        model_class.new(identifier => attrs[:id])
+      model_class.where(identifier => attrs[:id]).first_or_initialize
     end
 
     def populate_model(model, listener)

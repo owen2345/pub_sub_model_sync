@@ -66,7 +66,7 @@ class PublisherUser2 < ActiveRecord::Base
     'custom_name'
   end
 
-  def ps_skip_for?(_action)
+  def ps_skip_callback?(_action)
     false
   end
 end
