@@ -119,6 +119,18 @@ class User < ActiveRecord::Base
 end
 ```
 
+Note: Be careful with collision of names
+```
+class User
+    # ps_publish %i[name_data:name name:key] # key will be replaced with name_data 
+    ps_publish %i[name_data:name key_data:key] # use alias to avoid collision
+    
+    def key_data
+      name
+    end
+end
+``` 
+
 ## API
 - Permit to cancel sync called after create/update/destroy (Before initializing sync service)
   ```model.ps_skip_callback?(action)```    
