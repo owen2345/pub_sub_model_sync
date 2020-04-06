@@ -23,9 +23,11 @@ module PubSubModelSync
     def ps_after_sync(_action, _data); end
 
     # To perform sync on demand
-    def ps_perform_sync(action = :create)
+    # @param custom_settings (Hash): { attrs: [], as_klass: nil, id: nil }
+    def ps_perform_sync(action = :create, custom_settings = {})
       service = self.class.ps_publisher_service
-      service.publish_model(self, action, self.class.ps_publisher_info(action))
+      model_settings = self.class.ps_publisher_info(action) || {}
+      service.publish_model(self, action, model_settings.merge(custom_settings))
     end
 
     module ClassMethods

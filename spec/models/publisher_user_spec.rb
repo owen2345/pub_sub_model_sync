@@ -94,18 +94,28 @@ RSpec.describe PublisherUser do
     end
 
     describe '.ps_perform_sync' do
-      it 'trigger manual create sync' do
+      it 'perform manual create sync' do
         model = PublisherUser.new(name: 'name')
-        args = [model, :create, anything]
+        action = :create
+        args = [model, action, anything]
         expect_publish_model(args)
-        model.ps_perform_sync(:create)
+        model.ps_perform_sync(action)
       end
 
-      it 'trigger manual create sync' do
+      it 'manual perform update sync' do
+        action = :update
         model = PublisherUser.create(name: 'name')
-        args = [model, :update, anything]
+        args = [model, action, anything]
         expect_publish_model(args)
-        model.ps_perform_sync(:update)
+        model.ps_perform_sync(action)
+      end
+
+      it 'perform with custom settings' do
+        model = PublisherUser.new(name: 'name')
+        attrs = %i[name]
+        args = [model, anything, hash_including(attrs: attrs)]
+        expect_publish_model(args)
+        model.ps_perform_sync(:create, attrs: attrs)
       end
     end
   end

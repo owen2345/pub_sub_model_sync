@@ -136,20 +136,21 @@ end
   ```model.ps_skip_callback?(action)```    
   Note: Return true to cancel sync
   
-- Permit to cancel the sync (Before preparing data)
+- Callback called before preparing data for sync (Permit to stop sync)
   ```model.ps_skip_sync?(action)```     
   Note: return true to cancel sync
   
-- To perform a callback before sync (After preparing data)
+- Callback called before sync (After preparing data)
   ```model.ps_before_sync(action, data_to_deliver)```  
-  Note: If the method returns ```:cancel```, the message will not be published
+  Note: If the method returns ```:cancel```, the sync will be stopped (message will not be published)
 
-- To perform a callback after sync
+- Callback called after sync
   ```model.ps_after_sync(action, data_delivered)```  
 
 - Perform sync on demand (:create, :update, :destroy):   
   The target model will receive a notification to perform the indicated action  
-  ```my_model.ps_perform_sync(action_name)```
+  ```my_model.ps_perform_sync(action_name, custom_settings = {})```  
+  * custom_settings: override default settings defined for action_name ({ attrs: [], as_klass: nil, id: nil })
     
 - Class level notification:     
   ```User.ps_class_publish(data, action: action_name, as_klass: custom_klass_name)```
