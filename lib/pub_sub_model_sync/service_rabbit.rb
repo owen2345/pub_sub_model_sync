@@ -80,6 +80,9 @@ module PubSubModelSync
       subscribe_to_queue
       payload = { data: data, attributes: attributes }
       topic.publish(payload.to_json, message_settings)
+
+      # Ugly fix: "IO timeout when reading 7 bytes"
+      # https://stackoverflow.com/questions/39039129/rabbitmq-timeouterror-io-timeout-when-reading-7-bytes
       channel.close
       service.close
     end
