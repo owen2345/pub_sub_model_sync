@@ -32,7 +32,7 @@ module PubSubModelSync
     # TODO: max retry
     rescue Timeout::Error => e
       log("Error publishing (retrying....): #{e.message}", :error)
-      initialize
+      service.close && initialize
       retry
     rescue => e
       info = [data, attributes, e.message, e.backtrace]
