@@ -97,9 +97,13 @@ class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
   ps_publish(%i[name:full_name email], actions: %i[update], as_klass: 'Client', id: :client_id)
   
-  def ps_skip_for?(_action)
+  def ps_skip_callback?(_action)
     false # here logic with action to skip push message
   end
+  
+  def ps_skip_sync?(_action)
+      false # here logic with action to skip push message
+    end
 end
 
 # App 2 (Subscriber)
@@ -115,18 +119,38 @@ class User < ActiveRecord::Base
 end
 ```
 
-## API
-- To perform a callback before publishing message (CRUD)
-  ```model.ps_before_sync(action, data_to_deliver)```  
-  Note: If the method returns ```false```, the message will not be published
+Note: Be careful with collision of names
+```
+class User
+    # ps_publish %i[name_data:name name:key] # key will be replaced with name_data 
+    ps_publish %i[name_data:name key_data:key] # use alias to avoid collision
+    
+    def key_data
+      name
+    end
+end
+``` 
 
-- To perform a callback after publishing message (CRUD)
-  ```model.ps_after_sync(action, data_to_deliver)```  
-  Note: If the method returns ```false```, the message will not be published  
+## API
+- Permit to cancel sync called after create/update/destroy (Before initializing sync service)
+  ```model.ps_skip_callback?(action)```    
+  Note: Return true to cancel sync
+  
+- Callback called before preparing data for sync (Permit to stop sync)
+  ```model.ps_skip_sync?(action)```     
+  Note: return true to cancel sync
+  
+- Callback called before sync (After preparing data)
+  ```model.ps_before_sync(action, data_to_deliver)```  
+  Note: If the method returns ```:cancel```, the sync will be stopped (message will not be published)
+
+- Callback called after sync
+  ```model.ps_after_sync(action, data_delivered)```  
 
 - Perform sync on demand (:create, :update, :destroy):   
   The target model will receive a notification to perform the indicated action  
-  ```my_model.ps_perform_sync(action_name)```
+  ```my_model.ps_perform_sync(action_name, custom_settings = {})```  
+  * custom_settings: override default settings defined for action_name ({ attrs: [], as_klass: nil, id: nil })
     
 - Class level notification:     
   ```User.ps_class_publish(data, action: action_name, as_klass: custom_klass_name)```

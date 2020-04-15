@@ -13,10 +13,13 @@ module PubSubModelSync
     end
 
     def process
+      @failed = false
       log 'processing message'
       listeners = filter_listeners
-      eval_message(listeners) if listeners.any?
-      log 'processed message'
+      return log 'Skipped: No listeners' unless listeners.any?
+
+      eval_message(listeners)
+      log 'processed message' unless @failed
     end
 
     private
@@ -36,6 +39,7 @@ module PubSubModelSync
       model_class.send(listener[:action], data)
     rescue => e
       log("Error listener (#{listener}): #{e.message}", :error)
+      @failed = true
     end
 
     # support for: create, update, destroy
@@ -49,13 +53,13 @@ module PubSubModelSync
       end
     rescue => e
       log("Error listener (#{listener}): #{e.message}", :error)
+      @failed = true
     end
 
     def find_model(listener)
       model_class = listener[:klass].constantize
       identifier = listener[:settings][:id] || :id
-      model_class.where(identifier => attrs[:id]).first ||
-        model_class.new(identifier => attrs[:id])
+      model_class.where(identifier => attrs[:id]).first_or_initialize
     end
 
     def populate_model(model, listener)

@@ -30,6 +30,10 @@ module PubSubModelSync
       def topic(*_args)
         @topic ||= MockTopic.new
       end
+
+      def close
+        true
+      end
     end
 
     def create_channel(*_args)

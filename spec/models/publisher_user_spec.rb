@@ -82,30 +82,40 @@ RSpec.describe PublisherUser do
   end
 
   describe 'methods' do
-    describe '#ps_skip_for?' do
+    describe '#ps_skip_callback?' do
       it 'cancel push notification' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
-        allow(model).to receive(:ps_skip_for?).and_return(true)
+        allow(model).to receive(:ps_skip_callback?).and_return(true)
         expect_no_publish_model(args)
         model.save!
       end
     end
 
     describe '.ps_perform_sync' do
-      it 'trigger manual create sync' do
+      it 'perform manual create sync' do
         model = PublisherUser.new(name: 'name')
-        args = [model, :create, anything]
+        action = :create
+        args = [model, action, anything]
         expect_publish_model(args)
-        model.ps_perform_sync(:create)
+        model.ps_perform_sync(action)
       end
 
-      it 'trigger manual create sync' do
+      it 'manual perform update sync' do
+        action = :update
         model = PublisherUser.create(name: 'name')
-        args = [model, :update, anything]
+        args = [model, action, anything]
         expect_publish_model(args)
-        model.ps_perform_sync(:update)
+        model.ps_perform_sync(action)
+      end
+
+      it 'perform with custom settings' do
+        model = PublisherUser.new(name: 'name')
+        attrs = %i[name]
+        args = [model, anything, hash_including(attrs: attrs)]
+        expect_publish_model(args)
+        model.ps_perform_sync(:create, attrs: attrs)
       end
     end
   end

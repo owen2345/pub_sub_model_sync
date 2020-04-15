@@ -52,10 +52,24 @@ RSpec.describe PubSubModelSync::Publisher do
           inst.publish_model(model, action)
         end
 
-        it 'does not publish if return false' do
-          allow(model).to receive(:ps_before_sync).and_return(false)
+        it 'does not publish if return :cancel' do
+          allow(model).to receive(:ps_before_sync).and_return(:cancel)
           expect(connector).not_to receive(:publish)
           expect(model).not_to receive(:ps_after_sync)
+          inst.publish_model(model, action)
+        end
+      end
+
+      describe '#ps_skip_sync?' do
+        it 'call method' do
+          expect(model).to receive(:ps_skip_sync?).with(action)
+          inst.publish_model(model, action)
+        end
+
+        it 'does not publish if return :cancel' do
+          allow(model).to receive(:ps_skip_sync?).and_return(true)
+          expect(connector).not_to receive(:publish)
+          expect(model).not_to receive(:ps_before_sync)
           inst.publish_model(model, action)
         end
       end

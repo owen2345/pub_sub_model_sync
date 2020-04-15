@@ -28,9 +28,12 @@ module PubSubModelSync
 
     def publish(data, attributes)
       log("Publishing: #{[data, attributes]}")
-      subscribe_to_queue
-      payload = { data: data, attributes: attributes }
-      topic.publish(payload.to_json, message_settings)
+      deliver_data(data, attributes)
+    # TODO: max retry
+    rescue Timeout::Error => e
+      log("Error publishing (retrying....): #{e.message}", :error)
+      initialize
+      retry
     rescue => e
       info = [data, attributes, e.message, e.backtrace]
       log("Error publishing: #{info}", :error)
@@ -71,6 +74,17 @@ module PubSubModelSync
 
     def log(msg, kind = :info)
       config.log("Rabbit Service ==> #{msg}", kind)
+    end
+
+    def deliver_data(data, attributes)
+      subscribe_to_queue
+      payload = { data: data, attributes: attributes }
+      topic.publish(payload.to_json, message_settings)
+
+      # Ugly fix: "IO timeout when reading 7 bytes"
+      # https://stackoverflow.com/questions/39039129/rabbitmq-timeouterror-io-timeout-when-reading-7-bytes
+      channel.close
+      service.close
     end
   end
 end

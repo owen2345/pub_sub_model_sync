@@ -6,18 +6,28 @@ module PubSubModelSync
       base.extend(ClassMethods)
     end
 
-    # Permit to skip a publish callback
-    def ps_skip_for?(_action)
+    # Before initializing sync service (callbacks: after create/update/destroy)
+    def ps_skip_callback?(_action)
       false
     end
 
+    # before preparing data to sync
+    def ps_skip_sync?(_action)
+      false
+    end
+
+    # before delivering data
     def ps_before_sync(_action, _data); end
 
+    # after delivering data
     def ps_after_sync(_action, _data); end
 
-    def ps_perform_sync(action = :create)
+    # To perform sync on demand
+    # @param custom_settings (Hash): { attrs: [], as_klass: nil, id: nil }
+    def ps_perform_sync(action = :create, custom_settings = {})
       service = self.class.ps_publisher_service
-      service.publish_model(self, action, self.class.ps_publisher_info(action))
+      model_settings = self.class.ps_publisher_info(action) || {}
+      service.publish_model(self, action, model_settings.merge(custom_settings))
     end
 
     module ClassMethods
@@ -32,12 +42,14 @@ module PubSubModelSync
         end
       end
 
+      # Publisher info for specific action
       def ps_publisher_info(action = :create)
         PubSubModelSync::Config.publishers.select do |listener|
           listener[:klass] == name && listener[:action] == action
         end.last
       end
 
+      # On demand class level publisher
       def ps_class_publish(data, action:, as_klass: nil)
         as_klass = (as_klass || name).to_s
         ps_publisher_service.publish_data(as_klass, data, action.to_sym)
@@ -51,7 +63,7 @@ module PubSubModelSync
 
       def ps_register_callback(action, info)
         after_commit(on: action) do |model|
-          unless model.ps_skip_for?(action)
+          unless model.ps_skip_callback?(action)
             service = model.class.ps_publisher_service
             service.publish_model(model, action.to_sym, info)
           end
