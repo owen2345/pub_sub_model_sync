@@ -1,5 +1,13 @@
 # Change Log
 
+# 0.2.3 (April 15, 2020)
+- Improve helper names
+- feat: perform manual sync with custom settings
+- fix for "IO timeout when reading 7 bytes" error (Rabbit)
+- style: do not print processed message when failed
+- feat: retry delivery message when failed (RabbitMQ)
+
+
 # 0.2.2 (March 27, 2020)
 - fix default value for cattr_accessor in ror < 5.2
 - add callbacks when publishing a message
