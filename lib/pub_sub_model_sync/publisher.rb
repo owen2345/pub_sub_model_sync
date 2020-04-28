@@ -3,13 +3,15 @@
 module PubSubModelSync
   class Publisher
     attr_accessor :connector
+    delegate :publish, to: :connector
+
     def initialize
       @connector = PubSubModelSync::Connector.new
     end
 
     def publish_data(klass, data, action)
       attributes = self.class.build_attrs(klass, action)
-      connector.publish(data, attributes)
+      publish(data, attributes)
     end
 
     # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
@@ -23,7 +25,7 @@ module PubSubModelSync
       res_before = model.ps_before_sync(action, data)
       return if res_before == :cancel
 
-      connector.publish(data.symbolize_keys, attributes)
+      publish(data.symbolize_keys, attributes)
       model.ps_after_sync(action, data)
     end
 

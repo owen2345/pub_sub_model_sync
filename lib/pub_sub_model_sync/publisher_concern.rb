@@ -31,7 +31,7 @@ module PubSubModelSync
     end
 
     module ClassMethods
-      # Permit to publish crud actions (:create, :update, :destroy)
+      # Permit to configure to publish crud actions (:create, :update, :destroy)
       # @param settings (Hash): { actions: nil, as_klass: nil, id: nil }
       def ps_publish(attrs, settings = {})
         actions = settings.delete(:actions) || %i[create update destroy]
@@ -42,17 +42,17 @@ module PubSubModelSync
         end
       end
 
+      # On demand class level publisher
+      def ps_class_publish(data, action:, as_klass: nil)
+        as_klass = (as_klass || name).to_s
+        ps_publisher_service.publish_data(as_klass, data, action.to_sym)
+      end
+
       # Publisher info for specific action
       def ps_publisher_info(action = :create)
         PubSubModelSync::Config.publishers.select do |listener|
           listener[:klass] == name && listener[:action] == action
         end.last
-      end
-
-      # On demand class level publisher
-      def ps_class_publish(data, action:, as_klass: nil)
-        as_klass = (as_klass || name).to_s
-        ps_publisher_service.publish_data(as_klass, data, action.to_sym)
       end
 
       def ps_publisher_service
