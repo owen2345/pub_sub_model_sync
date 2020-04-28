@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.2.4 (April 28, 2020)
+- Delegate .publish to the .publisher for better understanding
+
 # 0.2.3 (April 15, 2020)
 - Improve helper names
 - feat: perform manual sync with custom settings
