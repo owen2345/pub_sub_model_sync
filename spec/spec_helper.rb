@@ -7,6 +7,7 @@ require 'spec_init_model'
 require 'pub_sub_model_sync/mock_google_service'
 require 'pub_sub_model_sync/mock_rabbit_service'
 require 'pub_sub_model_sync/mock_kafka_service'
+require 'database_cleaner/active_record'
 
 root_path = File.dirname __dir__
 Dir[File.join(root_path, 'spec', 'support', '**', '*.rb')].each do |f|
@@ -43,5 +44,20 @@ RSpec.configure do |config|
   config.before(:each) do
     kafka_mock = PubSubModelSync::MockKafkaService.new
     allow(Kafka).to receive(:new).and_return(kafka_mock)
+  end
+end
+
+# database cleaner
+RSpec.configure do |config|
+
+  config.before(:suite) do
+    DatabaseCleaner.strategy = :transaction
+    DatabaseCleaner.clean_with(:truncation)
+  end
+
+  config.around(:each) do |example|
+    DatabaseCleaner.cleaning do
+      example.run
+    end
   end
 end

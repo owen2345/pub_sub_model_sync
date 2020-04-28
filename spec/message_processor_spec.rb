@@ -87,5 +87,35 @@ RSpec.describe PubSubModelSync::MessageProcessor do
         inst.process
       end
     end
+
+    describe 'find model' do
+      let!(:user1) { SubscriberUser.create!(name: 'name1', email: 'email1') }
+      let!(:user2) { SubscriberUser.create!(name: 'name2', email: 'email2') }
+      let(:data) { { name: user2.name, email: user2.email, age: '' } }
+      it 'custom identifier' do
+        stub_listener(SubscriberUser, :update, settings: { id: :email })
+        inst = described_class.new(data, user2.class.name, :update)
+        expect(inst).to receive(:populate_model).with(user2, anything)
+        inst.process
+      end
+
+      it 'multiple identifiers' do
+        stub_listener(SubscriberUser, :update, settings: { id: %i[name email] })
+        inst = described_class.new(data, user2.class.name, :update)
+        expect(inst).to receive(:populate_model).with(user2, anything)
+        inst.process
+      end
+
+      it 'custom find model' do
+        model = SubscriberUser.new
+        klass = user2.class
+        klass.create_class_method(:ps_find_model) do
+          args = [data, hash_including(:klass, :action)]
+          allow(klass).to receive(:ps_find_model).and_return(model)
+          expect(klass).to receive(:ps_find_model).with(*args)
+          described_class.new(data, model.class.name, :create).process
+        end
+      end
+    end
   end
 end

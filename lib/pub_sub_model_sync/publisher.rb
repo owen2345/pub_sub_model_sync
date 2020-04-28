@@ -14,14 +14,13 @@ module PubSubModelSync
       publish(data, attributes)
     end
 
-    # @param settings (Hash): { attrs: [], as_klass: nil, id: nil }
-    def publish_model(model, action, settings = nil)
+    # @param custom_settings (Hash): { attrs: [], as_klass: nil }
+    def publish_model(model, action, custom_settings = {})
       return if model.ps_skip_sync?(action)
 
-      settings ||= model.class.ps_publisher_info(action)
+      settings = model.class.ps_publisher(action).merge(custom_settings)
       attributes = build_model_attrs(model, action, settings)
-      data = {}
-      data = build_model_data(model, settings[:attrs]) if action != :destroy
+      data = build_model_data(model, settings[:attrs])
       res_before = model.ps_before_sync(action, data)
       return if res_before == :cancel
 
@@ -29,12 +28,8 @@ module PubSubModelSync
       model.ps_after_sync(action, data)
     end
 
-    def self.build_attrs(klass, action, id = nil)
-      {
-        klass: klass.to_s,
-        action: action.to_sym,
-        id: id
-      }
+    def self.build_attrs(klass, action)
+      { klass: klass.to_s, action: action.to_sym }
     end
 
     private
@@ -52,8 +47,7 @@ module PubSubModelSync
 
     def build_model_attrs(model, action, settings)
       as_klass = (settings[:as_klass] || model.class.name).to_s
-      id_val = model.send(settings[:id] || :id)
-      self.class.build_attrs(as_klass, action, id_val)
+      self.class.build_attrs(as_klass, action)
     end
 
     def log(msg)

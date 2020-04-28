@@ -11,9 +11,9 @@ module PubSubModelSync
       def ps_subscribe(attrs, settings = {})
         as_klass = (settings[:as_klass] || name).to_s
         actions = settings.delete(:actions) || %i[create update destroy]
-        settings = settings.merge(attrs: attrs)
+        subscriber_info = { attrs: attrs, id: settings[:id] }
         actions.each do |action|
-          add_ps_subscriber(as_klass, action, action, false, settings)
+          add_ps_subscriber(as_klass, action, action, false, subscriber_info)
         end
       end
 
@@ -22,13 +22,14 @@ module PubSubModelSync
       end
 
       def ps_subscriber(action = :create)
-        PubSubModelSync::Config.listeners.select do |listener|
+        PubSubModelSync::Config.listeners.find do |listener|
           listener[:klass] == name && listener[:action] == action
-        end.last
+        end
       end
 
       private
 
+      # @param settings (Hash): { id:, attrs: }
       def add_ps_subscriber(as_klass, action, as_action, direct_mode, settings)
         listener = {
           klass: name,
@@ -38,7 +39,7 @@ module PubSubModelSync
           direct_mode: direct_mode,
           settings: settings
         }
-        PubSubModelSync::Config.listeners << listener
+        PubSubModelSync::Config.listeners.push(listener) && listener
       end
     end
   end

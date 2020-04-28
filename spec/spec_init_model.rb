@@ -34,7 +34,7 @@ prepare_database!
 
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[name email])
+  ps_publish(%i[id name email])
   def custom_id
     99
   end
@@ -50,14 +50,22 @@ class SubscriberUser < ActiveRecord::Base
   def self.greeting(args)
     puts args
   end
+
+  # ****** testing usage
+  def self.create_class_method(method_name, &block)
+    self.class.define_method(method_name) { |*_args| }
+    block&.call
+    self.class.remove_method(method_name)
+  end
+  # ****** end testing usage
 end
 
 # custom crud listeners
 class PublisherUser2 < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[name custom_name], actions: %i[update],
-                                   as_klass: 'User', id: :custom_id)
+  ps_publish(%i[id name custom_name], actions: %i[update], as_klass: 'User')
+
   def custom_id
     99
   end

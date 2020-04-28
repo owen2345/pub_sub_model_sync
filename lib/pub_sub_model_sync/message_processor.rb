@@ -2,14 +2,12 @@
 
 module PubSubModelSync
   class MessageProcessor
-    attr_accessor :data, :attrs, :settings
+    attr_accessor :data, :settings
 
     # @param data (Hash): any hash value to deliver
-    # @param settings (optional): { id: id_val }
-    def initialize(data, klass, action, settings = {})
+    def initialize(data, klass, action)
       @data = data
-      @settings = settings
-      @attrs = settings.merge(klass: klass, action: action)
+      @settings = { klass: klass, action: action }
     end
 
     def process
@@ -45,7 +43,7 @@ module PubSubModelSync
     # support for: create, update, destroy
     def call_listener(listener)
       model = find_model(listener)
-      if attrs[:action].to_sym == :destroy
+      if settings[:action].to_sym == :destroy
         model.destroy!
       else
         populate_model(model, listener)
@@ -58,8 +56,17 @@ module PubSubModelSync
 
     def find_model(listener)
       model_class = listener[:klass].constantize
-      identifier = listener[:settings][:id] || :id
-      model_class.where(identifier => attrs[:id]).first_or_initialize
+      if model_class.respond_to?(:ps_find_model)
+        return model_class.ps_find_model(data, settings)
+      end
+
+      model_class.where(model_identifiers(listener)).first_or_initialize
+    end
+
+    def model_identifiers(listener)
+      identifiers = listener[:settings][:id] || [:id]
+      identifiers = [identifiers] unless identifiers.is_a?(Array)
+      identifiers.map { |key| [key, data[key.to_sym]] }.to_h
     end
 
     def populate_model(model, listener)
@@ -72,13 +79,13 @@ module PubSubModelSync
     def filter_listeners
       listeners = PubSubModelSync::Config.listeners
       listeners.select do |listener|
-        listener[:as_klass].to_s == attrs[:klass].to_s &&
-          listener[:as_action].to_s == attrs[:action].to_s
+        listener[:as_klass].to_s == settings[:klass].to_s &&
+          listener[:as_action].to_s == settings[:action].to_s
       end
     end
 
     def log(message, kind = :info)
-      PubSubModelSync::Config.log "#{message} ==> #{[data, attrs]}", kind
+      PubSubModelSync::Config.log "#{message} ==> #{[data, settings]}", kind
     end
   end
 end

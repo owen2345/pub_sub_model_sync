@@ -23,16 +23,16 @@ module PubSubModelSync
     def ps_after_sync(_action, _data); end
 
     # To perform sync on demand
-    # @param custom_settings (Hash): { attrs: [], as_klass: nil, id: nil }
+    # @param custom_settings (Hash): { attrs: [], as_klass: nil }
     def ps_perform_sync(action = :create, custom_settings = {})
       service = self.class.ps_publisher_service
-      model_settings = self.class.ps_publisher_info(action) || {}
+      model_settings = self.class.ps_publisher(action) || {}
       service.publish_model(self, action, model_settings.merge(custom_settings))
     end
 
     module ClassMethods
       # Permit to configure to publish crud actions (:create, :update, :destroy)
-      # @param settings (Hash): { actions: nil, as_klass: nil, id: nil }
+      # @param settings (Hash): { actions: nil, as_klass: nil }
       def ps_publish(attrs, settings = {})
         actions = settings.delete(:actions) || %i[create update destroy]
         actions.each do |action|
@@ -49,10 +49,10 @@ module PubSubModelSync
       end
 
       # Publisher info for specific action
-      def ps_publisher_info(action = :create)
-        PubSubModelSync::Config.publishers.select do |listener|
+      def ps_publisher(action = :create)
+        PubSubModelSync::Config.publishers.find do |listener|
           listener[:klass] == name && listener[:action] == action
-        end.last
+        end
       end
 
       def ps_publisher_service

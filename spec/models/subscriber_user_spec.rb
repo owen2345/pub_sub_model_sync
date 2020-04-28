@@ -11,9 +11,9 @@ RSpec.describe SubscriberUser do
     describe 'CRUD' do
       describe 'create' do
         let(:id_model) { 10 }
-        let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
+        let(:data) { { name: 'Test user', email: 'email c', id: id_model } }
         let(:sender) do
-          message_processor.new(data, 'SubscriberUser', :create, id: id_model)
+          message_processor.new(data, 'SubscriberUser', :create)
         end
         let(:model_klass) { SubscriberUser }
         it 'save only accepted attrs' do
@@ -37,9 +37,9 @@ RSpec.describe SubscriberUser do
       describe 'update' do
         let(:model_klass) { SubscriberUser }
         let(:model) { model_klass.create(name: 'name', email: 'email') }
-        let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
+        let(:data) { { name: 'Test user', email: 'email c', id: model.id } }
         let(:sender) do
-          message_processor.new(data, 'SubscriberUser', :update, id: model.id)
+          message_processor.new(data, 'SubscriberUser', :update)
         end
         before { sender.process }
         it 'save only accepted attrs' do
@@ -55,9 +55,9 @@ RSpec.describe SubscriberUser do
       describe 'destroy' do
         let(:model_klass) { SubscriberUser }
         let(:model) { model_klass.create(name: 'name', email: 'email') }
-        let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
+        let(:data) { { name: 'Test user', email: 'email c', id: model.id } }
         let(:sender) do
-          message_processor.new(data, 'SubscriberUser', :destroy, id: model.id)
+          message_processor.new(data, 'SubscriberUser', :destroy)
         end
         it 'destroy model' do
           sender.process
@@ -69,15 +69,15 @@ RSpec.describe SubscriberUser do
     describe 'custom crud subscriptions' do
       let(:model_klass) { SubscriberUser2 }
       let(:model) { model_klass.create(name: 'orig_name', email: 'orig_email') }
-      let(:data) { { name: 'Test user', email: 'sample email', age: 10 } }
+      let(:data) { { name: 'Test user', id: model.id } }
       it 'do not call non accepted actions (excluded destroy)' do
-        sender = message_processor.new(data, 'User', :destroy, id: model.id)
+        sender = message_processor.new(data, 'User', :destroy)
         sender.process
         expect_any_instance_of(model_klass).not_to receive(:destroy!)
       end
 
       it 'Listen to custom class name (SubscriberUser2 from Class User)' do
-        sender = message_processor.new(data, 'User', :update, id: model.id)
+        sender = message_processor.new(data, 'User', :update)
         sender.process
         model.reload
         expect(model.name).to eq data[:name]

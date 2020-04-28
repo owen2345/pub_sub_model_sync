@@ -26,19 +26,6 @@ RSpec.describe PubSubModelSync::Publisher do
       expect(connector).to receive(:publish).with(anything, attrs)
       inst.publish_model(model, action)
     end
-    it 'custom identifier' do
-      custom_id_val = 10
-      attrs = hash_including(id: custom_id_val)
-      allow(model).to receive(:custom_id).and_return(custom_id_val)
-      expect(connector).to receive(:publish).with(anything, attrs)
-      inst.publish_model(model, action)
-    end
-    it 'empty data when action is destroy' do
-      model = PublisherUser.new(name: 'name')
-      expected_data = {}
-      expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, :destroy)
-    end
     it 'aliased attributes' do
       expected_data = hash_including(full_name: model.name, email: model.email)
       expect(connector).to receive(:publish).with(expected_data, anything)

@@ -2,7 +2,7 @@
 
 RSpec.describe PublisherUser do
   it 'crud publisher settings' do
-    info = PublisherUser2.ps_publisher_info(:update)
+    info = PublisherUser2.ps_publisher(:update)
     expect(info).not_to be_nil
   end
 

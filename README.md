@@ -67,7 +67,7 @@ And then execute: $ bundle install
 # attributes: name email age 
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[name email])
+  ps_publish(%i[id name email])
 end
 
 # App 2 (Subscriber)
@@ -95,7 +95,7 @@ PubSubModelSync::Publisher.new.publish_data(User, { msg: 'Hello' }, :greeting) #
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[name:full_name email], actions: %i[update], as_klass: 'Client', id: :client_id)
+  ps_publish(%i[id:client_id name:full_name email], actions: %i[update], as_klass: 'Client')
   
   def ps_skip_callback?(_action)
     false # here logic with action to skip push message
@@ -110,8 +110,9 @@ end
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: :custom_id)
+  ps_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: %i[client_id email])
   ps_class_subscribe(:greeting, as_action: :custom_greeting, as_klass: 'CustomUser')
+  alias_attribute :full_name, :name
   
   def self.greeting(data)
     puts 'Class message called through custom_greeting'
@@ -132,6 +133,39 @@ end
 ``` 
 
 ## API
+### Subscribers
+- Permit to configure class level listeners
+  ```ps_class_subscribe(action_name, as_action: nil, as_klass: nil)```
+  * as_action: (Optional) Source method name
+  * as_klass: (Optional) Source class name
+  
+- Permit to configure instance level listeners (CRUD)
+  ```ps_subscribe(attrs, as_klass: nil, actions: nil, id: nil)```
+  * attrs: (Array/Required) Array of all attributes to be synced
+  * as_klass: (String/Optional) Source class name (Instead of the model class name, will use this value) 
+  * actions: (Array/Optional, default: create/update/destroy) permit to customize action names
+  * id: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
+
+- Permit to configure a custom model finder
+  ```ps_find_model(data, settings)```
+  * data: (Hash) Data received from sync
+  * settings: (Hash(:klass, :action)) Class and action name from sync
+  Must return an existent or a new model object
+
+- Get crud subscription configured for the class   
+  ```User.ps_subscriber(action_name)```  
+  * action_name (default :create, :sym): can be :create, :update, :destroy
+
+- Inspect all configured listeners
+  ```PubSubModelSync::Config.listeners```    
+
+### Publishers
+- Permit to configure crud publishers
+  ```ps_publish(attrs, actions: nil, as_klass: nil)```
+  * attrs: (Array/Required) Array of attributes to be published
+  * actions: (Array/Optional, default: create/update/destroy) permit to customize action names
+  * as_klass: (String/Optional) Output class name (Instead of the model class name, will use this value)
+
 - Permit to cancel sync called after create/update/destroy (Before initializing sync service)
   ```model.ps_skip_callback?(action)```    
   Note: Return true to cancel sync
@@ -150,29 +184,24 @@ end
 - Perform sync on demand (:create, :update, :destroy):   
   The target model will receive a notification to perform the indicated action  
   ```my_model.ps_perform_sync(action_name, custom_settings = {})```  
-  * custom_settings: override default settings defined for action_name ({ attrs: [], as_klass: nil, id: nil })
+  * custom_settings: override default settings defined for action_name ({ attrs: [], as_klass: nil })
     
-- Class level notification:     
+- Publish a class level notification:     
   ```User.ps_class_publish(data, action: action_name, as_klass: custom_klass_name)```
   Target class ```User.action_name``` will be called when message is received    
   * data: (required, :hash) message value to deliver    
-  * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)    
-  * as_klass: (optional, :string) same class name as defined in ps_class_subscribe(...)
+  * action_name: (required, :sim) Action name    
+  * as_klass: (optional, :string) Custom class name (Default current model name)
       
-- Class level notification (Same as above: on demand call)    
+- Publish a class level notification (Same as above: on demand call)    
   ```PubSubModelSync::Publisher.new.publish_data(Klass_name, data, action_name)```  
   * klass_name: (required, Class) same class name as defined in ps_class_subscribe(...)
   * data: (required, :hash) message value to deliver    
   * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)
   
-- Get crud subscription configured for the class   
-  ```User.ps_subscriber(action_name)```  
-  * action_name (default :create, :sym): can be :create, :update, :destroy
 - Get crud publisher configured for the class   
   ```User.ps_publisher(action_name)```  
   * action_name (default :create, :sym): can be :create, :update, :destroy
-- Inspect all configured listeners
-  ```PubSubModelSync::Config.listeners```
   
 ## Testing with RSpec
 - Config: (spec/rails_helper.rb)
@@ -205,12 +234,10 @@ end
     # Subscriber
     it 'receive model message' do
       action = :create
-      data = { name: 'name' }
-      user_id = 999
-      attrs = PubSubModelSync::Publisher.build_attrs('User', action, user_id)
-      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action, id: user_id)
+      data = { name: 'name', id: 999 }
+      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
       publisher.process
-      expect(User.where(id: user_id).any?).to be_truth
+      expect(User.where(id: data[:id]).any?).to be_truth
     end
       
     it 'receive class message' do

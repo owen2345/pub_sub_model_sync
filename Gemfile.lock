@@ -72,6 +72,10 @@ GEM
       amq-protocol (~> 2.3, >= 2.3.0)
     concurrent-ruby (1.1.6)
     crass (1.0.6)
+    database_cleaner (1.8.4)
+    database_cleaner-active_record (1.8.0)
+      activerecord
+      database_cleaner (~> 1.8.0)
     diff-lcs (1.3)
     digest-crc (0.5.1)
     erubi (1.9.0)
@@ -228,6 +232,7 @@ PLATFORMS
 DEPENDENCIES
   bundler
   bunny
+  database_cleaner-active_record
   google-cloud-pubsub
   pub_sub_model_sync!
   rake
