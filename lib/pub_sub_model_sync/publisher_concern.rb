@@ -32,11 +32,11 @@ module PubSubModelSync
 
     module ClassMethods
       # Permit to configure to publish crud actions (:create, :update, :destroy)
-      # @param settings (Hash): { actions: nil, as_klass: nil }
-      def ps_publish(attrs, settings = {})
-        actions = settings.delete(:actions) || %i[create update destroy]
+      def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil)
+        as_klass ||= name
         actions.each do |action|
-          info = settings.merge(klass: name, action: action, attrs: attrs)
+          info = { klass: name, action: action, attrs: attrs,
+                   as_klass: as_klass }
           PubSubModelSync::Config.publishers << info
           ps_register_callback(action.to_sym, info)
         end

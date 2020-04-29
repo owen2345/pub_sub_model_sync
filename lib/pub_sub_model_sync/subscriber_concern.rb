@@ -7,13 +7,11 @@ module PubSubModelSync
     end
 
     module ClassMethods
-      # @param settings (Hash): { as_klass: nil, actions: nil, id: nil }
-      def ps_subscribe(attrs, settings = {})
-        as_klass = (settings[:as_klass] || name).to_s
-        actions = settings.delete(:actions) || %i[create update destroy]
-        subscriber_info = { attrs: attrs, id: settings[:id] }
+      def ps_subscribe(attrs, as_klass: nil, actions: nil, id: :id)
+        actions ||= %i[create update destroy]
+        settings = { attrs: attrs, id: id }
         actions.each do |action|
-          add_ps_subscriber(as_klass, action, action, false, subscriber_info)
+          add_ps_subscriber(as_klass, action, action, false, settings)
         end
       end
 

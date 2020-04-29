@@ -2,17 +2,18 @@
 
 module PubSubModelSync
   class MessageProcessor
-    attr_accessor :data, :settings
+    attr_accessor :data, :settings, :message_id
 
     # @param data (Hash): any hash value to deliver
     def initialize(data, klass, action)
       @data = data
       @settings = { klass: klass, action: action }
+      @message_id = [klass, action, Time.current.to_i].join('-')
     end
 
     def process
       @failed = false
-      log 'processing message'
+      log "processing message: #{[data, settings]}"
       listeners = filter_listeners
       return log 'Skipped: No listeners' unless listeners.any?
 
@@ -64,7 +65,7 @@ module PubSubModelSync
     end
 
     def model_identifiers(listener)
-      identifiers = listener[:settings][:id] || [:id]
+      identifiers = listener[:settings][:id]
       identifiers = [identifiers] unless identifiers.is_a?(Array)
       identifiers.map { |key| [key, data[key.to_sym]] }.to_h
     end
@@ -85,7 +86,7 @@ module PubSubModelSync
     end
 
     def log(message, kind = :info)
-      PubSubModelSync::Config.log "#{message} ==> #{[data, settings]}", kind
+      PubSubModelSync::Config.log "(ID: #{message_id}) #{message}", kind
     end
   end
 end
