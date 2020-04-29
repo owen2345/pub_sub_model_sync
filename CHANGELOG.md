@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.3.0 (April 29, 2020)
+- Support for multiple identifiers when syncing
+- Add klass.ps_find_model method for a custom model finder
+
 # 0.2.4 (April 28, 2020)
 - Delegate .publish to the .publisher for better understanding
 

@@ -117,6 +117,10 @@ class User < ActiveRecord::Base
   def self.greeting(data)
     puts 'Class message called through custom_greeting'
   end
+  
+  # def self.ps_find_model(data, settings)
+  #   where(email: data[:email], ...).first_or_initialize 
+  # end
 end
 ```
 
