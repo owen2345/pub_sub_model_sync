@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'google/cloud/pubsub'
 module PubSubModelSync
   class Connector
     attr_accessor :service
