@@ -8,7 +8,7 @@ module PubSubModelSync
     def initialize(data, klass, action)
       @data = data
       @settings = { klass: klass, action: action }
-      @message_id = [klass, action, Time.current.to_i].join('-')
+      @message_id = [klass, action, Time.now.hash].join('-')
     end
 
     def process
