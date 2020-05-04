@@ -19,7 +19,8 @@ module PubSubModelSync
       log('Listener starting...')
       subscribe_to_queue
       log('Listener started')
-      queue.subscribe(block: true, manual_ack: false, &method(:process_message))
+      queue.subscribe(subscribe_settings, &method(:process_message))
+      loop { sleep 5 }
     rescue PubSubModelSync::Runner::ShutDown
       raise
     rescue => e
@@ -48,6 +49,10 @@ module PubSubModelSync
 
     def message_settings
       { routing_key: queue.name, type: SERVICE_KEY }
+    end
+
+    def subscribe_settings
+      { manual_ack: false }
     end
 
     def process_message(_delivery_info, meta_info, payload)
