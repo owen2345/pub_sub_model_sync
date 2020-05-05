@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.3.1 (May 05, 2020)
+- improve rabbit service to use sleep instead of block ("Block is not recommended for production")
+- improve message ID
+
 # 0.3.0 (April 29, 2020)
 - Support for multiple identifiers when syncing
 - Add klass.ps_find_model method for a custom model finder
