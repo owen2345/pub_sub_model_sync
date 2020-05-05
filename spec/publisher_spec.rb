@@ -2,7 +2,7 @@
 
 RSpec.describe PubSubModelSync::Publisher do
   let(:publisher_klass) { 'PublisherUser' }
-  let(:inst) { described_class.new }
+  let(:inst) { described_class }
   let(:connector) { inst.connector }
   it '.publish_data' do
     data = { message: 'hello' }

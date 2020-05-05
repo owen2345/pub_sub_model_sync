@@ -25,9 +25,9 @@ module PubSubModelSync
     # To perform sync on demand
     # @param custom_settings (Hash): { attrs: [], as_klass: nil }
     def ps_perform_sync(action = :create, custom_settings = {})
-      service = self.class.ps_publisher_service
       model_settings = self.class.ps_publisher(action) || {}
-      service.publish_model(self, action, model_settings.merge(custom_settings))
+      settings = model_settings.merge(custom_settings)
+      PubSubModelSync::Publisher.publish_model(self, action, settings)
     end
 
     module ClassMethods
@@ -45,7 +45,7 @@ module PubSubModelSync
       # On demand class level publisher
       def ps_class_publish(data, action:, as_klass: nil)
         as_klass = (as_klass || name).to_s
-        ps_publisher_service.publish_data(as_klass, data, action.to_sym)
+        PubSubModelSync::Publisher.publish_data(as_klass, data, action.to_sym)
       end
 
       # Publisher info for specific action
@@ -55,17 +55,12 @@ module PubSubModelSync
         end
       end
 
-      def ps_publisher_service
-        PubSubModelSync::Publisher.new
-      end
-
       private
 
       def ps_register_callback(action, info)
         after_commit(on: action) do |model|
           unless model.ps_skip_callback?(action)
-            service = model.class.ps_publisher_service
-            service.publish_model(model, action.to_sym, info)
+            PubSubModelSync::Publisher.publish_model(model, action.to_sym, info)
           end
         end
       end

@@ -86,7 +86,7 @@ User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to
 User.new(name: 'test user').ps_perform_sync(:create) # similar to above to perform sync on demand
 
 User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
-PubSubModelSync::Publisher.new.publish_data(User, { msg: 'Hello' }, :greeting) # similar to above when not included publisher concern
+PubSubModelSync::Publisher.publish_data(User, { msg: 'Hello' }, :greeting) # similar to above when not included publisher concern
 ```
 
 ## Advanced Example
@@ -198,7 +198,7 @@ end
   * as_klass: (optional, :string) Custom class name (Default current model name)
       
 - Publish a class level notification (Same as above: on demand call)    
-  ```PubSubModelSync::Publisher.new.publish_data(Klass_name, data, action_name)```  
+  ```PubSubModelSync::Publisher.publish_data(Klass_name, data, action_name)```  
   * klass_name: (required, Class) same class name as defined in ps_class_subscribe(...)
   * data: (required, :hash) message value to deliver    
   * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)
@@ -259,7 +259,7 @@ end
       action = :create
       User.ps_class_publish(data, action: action)
       user = User.create(name: 'name', email: 'email')
-      expect_any_instance_of(publisher).to receive(:publish_model).with(user, :create, anything)
+      expect(publisher).to receive(:publish_model).with(user, :create, anything)
     end
        
     it 'publish class message' do
@@ -267,7 +267,7 @@ end
       data = {msg: 'hello'}
       action = :greeting
       User.ps_class_publish(data, action: action)
-      expect_any_instance_of(publisher).to receive(:publish_data).with('User', data, action)
+      expect(publisher).to receive(:publish_data).with('User', data, action)
     end
     ```
 

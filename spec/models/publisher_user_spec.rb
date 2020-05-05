@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PublisherUser do
+  let(:publisher_klass) { PubSubModelSync::Publisher }
   it 'crud publisher settings' do
     info = PublisherUser2.ps_publisher(:update)
     expect(info).not_to be_nil
@@ -123,22 +124,18 @@ RSpec.describe PublisherUser do
   private
 
   def expect_publish_data(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .to receive(:publish_data).with(*args)
+    expect(publisher_klass).to receive(:publish_data).with(*args)
   end
 
   def expect_publish_model(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .to receive(:publish_model).with(*args)
+    expect(publisher_klass).to receive(:publish_model).with(*args)
   end
 
   def expect_no_publish_model(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .not_to receive(:publish_model).with(*args)
+    expect(publisher_klass).not_to receive(:publish_model).with(*args)
   end
 
   def expect_publish(args)
-    expect_any_instance_of(PubSubModelSync::Connector)
-      .to receive(:publish).with(*args)
+    expect(publisher_klass).to receive(:publish).with(*args)
   end
 end
