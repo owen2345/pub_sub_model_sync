@@ -7,18 +7,18 @@ module PubSubModelSync
     end
 
     module ClassMethods
-      def ps_subscribe(attrs, actions: nil, as_klass: name, id: :id)
-        settings = { id: id, as_klass: as_klass }
+      def ps_subscribe(attrs, actions: nil, from_klass: name, id: :id)
+        settings = { id: id, from_klass: from_klass }
         actions ||= %i[create update destroy]
         actions.each do |action|
           add_ps_subscriber(action, attrs, settings)
         end
       end
 
-      def ps_class_subscribe(action, as_action: nil, as_klass: nil)
+      def ps_class_subscribe(action, from_action: nil, from_klass: nil)
         settings = { direct_mode: true }
-        settings[:as_action] = as_action if as_action
-        settings[:as_klass] = as_klass if as_klass
+        settings[:from_action] = from_action if from_action
+        settings[:from_klass] = from_klass if from_klass
         add_ps_subscriber(action, nil, settings)
       end
 

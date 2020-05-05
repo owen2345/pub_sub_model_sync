@@ -5,10 +5,10 @@ module PubSubModelSync
     attr_accessor :klass, :action, :attrs, :settings
 
     # @param settings: (Hash) { id: :id, direct_mode: false,
-    #                           as_klass: klass, as_action: action}
+    #                           from_klass: klass, from_action: action }
     def initialize(klass, action, attrs: nil, settings: {})
       def_settings = { id: :id, direct_mode: false,
-                       as_klass: klass, as_action: action }
+                       from_klass: klass, from_action: action }
       @klass = klass
       @action = action
       @attrs = attrs

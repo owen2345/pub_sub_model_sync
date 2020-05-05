@@ -110,8 +110,8 @@ end
 class User < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name], actions: %i[update], as_klass: 'Client', id: %i[client_id email])
-  ps_class_subscribe(:greeting, as_action: :custom_greeting, as_klass: 'CustomUser')
+  ps_subscribe(%i[name], actions: %i[update], from_klass: 'Client', id: %i[client_id email])
+  ps_class_subscribe(:greeting, from_action: :custom_greeting, from_klass: 'CustomUser')
   alias_attribute :full_name, :name
   
   def self.greeting(data)
@@ -139,14 +139,14 @@ end
 ## API
 ### Subscribers
 - Permit to configure class level listeners
-  ```ps_class_subscribe(action_name, as_action: nil, as_klass: nil)```
-  * as_action: (Optional) Source method name
-  * as_klass: (Optional) Source class name
+  ```ps_class_subscribe(action_name, from_action: nil, from_klass: nil)```
+  * from_action: (Optional) Source method name
+  * from_klass: (Optional) Source class name
   
 - Permit to configure instance level listeners (CRUD)
-  ```ps_subscribe(attrs, as_klass: nil, actions: nil, id: nil)```
+  ```ps_subscribe(attrs, from_klass: nil, actions: nil, id: nil)```
   * attrs: (Array/Required) Array of all attributes to be synced
-  * as_klass: (String/Optional) Source class name (Instead of the model class name, will use this value) 
+  * from_klass: (String/Optional) Source class name (Instead of the model class name, will use this value) 
   * actions: (Array/Optional, default: create/update/destroy) permit to customize action names
   * id: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
 

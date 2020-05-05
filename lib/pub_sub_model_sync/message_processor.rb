@@ -31,8 +31,8 @@ module PubSubModelSync
 
     def filter_subscribers
       PubSubModelSync::Config.subscribers.select do |subscriber|
-        subscriber.settings[:as_klass].to_s == klass.to_s &&
-          subscriber.settings[:as_action].to_s == action.to_s
+        subscriber.settings[:from_klass].to_s == klass.to_s &&
+          subscriber.settings[:from_action].to_s == action.to_s
       end
     end
 

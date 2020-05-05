@@ -22,7 +22,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
       it 'subscriber with custom klass' do
         custom_klass = 'CustomClass'
-        subscriber.settings[:as_klass] = custom_klass
+        subscriber.settings[:from_klass] = custom_klass
         inst.klass = custom_klass
         stub_subscriber(subscriber) do
           expect(inst).to receive(:run_subscriber).with(subscriber)
@@ -32,7 +32,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
       it 'subscriber with custom action' do
         custom_method = :custom_method
-        subscriber.settings[:as_action] = custom_method
+        subscriber.settings[:from_action] = custom_method
         inst.action = custom_method
         stub_subscriber(subscriber) do
           expect(inst).to receive(:run_subscriber).with(subscriber)
