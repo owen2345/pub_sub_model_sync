@@ -12,6 +12,8 @@ require 'pub_sub_model_sync/runner'
 require 'pub_sub_model_sync/connector'
 require 'pub_sub_model_sync/message_processor'
 
+require 'pub_sub_model_sync/publisher'
+
 require 'pub_sub_model_sync/service_base'
 require 'pub_sub_model_sync/service_google'
 require 'pub_sub_model_sync/service_rabbit'

@@ -23,22 +23,22 @@ module PubSubModelSync
     def ps_after_sync(_action, _data); end
 
     # To perform sync on demand
-    # @param custom_settings (Hash): { attrs: [], as_klass: nil }
-    def ps_perform_sync(action = :create, custom_settings = {})
-      model_settings = self.class.ps_publisher(action) || {}
-      settings = model_settings.merge(custom_settings)
-      PubSubModelSync::MessagePublisher.publish_model(self, action, settings)
+    def ps_perform_sync(action = :create, attrs: nil, as_klass: nil,
+                        publisher: nil)
+      publisher ||= self.class.ps_publisher(action).dup
+      publisher.attrs = attrs if attrs
+      publisher.as_klass = as_klass if as_klass
+      PubSubModelSync::MessagePublisher.publish_model(self, action, publisher)
     end
 
     module ClassMethods
       # Permit to configure to publish crud actions (:create, :update, :destroy)
       def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil)
-        as_klass ||= name
+        klass = PubSubModelSync::Publisher
+        publisher = klass.new(attrs, name, actions, as_klass)
+        PubSubModelSync::Config.publishers << publisher
         actions.each do |action|
-          info = { klass: name, action: action, attrs: attrs,
-                   as_klass: as_klass }
-          PubSubModelSync::Config.publishers << info
-          ps_register_callback(action.to_sym, info)
+          ps_register_callback(action.to_sym, publisher)
         end
       end
 
@@ -51,18 +51,18 @@ module PubSubModelSync
 
       # Publisher info for specific action
       def ps_publisher(action = :create)
-        PubSubModelSync::Config.publishers.find do |listener|
-          listener[:klass] == name && listener[:action] == action
+        PubSubModelSync::Config.publishers.find do |publisher|
+          publisher.klass == name && publisher.actions.include?(action)
         end
       end
 
       private
 
-      def ps_register_callback(action, info)
+      def ps_register_callback(action, publisher)
         after_commit(on: action) do |model|
           unless model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
-            klass.publish_model(model, action.to_sym, info)
+            klass.publish_model(model, action.to_sym, publisher)
           end
         end
       end

@@ -15,21 +15,21 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   describe '.publish_model' do
     let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
     let(:action) { :update }
-    it 'filter to only accepted attributes' do
-      expected_data = { name: model.name }
-      expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, action, { attrs: [:name] })
-    end
-    it 'custom class name' do
-      custom_klass = 'User'
-      attrs = hash_including(action: action, klass: custom_klass)
-      expect(connector).to receive(:publish).with(anything, attrs)
-      inst.publish_model(model, action)
-    end
-    it 'aliased attributes' do
-      expected_data = hash_including(full_name: model.name, email: model.email)
-      expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, action, attrs: %i[name:full_name email])
+
+    describe '#publish' do
+      it 'default publisher' do
+        expect(connector).to receive(:publish)
+        inst.publish_model(model, action)
+      end
+
+      it 'custom publisher' do
+        attrs = %i[name email]
+        publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
+        exp_data = attrs.map { |k| [k, model.send(k)] }.to_h
+        exp_attrs = hash_including(:action, :klass)
+        expect(connector).to receive(:publish).with(exp_data, exp_attrs)
+        inst.publish_model(model, action, publisher)
+      end
     end
 
     describe 'callbacks' do
@@ -63,8 +63,9 @@ RSpec.describe PubSubModelSync::MessagePublisher do
 
       describe '#ps_after_sync' do
         it 'call method' do
-          expect(model).to receive(:ps_after_sync).with(action, anything)
-          inst.publish_model(model, action)
+          expect(model).to receive(:ps_after_sync).with(action, any_args)
+          publisher = model.class.ps_publisher(action)
+          inst.publish_model(model, action, publisher)
         end
       end
     end
