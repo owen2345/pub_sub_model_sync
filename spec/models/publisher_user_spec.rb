@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PublisherUser do
-  let(:publisher_klass) { PubSubModelSync::Publisher }
+  let(:publisher_klass) { PubSubModelSync::MessagePublisher }
   it 'crud publisher settings' do
     info = PublisherUser2.ps_publisher(:update)
     expect(info).not_to be_nil

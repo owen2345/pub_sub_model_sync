@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PubSubModelSync::Publisher do
+RSpec.describe PubSubModelSync::MessagePublisher do
   let(:publisher_klass) { 'PublisherUser' }
   let(:inst) { described_class }
   let(:connector) { inst.connector }

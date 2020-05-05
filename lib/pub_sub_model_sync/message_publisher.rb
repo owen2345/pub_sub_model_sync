@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PubSubModelSync
-  class Publisher
+  class MessagePublisher
     class << self
       delegate :publish, to: :connector
 

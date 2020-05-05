@@ -19,7 +19,7 @@ module PubSubModelSync
     private
 
     # @param payload (String JSON): '{"data":{}, "attributes":{..}}'
-    #   refer: PubSubModelSync::Publisher (.publish_model | .publish_data)
+    #   refer: PubSubModelSync::MessagePublisher(.publish_model | .publish_data)
     def perform_message(payload)
       data, attrs = parse_message_payload(payload)
       args = [data, attrs[:klass], attrs[:action]]
