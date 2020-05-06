@@ -28,7 +28,7 @@ module PubSubModelSync
     end
 
     def publish(data, attributes)
-      log("Publishing: #{[data, attributes]}")
+      log("Publishing: #{[attributes, data]}")
       deliver_data(data, attributes)
     # TODO: max retry
     rescue Timeout::Error => e
@@ -36,7 +36,7 @@ module PubSubModelSync
       initialize
       retry
     rescue => e
-      info = [data, attributes, e.message, e.backtrace]
+      info = [attributes, data, e.message, e.backtrace]
       log("Error publishing: #{info}", :error)
     end
 

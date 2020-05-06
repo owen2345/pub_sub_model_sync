@@ -29,11 +29,11 @@ module PubSubModelSync
     end
 
     def publish(data, attributes)
-      log("Publishing message: #{[data, attributes]}")
+      log("Publishing message: #{[attributes, data]}")
       payload = { data: data, attributes: attributes }.to_json
       topic.publish(payload, { SERVICE_KEY => true })
     rescue => e
-      info = [data, attributes, e.message, e.backtrace]
+      info = [attributes, data, e.message, e.backtrace]
       log("Error publishing: #{info}", :error)
     end
 
