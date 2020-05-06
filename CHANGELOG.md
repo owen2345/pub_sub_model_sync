@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.4.0 (May 06, 2020)
+- rename as_klass to from_klass and as_action to from_action for subscribers
+- refactor subscribers to be independent
+- refactor message_publisher to use publisher
+- rename publisher into message_publisher
+- reformat publisher to reuse connector
+
 # 0.3.1 (May 05, 2020)
 - improve rabbit service to use sleep instead of block ("Block is not recommended for production")
 - improve message ID
