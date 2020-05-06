@@ -121,7 +121,7 @@ RSpec.describe PublisherUser do
         attrs = %i[name]
         klass = PubSubModelSync::MessagePublisher
         publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
-        exp_args = anything, anything, publisher
+        exp_args = [anything, anything, publisher]
         expect(klass).to receive(:publish_model).with(*exp_args)
         model.ps_perform_sync(:create, attrs: attrs, publisher: publisher)
       end

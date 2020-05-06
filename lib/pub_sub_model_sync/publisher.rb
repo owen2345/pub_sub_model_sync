@@ -11,15 +11,15 @@ module PubSubModelSync
     end
 
     def payload(model, action)
-      { data: payload_data(model, attrs), attrs: payload_attrs(model, action) }
+      { data: payload_data(model), attrs: payload_attrs(model, action) }
     end
 
     private
 
-    def payload_data(model, attrs)
-      source_props = attrs.map { |prop| prop.to_s.split(':').first }
+    def payload_data(model)
+      source_props = @attrs.map { |prop| prop.to_s.split(':').first }
       data = model.as_json(only: source_props, methods: source_props)
-      aliased_props = attrs.select { |prop| prop.to_s.include?(':') }
+      aliased_props = @attrs.select { |prop| prop.to_s.include?(':') }
       aliased_props.each do |prop|
         source, target = prop.to_s.split(':')
         data[target] = data.delete(source)

@@ -2,21 +2,17 @@
 
 module PubSubModelSync
   class MessageProcessor
-    attr_accessor :data, :klass, :action, :message_id
+    attr_accessor :data, :klass, :action
 
     # @param data (Hash): any hash value to deliver
     def initialize(data, klass, action)
       @data = data
       @klass = klass
       @action = action
-      @message_id = [klass, action, Time.now.hash].join('-')
     end
 
     def process
-      log "processing message: #{[data, klass, action]}"
       subscribers = filter_subscribers
-      return log 'Skipped: No listeners' unless subscribers.any?
-
       subscribers.each { |subscriber| run_subscriber(subscriber) }
     end
 
@@ -24,9 +20,10 @@ module PubSubModelSync
 
     def run_subscriber(subscriber)
       subscriber.eval_message(data)
-      log "processed message for: #{subscriber.info}"
+      log "processed message with: #{[klass, action, data]}"
     rescue => e
-      log("error message (#{subscriber.info}): #{e.message}", :error)
+      info = [klass, action, data, e.message, e.backtrace]
+      log("error processing message: #{info}", :error)
     end
 
     def filter_subscribers
@@ -37,7 +34,7 @@ module PubSubModelSync
     end
 
     def log(message, kind = :info)
-      PubSubModelSync::Config.log "(ID: #{message_id}) #{message}", kind
+      PubSubModelSync::Config.log message, kind
     end
   end
 end

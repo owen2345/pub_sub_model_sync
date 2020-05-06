@@ -23,10 +23,6 @@ module PubSubModelSync
       end
     end
 
-    def info
-      { klass: klass, action: action }
-    end
-
     private
 
     def run_class_message(message)

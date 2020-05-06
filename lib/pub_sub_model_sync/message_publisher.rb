@@ -16,7 +16,7 @@ module PubSubModelSync
 
       # @param model: ActiveRecord model
       # @param action: (Sym) Action name
-      # @param publisher: (Publisher) Publisher to be used
+      # @param publisher: (Publisher, optional) Publisher to be used
       def publish_model(model, action, publisher = nil)
         return if model.ps_skip_sync?(action)
 
@@ -27,12 +27,6 @@ module PubSubModelSync
 
         publish(payload[:data], payload[:attrs])
         model.ps_after_sync(action, payload[:data])
-      end
-
-      private
-
-      def log(msg)
-        PubSubModelSync::Config.log(msg)
       end
     end
   end

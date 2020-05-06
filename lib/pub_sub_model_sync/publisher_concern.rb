@@ -23,6 +23,9 @@ module PubSubModelSync
     def ps_after_sync(_action, _data); end
 
     # To perform sync on demand
+    # @param attrs (Array, optional): custom attrs to be used
+    # @param as_klass (Array, optional): custom klass name to be used
+    # @param publisher (Publisher, optional): custom publisher object
     def ps_perform_sync(action = :create, attrs: nil, as_klass: nil,
                         publisher: nil)
       publisher ||= self.class.ps_publisher(action).dup

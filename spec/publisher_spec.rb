@@ -22,8 +22,9 @@ RSpec.describe PubSubModelSync::Publisher do
 
   describe 'data' do
     it 'filter to only accepted attributes' do
-      inst = described_class.new([:name], klass_name, action)
-      expected_data = { name: model.name }
+      attrs = [:name]
+      inst = described_class.new(attrs, klass_name, action)
+      expected_data = attrs.map { |attr| [attr, model.send(attr)] }.to_h
       payload = inst.payload(model, action)
       expect(payload[:data]).to eq expected_data
     end
