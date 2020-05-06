@@ -1,72 +1,40 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::Publisher do
-  let(:publisher_klass) { 'PublisherUser' }
-  let(:inst) { described_class.new }
-  let(:connector) { inst.connector }
-  it '.publish_data' do
-    data = { message: 'hello' }
-    action = :greeting
-    attributes = hash_including(action: action, klass: publisher_klass)
-    expect(connector).to receive(:publish).with(data, attributes)
-    inst.publish_data(publisher_klass, data, action)
+  let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
+  let(:klass_name) { model.class.name }
+  let(:action) { :update }
+
+  describe 'settings' do
+    it 'includes action and klass' do
+      inst = described_class.new([:name], klass_name, action)
+      payload = inst.payload(model, action)
+      expect(payload[:attrs]).to eq({ klass: klass_name, action: action })
+    end
+
+    it 'custom class name' do
+      as_klass = 'CustomClass'
+      inst = described_class.new([:name], klass_name, action, as_klass)
+      payload = inst.payload(model, action)
+      expect(payload[:attrs]).to match(hash_including(klass: as_klass))
+    end
   end
 
-  describe '.publish_model' do
-    let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
-    let(:action) { :update }
+  describe 'data' do
     it 'filter to only accepted attributes' do
-      expected_data = { name: model.name }
-      expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, action, { attrs: [:name] })
+      attrs = [:name]
+      inst = described_class.new(attrs, klass_name, action)
+      expected_data = attrs.map { |attr| [attr, model.send(attr)] }.to_h
+      payload = inst.payload(model, action)
+      expect(payload[:data]).to eq expected_data
     end
-    it 'custom class name' do
-      custom_klass = 'User'
-      attrs = hash_including(action: action, klass: custom_klass)
-      expect(connector).to receive(:publish).with(anything, attrs)
-      inst.publish_model(model, action)
-    end
+
     it 'aliased attributes' do
-      expected_data = hash_including(full_name: model.name, email: model.email)
-      expect(connector).to receive(:publish).with(expected_data, anything)
-      inst.publish_model(model, action, attrs: %i[name:full_name email])
-    end
-
-    describe 'callbacks' do
-      describe '#ps_before_sync' do
-        it 'call method' do
-          expect(model).to receive(:ps_before_sync).with(action, anything)
-          inst.publish_model(model, action)
-        end
-
-        it 'does not publish if return :cancel' do
-          allow(model).to receive(:ps_before_sync).and_return(:cancel)
-          expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_after_sync)
-          inst.publish_model(model, action)
-        end
-      end
-
-      describe '#ps_skip_sync?' do
-        it 'call method' do
-          expect(model).to receive(:ps_skip_sync?).with(action)
-          inst.publish_model(model, action)
-        end
-
-        it 'does not publish if return :cancel' do
-          allow(model).to receive(:ps_skip_sync?).and_return(true)
-          expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_before_sync)
-          inst.publish_model(model, action)
-        end
-      end
-
-      describe '#ps_after_sync' do
-        it 'call method' do
-          expect(model).to receive(:ps_after_sync).with(action, anything)
-          inst.publish_model(model, action)
-        end
-      end
+      attrs = %i[name:full_name email]
+      inst = described_class.new(attrs, klass_name, action)
+      expected_data = { full_name: model.name, email: model.email }
+      payload = inst.payload(model, action)
+      expect(payload[:data]).to eq expected_data
     end
   end
 end

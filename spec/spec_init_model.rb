@@ -44,8 +44,8 @@ class SubscriberUser < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
   ps_subscribe(%i[name])
   ps_class_subscribe(:greeting)
-  ps_class_subscribe(:greeting, as_action: :greeting2)
-  ps_class_subscribe(:greeting, as_action: :greeting3, as_klass: 'User')
+  ps_class_subscribe(:greeting, from_action: :greeting2)
+  ps_class_subscribe(:greeting, from_action: :greeting3, from_klass: 'User')
 
   def self.greeting(args)
     puts args
@@ -82,6 +82,6 @@ end
 class SubscriberUser2 < ActiveRecord::Base
   self.table_name = 'subscriber_users'
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name], actions: %i[update], as_klass: 'User', id: :id)
+  ps_subscribe(%i[name], actions: %i[update], from_klass: 'User', id: :id)
   attr_accessor :custom_name
 end

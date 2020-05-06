@@ -11,6 +11,8 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
   let(:service) { inst.service }
   let(:channel) { service.channel }
 
+  before { allow(inst).to receive(:loop) }
+
   describe 'initializer' do
     it 'connect to pub/sub service' do
       expect(service).not_to be_nil

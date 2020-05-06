@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PublisherUser do
+  let(:publisher_klass) { PubSubModelSync::MessagePublisher }
   it 'crud publisher settings' do
     info = PublisherUser2.ps_publisher(:update)
     expect(info).not_to be_nil
@@ -94,8 +95,8 @@ RSpec.describe PublisherUser do
     end
 
     describe '.ps_perform_sync' do
+      let(:model) { PublisherUser.new(name: 'name') }
       it 'perform manual create sync' do
-        model = PublisherUser.new(name: 'name')
         action = :create
         args = [model, action, anything]
         expect_publish_model(args)
@@ -104,18 +105,25 @@ RSpec.describe PublisherUser do
 
       it 'manual perform update sync' do
         action = :update
-        model = PublisherUser.create(name: 'name')
         args = [model, action, anything]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
       it 'perform with custom settings' do
-        model = PublisherUser.new(name: 'name')
         attrs = %i[name]
-        args = [model, anything, hash_including(attrs: attrs)]
+        args = [model, anything, have_attributes(attrs: attrs)]
         expect_publish_model(args)
         model.ps_perform_sync(:create, attrs: attrs)
+      end
+
+      it 'perform with custom publisher' do
+        attrs = %i[name]
+        klass = PubSubModelSync::MessagePublisher
+        publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
+        exp_args = [anything, anything, publisher]
+        expect(klass).to receive(:publish_model).with(*exp_args)
+        model.ps_perform_sync(:create, attrs: attrs, publisher: publisher)
       end
     end
   end
@@ -123,22 +131,18 @@ RSpec.describe PublisherUser do
   private
 
   def expect_publish_data(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .to receive(:publish_data).with(*args)
+    expect(publisher_klass).to receive(:publish_data).with(*args)
   end
 
   def expect_publish_model(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .to receive(:publish_model).with(*args)
+    expect(publisher_klass).to receive(:publish_model).with(*args)
   end
 
   def expect_no_publish_model(args)
-    expect_any_instance_of(PubSubModelSync::Publisher)
-      .not_to receive(:publish_model).with(*args)
+    expect(publisher_klass).not_to receive(:publish_model).with(*args)
   end
 
   def expect_publish(args)
-    expect_any_instance_of(PubSubModelSync::Connector)
-      .to receive(:publish).with(*args)
+    expect(publisher_klass).to receive(:publish).with(*args)
   end
 end

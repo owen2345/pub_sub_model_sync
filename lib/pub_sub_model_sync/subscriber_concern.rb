@@ -7,37 +7,34 @@ module PubSubModelSync
     end
 
     module ClassMethods
-      def ps_subscribe(attrs, as_klass: nil, actions: nil, id: :id)
+      def ps_subscribe(attrs, actions: nil, from_klass: name, id: :id)
+        settings = { id: id, from_klass: from_klass }
         actions ||= %i[create update destroy]
-        settings = { attrs: attrs, id: id }
         actions.each do |action|
-          add_ps_subscriber(as_klass, action, action, false, settings)
+          add_ps_subscriber(action, attrs, settings)
         end
       end
 
-      def ps_class_subscribe(action, as_action: nil, as_klass: nil)
-        add_ps_subscriber(as_klass, action, as_action, true, {})
+      def ps_class_subscribe(action, from_action: nil, from_klass: nil)
+        settings = { direct_mode: true }
+        settings[:from_action] = from_action if from_action
+        settings[:from_klass] = from_klass if from_klass
+        add_ps_subscriber(action, nil, settings)
       end
 
       def ps_subscriber(action = :create)
-        PubSubModelSync::Config.listeners.find do |listener|
-          listener[:klass] == name && listener[:action] == action
+        PubSubModelSync::Config.subscribers.find do |subscriber|
+          subscriber.klass == name && subscriber.action == action
         end
       end
 
       private
 
-      # @param settings (Hash): { id:, attrs: }
-      def add_ps_subscriber(as_klass, action, as_action, direct_mode, settings)
-        listener = {
-          klass: name,
-          as_klass: (as_klass || name).to_s,
-          action: action.to_sym,
-          as_action: (as_action || action).to_sym,
-          direct_mode: direct_mode,
-          settings: settings
-        }
-        PubSubModelSync::Config.listeners.push(listener) && listener
+      # @param settings (Hash): refer to PubSubModelSync::Subscriber.settings
+      def add_ps_subscriber(action, attrs, settings = {})
+        klass = PubSubModelSync::Subscriber
+        subscriber = klass.new(name, action, attrs: attrs, settings: settings)
+        PubSubModelSync::Config.subscribers.push(subscriber) && subscriber
       end
     end
   end

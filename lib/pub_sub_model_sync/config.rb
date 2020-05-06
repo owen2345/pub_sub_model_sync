@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class Config
-    cattr_accessor(:listeners) { [] }
+    cattr_accessor(:subscribers) { [] }
     cattr_accessor(:publishers) { [] }
     cattr_accessor(:service_name) { :google }
     cattr_accessor :logger

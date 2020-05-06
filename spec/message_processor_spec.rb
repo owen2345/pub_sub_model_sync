@@ -1,121 +1,67 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::MessageProcessor do
-  let(:listener_klass) { 'SubscriberUser' }
-  describe 'class message' do
-    let(:data) { { greeting: 'Hello' } }
-    let(:listener_action) { :greeting } # subscribed in SubscriberUser model
-    let(:inst) do
-      described_class.new(data, listener_klass, listener_action)
-    end
-    describe '.filter_listeners' do
-      it 'with listeners' do
-        expect(inst.send(:filter_listeners).any?).to be_truthy
-      end
-      it 'without class listeners' do
-        inst = described_class.new(data, 'Invalid', 'greeting')
-        expect(inst.send(:filter_listeners).any?).to be_falsey
-      end
-      it 'without action listeners' do
-        inst = described_class.new(data, 'SubscriberUser', 'inv')
-        expect(inst.send(:filter_listeners).any?).to be_falsey
-      end
-    end
-    describe '.eval_message' do
-      it 'receive listener to call action' do
-        listener_info = hash_including(klass: listener_klass,
-                                       action: listener_action)
-        allow(inst).to receive(:call_class_listener)
-        expect(inst).to receive(:call_class_listener).with(listener_info)
+  let(:subs_klass) { PubSubModelSync::Subscriber }
+  let(:klass) { 'SampleUser' }
+  let(:action) { :create }
+  let(:data) { { title: 'title' } }
+  let(:inst) { described_class.new(data, klass, action) }
+  let(:subscriber) do
+    subs_klass.new(klass, action, settings: { direct_mode: true })
+  end
+
+  describe 'subscriber exists' do
+    it 'normal subscriber' do
+      stub_subscriber(subscriber) do
+        expect(inst).to receive(:run_subscriber).with(subscriber)
         inst.process
       end
-      it 'call model class method' do
-        klass = listener_klass.constantize
-        expect(klass).to receive(listener_action).with(data)
+    end
+
+    it 'subscriber with custom klass' do
+      custom_klass = 'CustomClass'
+      subscriber.settings[:from_klass] = custom_klass
+      inst.klass = custom_klass
+      stub_subscriber(subscriber) do
+        expect(inst).to receive(:run_subscriber).with(subscriber)
         inst.process
       end
-      it 'log if error calling action' do
-        error_msg = 'Error in class method'
-        klass = listener_klass.constantize
-        allow(klass).to receive(listener_action).and_raise(error_msg)
-        allow(inst).to receive(:log)
-        expect(inst).to receive(:log).with(include(error_msg), anything)
+    end
+
+    it 'subscriber with custom action' do
+      custom_method = :custom_method
+      subscriber.settings[:from_action] = custom_method
+      inst.action = custom_method
+      stub_subscriber(subscriber) do
+        expect(inst).to receive(:run_subscriber).with(subscriber)
+        inst.process
+      end
+    end
+
+    it 'print error if failed' do
+      error_msg = 'Error message'
+      allow(inst).to receive(:log)
+      stub_subscriber(subscriber) do
+        allow(subscriber).to receive(:eval_message).and_raise(error_msg)
+        expect(inst).to receive(:log).with(/#{error_msg}/, anything)
         inst.process
       end
     end
   end
 
-  describe 'crud message' do
-    let(:data) { {} }
-    let(:action) { :update }
-    describe '.filter_listeners' do
-      let(:listener_klass) { 'SubscriberUser2' }
-      let(:listener_klass) { 'User' }
-      it 'listeners only for enabled actions' do
-        inst = described_class.new(data, listener_klass, action)
-        expect(inst.send(:filter_listeners).any?).to be_truthy
-      end
-      it 'no listeners for excluded actions' do
-        inst = described_class.new(data, listener_klass, :create)
-        expect(inst.send(:filter_listeners).any?).to be_falsey
-      end
-      it 'no listeners for non subscribed models' do
-        inst = described_class.new(data, 'Unknown', :create)
-        expect(inst.send(:filter_listeners).any?).to be_falsey
-      end
+  it 'no subscriber found: different klass' do
+    inst.klass = :UnknownClass
+    stub_subscriber(subscriber) do
+      expect(inst).not_to receive(:run_subscriber).with(subscriber)
+      inst.process
     end
+  end
 
-    describe '.eval_message' do
-      let(:listener_klass) { 'SubscriberUser2' }
-      let(:inst) { described_class.new(data, 'User', action) }
-      it 'receive listener to call action' do
-        listener_info = hash_including(klass: listener_klass, action: action)
-        expect(inst).to receive(:call_listener).with(listener_info)
-        inst.process
-      end
-      it 'call model method' do
-        klass = listener_klass.constantize
-        expect_any_instance_of(klass).to receive(:save!)
-        inst.process
-      end
-      it 'log if error calling action' do
-        error_msg = 'Error in class method'
-        klass = listener_klass.constantize
-        expect_any_instance_of(klass).to receive(:save!).and_raise(error_msg)
-        allow(inst).to receive(:log)
-        expect(inst).to receive(:log).with(include(error_msg), anything)
-        inst.process
-      end
-    end
-
-    describe 'find model' do
-      let!(:user1) { SubscriberUser.create!(name: 'name1', email: 'email1') }
-      let!(:user2) { SubscriberUser.create!(name: 'name2', email: 'email2') }
-      let(:data) { { name: user2.name, email: user2.email, age: '' } }
-      it 'custom identifier' do
-        stub_listener(SubscriberUser, :update, settings: { id: :email })
-        inst = described_class.new(data, user2.class.name, :update)
-        expect(inst).to receive(:populate_model).with(user2, anything)
-        inst.process
-      end
-
-      it 'multiple identifiers' do
-        stub_listener(SubscriberUser, :update, settings: { id: %i[name email] })
-        inst = described_class.new(data, user2.class.name, :update)
-        expect(inst).to receive(:populate_model).with(user2, anything)
-        inst.process
-      end
-
-      it 'custom find model' do
-        model = SubscriberUser.new
-        klass = user2.class
-        klass.create_class_method(:ps_find_model) do
-          args = [data, hash_including(:klass, :action)]
-          allow(klass).to receive(:ps_find_model).and_return(model)
-          expect(klass).to receive(:ps_find_model).with(*args)
-          described_class.new(data, model.class.name, :create).process
-        end
-      end
+  it 'no subscriber found: different action' do
+    inst.action = :unknown_action
+    stub_subscriber(subscriber) do
+      expect(inst).not_to receive(:run_subscriber).with(subscriber)
+      inst.process
     end
   end
 end
