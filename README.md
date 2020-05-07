@@ -118,7 +118,7 @@ class User < ActiveRecord::Base
     puts 'Class message called through custom_greeting'
   end
   
-  # def self.ps_find_model(data, settings)
+  # def self.ps_find_model(data)
   #   where(email: data[:email], ...).first_or_initialize 
   # end
 end
@@ -126,24 +126,18 @@ end
 
 Note: Be careful with collision of names
 ```
-class User
-    # ps_publish %i[name_data:name name:key] # key will be replaced with name_data 
-    ps_publish %i[name_data:name key_data:key] # use alias to avoid collision
-    
-    def key_data
-      name
-    end
-end
+  # ps_publish %i[name_data:name name:key] # key will be replaced with name_data 
+  ps_publish %i[name_data:name key_data:key] # use alias to avoid collision
 ``` 
 
 ## API
 ### Subscribers
-- Permit to configure class level listeners
+- Permit to configure class level subscriptions
   ```ps_class_subscribe(action_name, from_action: nil, from_klass: nil)```
   * from_action: (Optional) Source method name
   * from_klass: (Optional) Source class name
   
-- Permit to configure instance level listeners (CRUD)
+- Permit to configure instance level subscriptions (CRUD)
   ```ps_subscribe(attrs, from_klass: nil, actions: nil, id: nil)```
   * attrs: (Array/Required) Array of all attributes to be synced
   * from_klass: (String/Optional) Source class name (Instead of the model class name, will use this value) 
@@ -151,17 +145,16 @@ end
   * id: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
 
 - Permit to configure a custom model finder
-  ```ps_find_model(data, settings)```
+  ```ps_find_model(data)```
   * data: (Hash) Data received from sync
-  * settings: (Hash(:klass, :action)) Class and action name from sync
   Must return an existent or a new model object
 
 - Get crud subscription configured for the class   
   ```User.ps_subscriber(action_name)```  
   * action_name (default :create, :sym): can be :create, :update, :destroy
 
-- Inspect all configured listeners
-  ```PubSubModelSync::Config.listeners```    
+- Inspect all configured subscribers
+  ```PubSubModelSync::Config.subscribers```    
 
 ### Publishers
 - Permit to configure crud publishers
