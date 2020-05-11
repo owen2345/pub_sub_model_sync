@@ -37,6 +37,8 @@ module PubSubModelSync
         model.destroy!
       else
         populate_model(model, message)
+        return if action == :update && !model.changed? # skip if no changes
+
         model.save!
       end
     end
@@ -57,6 +59,7 @@ module PubSubModelSync
 
     def populate_model(model, message)
       values = message.slice(*attrs)
+      puts "===========values: #{values.inspect}-------#{message.inspect}"
       values.each do |attr, value|
         model.send("#{attr}=", value)
       end

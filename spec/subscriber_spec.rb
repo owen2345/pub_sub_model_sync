@@ -22,8 +22,10 @@ RSpec.describe PubSubModelSync::Subscriber do
     let(:action) { :create }
     let(:model_klass) { SubscriberUser }
     let(:settings) { { direct_mode: false } }
+    let(:attrs) { %i[name email] }
     let(:inst) do
-      described_class.new(model_klass.name, action, settings: settings)
+      described_class.new(model_klass.name, action, attrs: attrs,
+                                                    settings: settings)
     end
 
     describe 'call action' do
@@ -31,12 +33,24 @@ RSpec.describe PubSubModelSync::Subscriber do
         expect_any_instance_of(model_klass).to receive(:save!)
         inst.eval_message(message)
       end
-      it 'when update' do
-        action = :update
-        inst.action = action
-        expect_any_instance_of(model_klass).to receive(:save!)
-        inst.eval_message(message)
+      describe 'when update' do
+        let(:action) { :update }
+        let!(:model) { model_klass.create(message) }
+        before do
+          inst.action = action
+          allow(inst).to receive(:find_model).and_return(model)
+        end
+        after { inst.eval_message(message) }
+
+        it 'update with changes' do
+          message[:name] = 'Changed Name'
+          expect_any_instance_of(model_klass).to receive(:save!)
+        end
+        it 'update without changes' do
+          expect_any_instance_of(model_klass).not_to receive(:save!)
+        end
       end
+
       it 'when destroy' do
         action = :destroy
         inst.action = action
@@ -92,5 +106,11 @@ RSpec.describe PubSubModelSync::Subscriber do
         expect(model.name).to eq original_name
       end
     end
+  end
+
+  private
+
+  def stub_saved(model_klass, flag)
+    allow_any_instance_of(model_klass).to receive(:changed?).and_return(flag)
   end
 end
