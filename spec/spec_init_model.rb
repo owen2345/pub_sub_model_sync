@@ -53,9 +53,9 @@ class SubscriberUser < ActiveRecord::Base
 
   # ****** testing usage
   def self.create_class_method(method_name, &block)
-    self.class.define_method(method_name) { |*_args| }
+    self.class.send(:define_method, method_name) { |*_args| }
     block&.call
-    self.class.remove_method(method_name)
+    self.class.send(:remove_method, method_name)
   end
   # ****** end testing usage
 end

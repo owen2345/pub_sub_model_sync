@@ -6,28 +6,45 @@ on:
       - master
   pull_request:
 
-
 jobs:
   build:
     name: Tests and Code Style
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ruby: [2.4, 2.5, 2.6]
+        rails: [4, 5, 6]
+        include:
+          - ruby: 2.7
+            rails: 6
+        exclude: # rails 6 requires ruby >= 2.5
+          - ruby: 2.4
+            rails: 6
 
     steps:
       - uses: actions/checkout@v2
-      - name: Set up Ruby 2.6
+      - name: Set up Ruby
         uses: actions/setup-ruby@v1
         with:
-          ruby-version: 2.6.x
-
+          ruby-version: ${{ matrix.ruby }}
       - name: Install sqlite3
         run: sudo apt-get install libsqlite3-dev
 
-      - name: Bundle install
+      - name: Install bundler
+        env:
+          GEMFILE_PATH: gemfiles/Gemfile_${{ matrix.rails }}
+          RAILS_V: ${{ matrix.rails }}
         run: |
-          gem install bundler
-          bundle install --jobs 4 --retry 3
+          rm -f Gemfile.lock && rm -f Gemfile
+          cp $GEMFILE_PATH ./Gemfile
+          bundler_v='2.1.4'
+          if [ $RAILS_V = "4" ]; then bundler_v="1.16.6"; fi
+          gem install bundler -v "~> $bundler_v"
+          bundle _${bundler_v}_ install --jobs 4 --retry 3
+
       - name: Tests (rspec)
         run: |
           bundle exec rspec
+
       - name: Code style (Rubocop)
         run: bundle exec rubocop
