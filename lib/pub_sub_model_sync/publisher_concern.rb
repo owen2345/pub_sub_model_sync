@@ -11,6 +11,7 @@ module PubSubModelSync
       false
     end
 
+    # TODO: make it using respond_to?(:ps_skip_sync?)
     # before preparing data to sync
     def ps_skip_sync?(_action)
       false
@@ -63,7 +64,8 @@ module PubSubModelSync
 
       def ps_register_callback(action, publisher)
         after_commit(on: action) do |model|
-          unless model.ps_skip_callback?(action)
+          if !(action == :update && previous_changes.empty?) &&
+             !model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
             klass.publish_model(model, action.to_sym, publisher)
           end

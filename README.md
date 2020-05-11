@@ -165,6 +165,7 @@ Note: Be careful with collision of names
 
 - Permit to cancel sync called after create/update/destroy (Before initializing sync service)
   ```model.ps_skip_callback?(action)```    
+  Default: False  
   Note: Return true to cancel sync
   
 - Callback called before preparing data for sync (Permit to stop sync)
