@@ -1,5 +1,11 @@
 # Change Log
 
+# 0.4.1 (May 12, 2020)
+- chore: improve log messages
+- feat: do not update model if no changes
+- feat: skip publisher after updating if no changes
+
+
 # 0.4.0 (May 06, 2020)
 - rename as_klass to from_klass and as_action to from_action for subscribers
 - refactor subscribers to be independent
