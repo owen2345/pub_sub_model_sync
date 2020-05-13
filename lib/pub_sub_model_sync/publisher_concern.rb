@@ -64,8 +64,7 @@ module PubSubModelSync
 
       def ps_register_callback(action, publisher)
         after_commit(on: action) do |model|
-          if !(action == :update && previous_changes.empty?) &&
-             !model.ps_skip_callback?(action)
+          unless model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
             klass.publish_model(model, action.to_sym, publisher)
           end

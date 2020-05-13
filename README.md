@@ -153,8 +153,12 @@ Note: Be careful with collision of names
   ```User.ps_subscriber(action_name)```  
   * action_name (default :create, :sym): can be :create, :update, :destroy
 
-- Inspect all configured subscribers
+- Inspect all configured subscribers   
   ```PubSubModelSync::Config.subscribers```    
+
+- Permit to customize the way to detect if the subscribed model was changed (Only for update action).   
+  ```.ps_subscriber_changed?(data)```    
+  By default: ```model.changed?```
 
 ### Publishers
 - Permit to configure crud publishers

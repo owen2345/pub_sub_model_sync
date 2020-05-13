@@ -6,6 +6,11 @@ module PubSubModelSync
       base.extend(ClassMethods)
     end
 
+    # check if model was changed to .save!
+    def ps_subscriber_changed?(_data)
+      changed?
+    end
+
     module ClassMethods
       def ps_subscribe(attrs, actions: nil, from_klass: name, id: :id)
         settings = { id: id, from_klass: from_klass }
