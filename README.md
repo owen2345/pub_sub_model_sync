@@ -61,6 +61,9 @@ And then execute: $ bundle install
     ```
     Note: Publishers do not need todo this
 
+- Check the service status with:    
+  ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
+
 ## Examples
 ```ruby
 # App 1 (Publisher)
