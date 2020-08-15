@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (0.4.1)
+    pub_sub_model_sync (0.4.2)
       rails
 
 GEM
@@ -122,7 +122,7 @@ GEM
       concurrent-ruby (~> 1.0)
     jaro_winkler (1.5.4)
     jwt (2.2.1)
-    loofah (2.5.0)
+    loofah (2.6.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
@@ -131,21 +131,21 @@ GEM
       mimemagic (~> 0.3.2)
     memoist (0.16.2)
     method_source (1.0.0)
-    mimemagic (0.3.4)
+    mimemagic (0.3.5)
     mini_mime (1.0.2)
     mini_portile2 (2.4.0)
     minitest (5.14.0)
     multi_json (1.14.1)
     multipart-post (2.1.1)
     nio4r (2.5.2)
-    nokogiri (1.10.9)
+    nokogiri (1.10.10)
       mini_portile2 (~> 2.4.0)
     os (1.0.1)
     parallel (1.19.1)
     parser (2.7.0.4)
       ast (~> 2.4.0)
     public_suffix (4.0.3)
-    rack (2.2.2)
+    rack (2.2.3)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
     rails (6.0.2.2)
@@ -207,7 +207,7 @@ GEM
       faraday (~> 0.9)
       jwt (>= 1.5, < 3.0)
       multi_json (~> 1.10)
-    sprockets (4.0.0)
+    sprockets (4.0.2)
       concurrent-ruby (~> 1.0)
       rack (> 1, < 3)
     sprockets-rails (3.2.1)
@@ -220,9 +220,9 @@ GEM
     tzinfo (1.2.7)
       thread_safe (~> 0.1)
     unicode-display_width (1.6.1)
-    websocket-driver (0.7.1)
+    websocket-driver (0.7.3)
       websocket-extensions (>= 0.1.0)
-    websocket-extensions (0.1.4)
+    websocket-extensions (0.1.5)
     zeitwerk (2.3.0)
 
 PLATFORMS

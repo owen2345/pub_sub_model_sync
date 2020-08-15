@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.4.2 (May 12, 2020)
+- chore: remove typo
+
 # 0.4.1 (May 12, 2020)
 - chore: improve log messages
 - feat: do not update model if no changes
