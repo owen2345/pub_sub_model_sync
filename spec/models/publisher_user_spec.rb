@@ -42,12 +42,14 @@ RSpec.describe PublisherUser do
       model.save!
     end
 
-    # it '.update: not published if not changes' do
-    #   model = described_class.create(name: 'name')
-    #   args = [model, :update, anything]
-    #   expect_no_publish_model(args)
-    #   model.save!
-    # end
+    # TODO: implement a feature to detect changes
+    #   including in virtual attrs or use cache
+    xit '.update: not published if no changes' do
+      model = described_class.create(name: 'name')
+      args = [model, :update, anything]
+      expect_no_publish_model(args)
+      model.save!
+    end
 
     it '.destroy' do
       model = described_class.create(name: 'name')
