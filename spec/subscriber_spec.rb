@@ -42,12 +42,14 @@ RSpec.describe PubSubModelSync::Subscriber do
         end
         after { inst.eval_message(message) }
 
-        it 'update with changes' do
+        it 'updates with received data' do
           message[:name] = 'Changed Name'
           expect_any_instance_of(model_klass).to receive(:save!)
         end
 
-        it 'do not update if no changes' do
+        it 'does not update if no changes' do
+          expect_any_instance_of(model_klass)
+            .to receive(:ps_subscriber_changed?).and_return(false)
           expect_any_instance_of(model_klass).not_to receive(:save!)
         end
       end

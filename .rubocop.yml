@@ -11,6 +11,9 @@ Metrics/BlockLength:
   Exclude:
     - 'spec/**/*.rb'
 
+Layout/LineLength:
+  Max: 80
+
 Style/SymbolArray:
   Exclude:
     - 'Gemfile'
