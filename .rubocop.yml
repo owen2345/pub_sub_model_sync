@@ -1,6 +1,7 @@
 # This is the configuration used to check the rubocop source code.
 
 AllCops:
+  TargetRubyVersion: 2.4
   Exclude:
     - 'spec/spec_helper.rb'
     - 'Gemfile'

@@ -7,9 +7,9 @@ module PubSubModelSync
     end
 
     # check if model was changed to skip nonsense .update!()
-    # TODO: check for ways to auto detect and avoid nonsense updates
     def ps_subscriber_changed?(_data)
-      true
+      validate
+      changed?
     end
 
     module ClassMethods
