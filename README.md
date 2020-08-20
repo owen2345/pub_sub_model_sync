@@ -272,6 +272,12 @@ Note: Be careful with collision of names
     end
     ```
 
+## TODO
+- Hooks/callbacks when message processed or failed
+- Add alias attributes when subscribing (similar to publisher)
+- Add flag ```model.ps_processing``` to indicate that the current transaction is being processed by pub/sub
+ 
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/owen2345/pub_sub_model_sync. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.

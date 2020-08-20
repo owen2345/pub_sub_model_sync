@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.4.2.1 (August 20, 2020)
+- Improve ```ps_subscriber_changed?``` to run validations and check for changes
+ 
 # 0.4.2 (May 12, 2020)
 - chore: remove typo
 
