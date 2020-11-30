@@ -28,7 +28,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       expect(service).to receive(:create_channel).and_call_original
     end
     it 'subscribe to queue' do
-      expect(channel).to receive(:queue).and_call_original
+      expect(channel).to receive(:fanout).and_call_original
     end
     it 'subscribe to topic' do
       expect(channel).to receive(:topic).and_call_original

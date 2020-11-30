@@ -48,7 +48,11 @@ module PubSubModelSync
     private
 
     def message_settings
-      { routing_key: queue.name, type: SERVICE_KEY }
+      {
+        routing_key: queue.name,
+        type: SERVICE_KEY,
+        app_id: app_id
+      }
     end
 
     def subscribe_settings
@@ -57,6 +61,7 @@ module PubSubModelSync
 
     def process_message(_delivery_info, meta_info, payload)
       return unless meta_info[:type] == SERVICE_KEY
+      return if meta_info[:app_id] && meta_info[:app_id] == app_id
 
       perform_message(payload)
     rescue => e
@@ -64,11 +69,15 @@ module PubSubModelSync
       log("Error processing message: #{error}", :error)
     end
 
+    def app_id
+      (Rails.application.class.parent_name rescue '') # rubocop:disable Style/RescueModifier
+    end
+
     def subscribe_to_queue
       service.start
       @channel = service.create_channel
       queue_settings = { durable: true, auto_delete: false }
-      @queue = channel.queue(config.queue_name, queue_settings)
+      @queue = channel.fanout(config.queue_name, queue_settings)
       subscribe_to_topic
     end
 

@@ -26,6 +26,7 @@ module PubSubModelSync
       def queue(*_args)
         @queue ||= MockQueue.new
       end
+      alias fanout queue
 
       def topic(*_args)
         @topic ||= MockTopic.new
