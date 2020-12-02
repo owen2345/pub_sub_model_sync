@@ -64,12 +64,12 @@ RSpec.describe PublisherUser do
       it 'model attributes (PublisherUser2 limited to name, custom_name)' do
         expected_data = hash_including(:name)
         expected_attrs = hash_including(action: :update)
-        expect_publish([expected_data, expected_attrs])
+        expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
       end
       it 'ability to use methods as attributes' do
         expected_data = hash_including(:custom_name)
         expected_attrs = hash_including(action: :update)
-        expect_publish([expected_data, expected_attrs])
+        expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
       end
     end
 

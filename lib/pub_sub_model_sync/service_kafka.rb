@@ -23,19 +23,14 @@ module PubSubModelSync
       start_consumer
       consumer.each_message(&method(:process_message))
     rescue PubSubModelSync::Runner::ShutDown
-      raise
+      log('Listener stopped')
     rescue => e
       log("Error listening message: #{[e.message, e.backtrace]}", :error)
     end
 
-    def publish(data, attributes)
-      log("Publishing: #{[attributes, data]}")
-      payload = { data: data, attributes: attributes }
+    def publish(payload)
       producer.produce(payload.to_json, message_settings)
       producer.deliver_messages
-    rescue => e
-      info = [attributes, data, e.message, e.backtrace]
-      log("Error publishing: #{info}", :error)
     end
 
     def stop
@@ -64,14 +59,7 @@ module PubSubModelSync
     def process_message(message)
       return unless message.headers[SERVICE_KEY]
 
-      perform_message(message.value)
-    rescue => e
-      error = [message, e.message, e.backtrace]
-      log("Error processing message: #{error}", :error)
-    end
-
-    def log(msg, kind = :info)
-      config.log("Kafka Service ==> #{msg}", kind)
+      super(message.value)
     end
   end
 end

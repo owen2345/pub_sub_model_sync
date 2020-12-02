@@ -22,22 +22,21 @@ module PubSubModelSync
       queue.subscribe(subscribe_settings, &method(:process_message))
       loop { sleep 5 }
     rescue PubSubModelSync::Runner::ShutDown
-      raise
+      log('Listener stopped')
     rescue => e
       log("Error listening message: #{[e.message, e.backtrace]}", :error)
     end
 
-    def publish(data, attributes)
-      log("Publishing: #{[attributes, data]}")
-      deliver_data(data, attributes)
-    # TODO: max retry
-    rescue Timeout::Error => e
-      log("Error publishing (retrying....): #{e.message}", :error)
-      initialize
-      retry
+    def publish(payload)
+      qty_retry ||= 0
+      deliver_data(payload)
     rescue => e
-      info = [attributes, data, e.message, e.backtrace]
-      log("Error publishing: #{info}", :error)
+      if e.is_a?(Timeout::Error) && (qty_retry += 1) <= 2
+        log("Error publishing (retrying....): #{e.message}", :error)
+        initialize
+        retry
+      end
+      raise
     end
 
     def stop
@@ -58,10 +57,7 @@ module PubSubModelSync
     def process_message(_delivery_info, meta_info, payload)
       return unless meta_info[:type] == SERVICE_KEY
 
-      perform_message(payload)
-    rescue => e
-      error = [payload, e.message, e.backtrace]
-      log("Error processing message: #{error}", :error)
+      super(payload)
     end
 
     def subscribe_to_queue
@@ -77,13 +73,8 @@ module PubSubModelSync
       queue.bind(topic, routing_key: queue.name)
     end
 
-    def log(msg, kind = :info)
-      config.log("Rabbit Service ==> #{msg}", kind)
-    end
-
-    def deliver_data(data, attributes)
+    def deliver_data(payload)
       subscribe_to_queue
-      payload = { data: data, attributes: attributes }
       topic.publish(payload.to_json, message_settings)
 
       # Ugly fix: "IO timeout when reading 7 bytes"

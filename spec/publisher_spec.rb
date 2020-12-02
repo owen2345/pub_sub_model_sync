@@ -12,7 +12,7 @@ RSpec.describe PubSubModelSync::Publisher do
       expect(payload[:attrs]).to eq({ klass: klass_name, action: action })
     end
 
-    it 'custom class name' do
+    it 'supports for custom class name' do
       as_klass = 'CustomClass'
       inst = described_class.new([:name], klass_name, action, as_klass)
       payload = inst.payload(model, action)
@@ -21,7 +21,7 @@ RSpec.describe PubSubModelSync::Publisher do
   end
 
   describe 'data' do
-    it 'filter to only accepted attributes' do
+    it 'filters only accepted attributes' do
       attrs = [:name]
       inst = described_class.new(attrs, klass_name, action)
       expected_data = attrs.map { |attr| [attr, model.send(attr)] }.to_h
@@ -29,7 +29,7 @@ RSpec.describe PubSubModelSync::Publisher do
       expect(payload[:data]).to eq expected_data
     end
 
-    it 'aliased attributes' do
+    it 'supports for aliased attributes' do
       attrs = %i[name:full_name email]
       inst = described_class.new(attrs, klass_name, action)
       expected_data = { full_name: model.name, email: model.email }
