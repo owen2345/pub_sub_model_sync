@@ -61,12 +61,12 @@ RSpec.describe PublisherUser do
     describe 'publish only specified attrs' do
       let(:model) { PublisherUser2.create(name: 'name') }
       after { model.update(name: 'changed name') }
-      it 'model attributes (PublisherUser2 limited to name, custom_name)' do
+      it 'publishes model attributes' do
         expected_data = hash_including(:name)
         expected_attrs = hash_including(action: :update)
         expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
       end
-      it 'ability to use methods as attributes' do
+      it 'supports ability to use methods as attributes' do
         expected_data = hash_including(:custom_name)
         expected_attrs = hash_including(action: :update)
         expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
@@ -74,7 +74,7 @@ RSpec.describe PublisherUser do
     end
 
     describe 'limit actions (PublisherUser2 is :update only)' do
-      it 'when update, then publish message' do
+      it 'publishes update event' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, :update, anything]
@@ -82,7 +82,7 @@ RSpec.describe PublisherUser do
         model.save!
       end
 
-      it 'when create, then do not publish' do
+      it 'does not publish create event' do
         model = PublisherUser2.new(name: 'name')
         args = [anything, 'create']
         expect_no_publish_model(args)
@@ -93,7 +93,7 @@ RSpec.describe PublisherUser do
 
   describe 'methods' do
     describe '#ps_skip_callback?' do
-      it 'cancel push notification' do
+      it 'cancels push notification' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
@@ -105,28 +105,28 @@ RSpec.describe PublisherUser do
 
     describe '.ps_perform_sync' do
       let(:model) { PublisherUser.new(name: 'name') }
-      it 'perform manual create sync' do
+      it 'performs manual create sync' do
         action = :create
         args = [model, action, anything]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
-      it 'manual perform update sync' do
+      it 'performs manual update sync' do
         action = :update
         args = [model, action, anything]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
-      it 'perform with custom settings' do
+      it 'performs with custom settings' do
         attrs = %i[name]
         args = [model, anything, have_attributes(attrs: attrs)]
         expect_publish_model(args)
         model.ps_perform_sync(:create, attrs: attrs)
       end
 
-      it 'perform with custom publisher' do
+      it 'performs with custom publisher' do
         attrs = %i[name]
         klass = PubSubModelSync::MessagePublisher
         publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
