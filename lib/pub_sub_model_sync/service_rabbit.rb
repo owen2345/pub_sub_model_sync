@@ -77,12 +77,12 @@ module PubSubModelSync
       service.start
       @channel = service.create_channel
       queue_settings = { durable: true, auto_delete: false }
-      @queue = channel.fanout(config.queue_name, queue_settings)
-      subscribe_to_topic
+      @queue = channel.queue(config.queue_name, queue_settings)
+      subscribe_to_exchange
     end
 
-    def subscribe_to_topic
-      @topic = channel.topic(config.topic_name)
+    def subscribe_to_exchange
+      @topic = channel.fanout(config.topic_name)
       queue.bind(topic, routing_key: queue.name)
     end
 
