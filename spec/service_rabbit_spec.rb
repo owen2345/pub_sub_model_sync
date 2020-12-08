@@ -28,10 +28,10 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       expect(service).to receive(:create_channel).and_call_original
     end
     it 'subscribe to queue' do
-      expect(channel).to receive(:fanout).and_call_original
+      expect(channel).to receive(:queue).and_call_original
     end
-    it 'subscribe to topic' do
-      expect(channel).to receive(:topic).and_call_original
+    it 'subscribe to exchange' do
+      expect(channel).to receive(:fanout).and_call_original
     end
     it 'listening messages' do
       expect(channel.queue).to receive(:subscribe)
@@ -67,12 +67,12 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       attrs = { id: 10 }
       payload = { data: data, attributes: attrs }
       expected_args = [payload.to_json, hash_including(:routing_key, :type)]
-      expect(channel.topic).to receive(:publish).with(*expected_args)
+      expect(channel.fanout).to receive(:publish).with(*expected_args)
       inst.publish(data, attrs)
     end
     it 'print error when sending message' do
       error = 'Error msg'
-      expect(channel.topic).to receive(:publish).and_raise(error)
+      expect(channel.fanout).to receive(:publish).and_raise(error)
       allow(inst).to receive(:log)
       expect(inst).to receive(:log).with(include(error), :error)
       inst.publish('invalid data', {})
