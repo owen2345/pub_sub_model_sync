@@ -31,7 +31,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
     end
 
     it 'subscribes to topic' do
-      expect(channel).to receive(:topic).and_call_original
+      expect(channel).to receive(:fanout).and_call_original
     end
     it 'listens for messages' do
       expect(channel.queue).to receive(:subscribe)
@@ -64,7 +64,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
   describe '.publish' do
     it 'deliveries message' do
       expected_args = [payload.to_json, hash_including(:routing_key, :type)]
-      expect(channel.topic).to receive(:publish).with(*expected_args)
+      expect(channel.queue).to receive(:publish).with(*expected_args)
       inst.publish(payload)
     end
     it 'retries 2 times when TimeoutError' do

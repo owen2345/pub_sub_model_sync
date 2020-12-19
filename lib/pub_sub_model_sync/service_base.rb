@@ -20,11 +20,15 @@ module PubSubModelSync
 
     private
 
-    # @param (String: Json string)
+    # @param (String: Payload in json format)
     def process_message(payload_info)
       payload = parse_payload(payload_info)
       log("Received message: #{[payload]}") if config.debug
-      PubSubModelSync::MessageProcessor.new(payload).process
+      if same_app_message?(payload)
+        log("Skip message from same origin: #{[payload]}") if config.debug
+      else
+        PubSubModelSync::MessageProcessor.new(payload).process
+      end
     rescue => e
       error = [payload, e.message, e.backtrace]
       log("Error parsing received message: #{error}", :error)
@@ -32,7 +36,13 @@ module PubSubModelSync
 
     def parse_payload(payload_info)
       info = JSON.parse(payload_info).deep_symbolize_keys
-      ::PubSubModelSync::Payload.new(info[:data], info[:attributes])
+      ::PubSubModelSync::Payload.new(info[:data], info[:attributes], info[:headers])
+    end
+
+    # @param payload (Payload)
+    def same_app_message?(payload)
+      key = payload.headers[:app_key]
+      key && key == config.subscription_key
     end
   end
 end

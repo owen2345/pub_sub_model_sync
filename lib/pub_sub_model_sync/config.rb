@@ -20,10 +20,10 @@ module PubSubModelSync
     cattr_accessor :project, :credentials, :topic_name, :subscription_name
 
     # rabbitmq service
-    cattr_accessor :bunny_connection, :queue_name, :topic_name
+    cattr_accessor :bunny_connection, :queue_name, :topic_name, :subscription_name
 
     # kafka service
-    cattr_accessor :kafka_connection, :topic_name
+    cattr_accessor :kafka_connection, :topic_name, :subscription_name
 
     def self.log(msg, kind = :info)
       msg = "PS_MSYNC ==> #{msg}"
@@ -32,6 +32,11 @@ module PubSubModelSync
       else
         logger ? logger.send(kind, msg) : puts(msg)
       end
+    end
+
+    def self.subscription_key
+      subscription_name ||
+        (Rails.application.class.parent_name rescue '') # rubocop:disable Style/RescueModifier
     end
   end
 end

@@ -16,6 +16,7 @@ end
 
 # raise sync errors during tests
 PubSubModelSync::Config.logger = :raise_error
+PubSubModelSync::Config.debug = true
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
