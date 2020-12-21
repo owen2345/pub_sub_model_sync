@@ -23,7 +23,7 @@ module PubSubModelSync
 
     def run_subscriber(subscriber)
       subscriber.eval_message(payload.data)
-      config.on_subscription_success.call(payload, subscriber)
+      config.on_message_processed.call(payload, subscriber)
       log "processed message with: #{payload}"
     rescue => e
       print_subscriber_error(e)
@@ -32,7 +32,7 @@ module PubSubModelSync
     # @param error (Error)
     def print_subscriber_error(error)
       info = [payload, error.message, error.backtrace]
-      res = config.on_subscription_error.call(error, payload)
+      res = config.on_message_error.call(error, payload)
       log("Error processing message: #{info}", :error) if res != :skip_log
     end
 
