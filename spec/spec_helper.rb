@@ -31,7 +31,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     klass = PubSubModelSync::ServiceBase
-    allow(klass).to receive(:same_app_message?).and_return(false)
+    allow_any_instance_of(klass).to receive(:same_app_message?).and_return(false)
   end
 
   # mock google service
