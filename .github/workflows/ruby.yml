@@ -12,11 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ruby: [2.4, 2.5, 2.6]
-        rails: [4, 5, 6]
-        include:
-          - ruby: 2.7
-            rails: 6
+        ruby: [2.6]
+        rails: [6]
         exclude: # rails 6 requires ruby >= 2.5
           - ruby: 2.4
             rails: 6
@@ -41,6 +38,9 @@ jobs:
           if [ $RAILS_V = "4" ]; then bundler_v="1.16.6"; fi
           gem install bundler -v "~> $bundler_v"
           bundle _${bundler_v}_ install --jobs 4 --retry 3
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
 
       - name: Tests (rspec)
         run: |
