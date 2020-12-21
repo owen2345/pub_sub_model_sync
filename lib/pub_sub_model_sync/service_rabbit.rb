@@ -7,8 +7,7 @@ end
 
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
-    attr_accessor :service, :channel, :queue, :topic
-    attr_accessor :config
+    attr_accessor :config, :service, :channel, :queue, :topic
 
     def initialize
       @config = PubSubModelSync::Config

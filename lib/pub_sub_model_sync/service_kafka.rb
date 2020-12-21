@@ -8,9 +8,8 @@ end
 module PubSubModelSync
   class ServiceKafka < ServiceBase
     cattr_accessor :producer
+    attr_accessor :config, :service, :consumer
 
-    attr_accessor :service, :consumer
-    attr_accessor :config
     CONSUMER_GROUP = 'service_model_sync'
 
     def initialize

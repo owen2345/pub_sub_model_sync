@@ -3,6 +3,7 @@
 module PubSubModelSync
   class Connector
     attr_accessor :service
+
     delegate :listen_messages, :publish, :stop, to: :service
 
     def initialize

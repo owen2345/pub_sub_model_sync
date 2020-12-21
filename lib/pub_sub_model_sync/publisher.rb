@@ -3,6 +3,7 @@
 module PubSubModelSync
   class Publisher
     attr_accessor :attrs, :actions, :klass, :as_klass
+
     def initialize(attrs, klass, actions = nil, as_klass = nil)
       @attrs = attrs
       @klass = klass

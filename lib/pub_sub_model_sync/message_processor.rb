@@ -36,7 +36,7 @@ module PubSubModelSync
       log("Error processing message: #{info}", :error) if res != :skip_log
     end
 
-    def filter_subscribers # rubocop:disable Metrics/AbcSize:
+    def filter_subscribers
       config.subscribers.select do |subscriber|
         subscriber.settings[:from_klass].to_s == payload.klass.to_s &&
           subscriber.settings[:from_action].to_s == payload.action.to_s
