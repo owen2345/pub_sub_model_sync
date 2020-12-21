@@ -89,6 +89,20 @@ RSpec.describe PublisherUser do
         model.save!
       end
     end
+
+    describe 'when publisher is disabled' do
+      it 'does not publish if disabled' do
+        allow(PubSubModelSync::Config).to receive(:disabled) { true }
+        expect(publisher_klass).not_to receive(:publish_model)
+        PublisherUser.create(name: 'name')
+      end
+
+      it 'publishes if not disabled' do
+        allow(PubSubModelSync::Config).to receive(:disabled) { false }
+        expect(publisher_klass).to receive(:publish_model)
+        PublisherUser.create(name: 'name')
+      end
+    end
   end
 
   describe 'methods' do
@@ -105,6 +119,7 @@ RSpec.describe PublisherUser do
 
     describe '.ps_perform_sync' do
       let(:model) { PublisherUser.new(name: 'name') }
+      let(:attrs) { %i[name] }
       it 'performs manual create sync' do
         action = :create
         args = [model, action, anything]
@@ -120,14 +135,12 @@ RSpec.describe PublisherUser do
       end
 
       it 'performs with custom settings' do
-        attrs = %i[name]
         args = [model, anything, have_attributes(attrs: attrs)]
         expect_publish_model(args)
         model.ps_perform_sync(:create, attrs: attrs)
       end
 
       it 'performs with custom publisher' do
-        attrs = %i[name]
         klass = PubSubModelSync::MessagePublisher
         publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
         exp_args = [anything, anything, publisher]

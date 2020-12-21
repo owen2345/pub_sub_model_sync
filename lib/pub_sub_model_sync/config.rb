@@ -15,6 +15,7 @@ module PubSubModelSync
     cattr_accessor :on_before_publish, default: ->(_payload) {}
     cattr_accessor :on_after_publish, default: ->(_payload) {}
     cattr_accessor :on_publish_error, default: ->(_exception, _payload) {}
+    cattr_accessor(:disabled) { false }
 
     # google service
     cattr_accessor :project, :credentials, :topic_name, :subscription_name
