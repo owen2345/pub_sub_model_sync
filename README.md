@@ -272,11 +272,34 @@ Note: Be careful with collision of names
     end
     ```
 
+## Extra configurations
+```ruby
+config = PubSubModelSync::Config
+config.debug = true
+```
+
+- ```debug = true```    
+    (true/false*) => show advanced log messages
+- ```logger = Rails.logger```   
+    (Logger) => define custom logger
+- ```disabled = true```   
+    (true/false*) => if true, does not publish model messages (Create/Update/Destroy) 
+- ```on_message_processed = ->(payload, subscriber) { puts payload }```    
+    (Proc) => called when a message was successfully processed
+- ```on_message_error = ->(exception, payload) { puts exception }```    
+    (Proc) => called when a message failed when processing
+- ```on_before_publish = ->(payload) { puts payload }```    
+    (Proc) => called before publishing a message    
+- ```on_after_publish = ->(payload) { puts payload }```    
+    (Proc) => called after publishing a message
+- ```on_publish_error = ->(exception, payload) { puts payload }```    
+    (Proc) => called when failed publishing a message
+    
 ## TODO
-- Hooks/callbacks when message processed or failed
 - Add alias attributes when subscribing (similar to publisher)
 - Add flag ```model.ps_processing``` to indicate that the current transaction is being processed by pub/sub
- 
+- Auto publish update only if payload has changed
+- On delete, payload must only be composed by ids 
 
 ## Contributing
 
