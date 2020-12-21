@@ -42,8 +42,9 @@ jobs:
           gem install bundler -v "~> $bundler_v"
           bundle _${bundler_v}_ install --jobs 4 --retry 3
 
-      - name: Setup tmate session (remote session debugger)
-        uses: mxschmitt/action-tmate@v3
+#      remote ssh debugger
+#      - name: Setup tmate session (remote session debugger)
+#        uses: mxschmitt/action-tmate@v3
 
       - name: Tests (rspec)
         run: |
