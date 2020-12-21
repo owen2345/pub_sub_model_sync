@@ -29,6 +29,11 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  config.before(:each) do
+    klass = PubSubModelSync::ServiceBase
+    allow(klass).to receive(:same_app_message?).and_return(false)
+  end
+
   # mock google service
   config.before(:each) do
     pub_sub_mock = PubSubModelSync::MockGoogleService.new
