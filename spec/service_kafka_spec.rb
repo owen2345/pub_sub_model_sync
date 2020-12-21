@@ -33,6 +33,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
 
   describe '.process_message' do
     let(:message_processor) { PubSubModelSync::MessageProcessor }
+    before { allow(inst).to receive(:log) }
     it 'ignores unknown message' do
       expect(message_processor).not_to receive(:new)
       inst.send(:process_message, invalid_message)

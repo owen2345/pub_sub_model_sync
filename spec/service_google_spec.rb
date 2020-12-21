@@ -47,6 +47,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
 
   describe '.process_message' do
     let(:message_processor) { PubSubModelSync::MessageProcessor }
+    before { allow(inst).to receive(:log) }
     it 'ignores if not a pub/sub model sync message (unknown)' do
       expect(message_processor).not_to receive(:new)
       inst.send(:process_message, mock_service_unknown_message)
