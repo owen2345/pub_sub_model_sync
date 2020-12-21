@@ -10,11 +10,11 @@ module PubSubModelSync
     cattr_accessor(:debug) { false }
     cattr_accessor :logger # LoggerInst
 
-    cattr_accessor :on_subscription_success, default: lambda { |_payload, _subscriber| }
-    cattr_accessor :on_subscription_error, default: lambda { |_exception, _payload| }
-    cattr_accessor :on_before_publish, default: lambda { |_payload| }
-    cattr_accessor :on_after_publish, default: lambda { |_payload| }
-    cattr_accessor :on_publish_error, default: lambda { |_exception, _payload| }
+    cattr_accessor :on_subscription_success, default: ->(_payload, _subscriber) {}
+    cattr_accessor :on_subscription_error, default: ->(_exception, _payload) {}
+    cattr_accessor :on_before_publish, default: ->(_payload) {}
+    cattr_accessor :on_after_publish, default: ->(_payload) {}
+    cattr_accessor :on_publish_error, default: ->(_exception, _payload) {}
 
     # google service
     cattr_accessor :project, :credentials, :topic_name, :subscription_name

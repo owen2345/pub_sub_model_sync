@@ -13,7 +13,7 @@ Metrics/BlockLength:
     - 'spec/**/*.rb'
 
 Layout/LineLength:
-  Max: 80
+  Max: 120
 
 Style/SymbolArray:
   Exclude:

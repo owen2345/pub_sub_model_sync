@@ -73,7 +73,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       allow(inst).to receive(:deliver_data).and_raise(Timeout::Error)
       allow(inst).to receive(:log)
       expect(inst).to receive(:log).with(include(error), :error).twice
-      inst.publish(payload) rescue nil
+      inst.publish(payload) rescue nil # rubocop:disable Style/RescueModifier
     end
   end
 

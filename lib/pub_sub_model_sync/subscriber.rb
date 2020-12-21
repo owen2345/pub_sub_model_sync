@@ -45,9 +45,7 @@ module PubSubModelSync
 
     def find_model(message)
       model_class = klass.constantize
-      if model_class.respond_to?(:ps_find_model)
-        return model_class.ps_find_model(message)
-      end
+      return model_class.ps_find_model(message) if model_class.respond_to?(:ps_find_model)
 
       model_class.where(model_identifiers(message)).first_or_initialize
     end

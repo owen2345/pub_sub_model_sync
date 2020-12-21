@@ -4,14 +4,14 @@ module PubSubModelSync
   class Base
     delegate :config, :log, to: self
 
-    private
+    class << self
+      def config
+        PubSubModelSync::Config
+      end
 
-    def self.config
-      PubSubModelSync::Config
-    end
-
-    def self.log(message, kind = :info)
-      config.log message, kind
+      def log(message, kind = :info)
+        config.log message, kind
+      end
     end
   end
 end
