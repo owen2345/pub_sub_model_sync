@@ -10,8 +10,8 @@ module PubSubModelSync
     cattr_accessor(:debug) { false }
     cattr_accessor :logger # LoggerInst
 
-    cattr_accessor(:on_message_processed) { ->(_payload, _subscriber) {} }
-    cattr_accessor(:on_message_error) { ->(_exception, _payload) {} }
+    cattr_accessor(:on_process_success) { ->(_payload, _subscriber) {} }
+    cattr_accessor(:on_process_error) { ->(_exception, _payload) {} }
     cattr_accessor(:on_before_publish) { ->(_payload) {} }
     cattr_accessor(:on_after_publish) { ->(_payload) {} }
     cattr_accessor(:on_publish_error) { ->(_exception, _payload) {} }
