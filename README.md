@@ -238,27 +238,23 @@ Note: Be careful with collision of names
     ```ruby
     # Subscriber
     it 'receive model message' do
-      action = :create
       data = { name: 'name', id: 999 }
-      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
-      publisher.process
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
+      payload.process!
       expect(User.where(id: data[:id]).any?).to be_truth
     end
       
     it 'receive class message' do
-      action = :greeting
       data = { msg: 'hello' }
-      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
-      publisher.process
+      action = :greeting
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action })
+      payload.process!
       expect(User).to receive(action)
     end
   
     # Publisher
     it 'publish model action' do
       publisher = PubSubModelSync::MessagePublisher  
-      data = { name: 'hello'}
-      action = :create
-      User.ps_class_publish(data, action: action)
       user = User.create(name: 'name', email: 'email')
       expect(publisher).to receive(:publish_model).with(user, :create, anything)
     end

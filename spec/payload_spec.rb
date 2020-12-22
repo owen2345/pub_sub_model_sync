@@ -20,4 +20,12 @@ RSpec.describe PubSubModelSync::Payload do
   it 'includes a unique ID' do
     expect(inst.to_h[:headers][:uuid].present?).to be_truthy
   end
+
+  describe '#process!' do
+    it 'does process the payload' do
+      klass = PubSubModelSync::MessageProcessor
+      expect_any_instance_of(klass).to receive(:process)
+      inst.process!
+    end
+  end
 end

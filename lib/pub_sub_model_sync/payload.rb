@@ -25,6 +25,11 @@ module PubSubModelSync
       attributes[:action]
     end
 
+    def process!
+      publisher = PubSubModelSync::MessageProcessor.new(self)
+      publisher.process
+    end
+
     private
 
     def build_headers
