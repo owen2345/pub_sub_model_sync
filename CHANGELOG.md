@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.0.1 (December 22, 2020)
+- fix: add missing rabbit mock method
+
 # 0.5.0 (December 22, 2020)
 - feat: add :publish! and :process! methods to payloads
 - feat: add ability to disable publisher globally
