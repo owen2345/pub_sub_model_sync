@@ -8,9 +8,6 @@ AllCops:
     - 'Rakefile'
     - 'bin/*'
 
-Lint/MissingSuper:
-  Enabled: false
-
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*.rb'

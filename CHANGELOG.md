@@ -1,13 +1,14 @@
 # Change Log
 
-# 0.4.3.0 (December 21, 2020)
+# 0.5.0 (December 22, 2020)
+- feat: add :publish! and :process! methods to payloads
 - feat: add ability to disable publisher globally
 - fix: skip notifications from the same application
 - fix: rabbitmq use fanout instead of queue to deliver messages to multiple apps
 - refactor: include payload object to carry message info
 - feat: include notification events (when publishing and when processing messages)
 
-# 0.4.2.2 (November 29, 2020)
+# 0.4.2.2 (November 29, 2020, deleted cause of typo)
 - feat: rabbitMQ skip receiving messages from the same app
 - feat: rabbitmq use fanout instead of queue to deliver messages to multiple apps
  
