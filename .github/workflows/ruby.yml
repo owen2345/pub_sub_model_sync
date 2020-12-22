@@ -52,4 +52,4 @@ jobs:
 
       - name: Code style (Rubocop)
         run: bundle exec rubocop
-        if: matrix.ruby == 2.6 || matrix.ruby == '2.6'
+        if: matrix.ruby == '2.6' && matrix.rails == '6'
