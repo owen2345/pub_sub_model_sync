@@ -20,6 +20,10 @@ module PubSubModelSync
       def name
         'name'
       end
+
+      def publish(*_args)
+        true
+      end
     end
 
     class MockChannel
