@@ -28,8 +28,6 @@ module PubSubModelSync
         model.ps_after_sync(action, payload.data)
       end
 
-      private
-
       def publish(payload)
         log("Publishing message: #{[payload]}") if config.debug
         config.on_before_publish.call(payload)
@@ -38,6 +36,8 @@ module PubSubModelSync
       rescue => e
         notify_error(e, payload)
       end
+
+      private
 
       def notify_error(exception, payload)
         info = [payload, exception.message, exception.backtrace]

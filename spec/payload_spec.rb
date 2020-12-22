@@ -28,4 +28,12 @@ RSpec.describe PubSubModelSync::Payload do
       inst.process!
     end
   end
+
+  describe '#publish!' do
+    it 'publishes the payload' do
+      klass = PubSubModelSync::MessagePublisher
+      expect(klass).to receive(:publish)
+      inst.publish!
+    end
+  end
 end

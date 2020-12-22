@@ -198,11 +198,11 @@ Note: Be careful with collision of names
   * action_name: (required, :sim) Action name    
   * as_klass: (optional, :string) Custom class name (Default current model name)
       
-- Publish a class level notification (Same as above: on demand call)    
-  ```PubSubModelSync::MessagePublisher.publish_data(Klass_name, data, action_name)```  
-  * klass_name: (required, Class) same class name as defined in ps_class_subscribe(...)
-  * data: (required, :hash) message value to deliver    
-  * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)
+- Publish a class level notification (Same as above: manual call)    
+  ```ruby
+    payload = PubSubModelSync::Payload.new({ title: 'hello' }, { action: :greeting, klass: 'User' })
+    payload.publish!
+  ```
   
 - Get crud publisher configured for the class   
   ```User.ps_publisher(action_name)```  
@@ -280,15 +280,15 @@ config.debug = true
     (Logger) => define custom logger
 - ```disabled = true```   
     (true/false*) => if true, does not publish model messages (Create/Update/Destroy) 
-- ```on_message_processed = ->(payload, subscriber) { puts payload }```    
+- ```on_process_success = ->(payload, subscriber) { puts payload }```    
     (Proc) => called when a message was successfully processed
-- ```on_message_error = ->(exception, payload) { puts exception }```    
+- ```on_process_error = ->(exception, payload) { sleep 1; payload.process! }```    
     (Proc) => called when a message failed when processing
 - ```on_before_publish = ->(payload) { puts payload }```    
     (Proc) => called before publishing a message    
 - ```on_after_publish = ->(payload) { puts payload }```    
     (Proc) => called after publishing a message
-- ```on_publish_error = ->(exception, payload) { puts payload }```    
+- ```on_publish_error = ->(exception, payload) { sleep 1; payload.publish! }```    
     (Proc) => called when failed publishing a message
     
 ## TODO

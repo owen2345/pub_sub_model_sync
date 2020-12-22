@@ -30,6 +30,11 @@ module PubSubModelSync
       publisher.process
     end
 
+    def publish!
+      klass = PubSubModelSync::MessagePublisher
+      klass.publish(self)
+    end
+
     private
 
     def build_headers
