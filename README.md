@@ -59,7 +59,13 @@ And then execute: $ bundle install
     ```ruby
     rake pub_sub_model_sync:start
     ```
-    Note: Publishers do not need todo this
+    Note: Publishers do not need todo this    
+    Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing outside ```rake pub_sub_model_sync:start```
+    ```ruby 
+      # PubSubModelSync::Config.subscribers ==> []
+      Rails.application.try(:eager_load!)
+      # PubSubModelSync::Config.subscribers ==> [#<PubSubModelSync::Subscriber:0x000.. @klass="Article", @action=:create..., ....]
+    ``` 
 
 - Check the service status with:    
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
