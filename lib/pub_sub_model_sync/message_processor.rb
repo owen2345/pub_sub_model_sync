@@ -22,16 +22,19 @@ module PubSubModelSync
     private
 
     def run_subscriber(subscriber)
-      if config.on_before_processing.call(payload, subscriber) == :cancel
-        log("process message cancelled: #{payload}") if config.debug
-        return
-      end
+      return unless processable?(subscriber)
 
       subscriber.process!(payload)
       config.on_success_processing.call(payload, subscriber)
       log "processed message with: #{payload}"
     rescue => e
       print_subscriber_error(e)
+    end
+
+    def processable?(subscriber)
+      cancel = config.on_before_processing.call(payload, subscriber) == :cancel
+      log("process message cancelled: #{payload}") if cancel && config.debug
+      !cancel
     end
 
     # @param error (Error)
