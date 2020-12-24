@@ -169,6 +169,9 @@ Note: Be careful with collision of names
   ```.ps_subscriber_changed?(data)```    
   By default: ```model.changed?```
 
+- Permit to perform custom actions before saving sync of the model (:cancel can be returned to skip sync)   
+  ```.ps_before_save_sync(payload)```    
+
 ### Publishers
 - Permit to configure crud publishers
   ```ps_publish(attrs, actions: nil, as_klass: nil)```
@@ -284,17 +287,19 @@ config.debug = true
     (true/false*) => show advanced log messages
 - ```logger = Rails.logger```   
     (Logger) => define custom logger
-- ```disabled = true```   
-    (true/false*) => if true, does not publish model messages (Create/Update/Destroy) 
-- ```on_process_success = ->(payload, subscriber) { puts payload }```    
+- ```disabled_callback_publisher = ->(_model, _action) { false }```   
+    (true/false*) => if true, does not listen model callbacks for auto sync (Create/Update/Destroy) 
+- ```on_before_processing = ->(payload, subscriber) { puts payload }```    
+    (Proc) => called before processing received message (:cancel can be returned to skip processing)   
+- ```on_success_processing = ->(payload, subscriber) { puts payload }```    
     (Proc) => called when a message was successfully processed
-- ```on_process_error = ->(exception, payload) { sleep 1; payload.process! }```    
+- ```on_error_processing = ->(exception, payload) { sleep 1; payload.process! }```    
     (Proc) => called when a message failed when processing
 - ```on_before_publish = ->(payload) { puts payload }```    
-    (Proc) => called before publishing a message    
+    (Proc) => called before publishing a message (:cancel can be returned to skip publishing)    
 - ```on_after_publish = ->(payload) { puts payload }```    
     (Proc) => called after publishing a message
-- ```on_publish_error = ->(exception, payload) { sleep 1; payload.publish! }```    
+- ```on_error_publish = ->(exception, payload) { sleep 1; payload.publish! }```    
     (Proc) => called when failed publishing a message
     
 ## TODO

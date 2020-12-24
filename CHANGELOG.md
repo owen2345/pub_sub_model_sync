@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.5.1 (December 24, 2020)
+- feat: rename publisher callbacks to be more understandable
+- feat: add callbacks to listen when processing a message (before saving sync)
+
 # 0.5.0.1 (December 22, 2020)
 - fix: add missing rabbit mock method
 
