@@ -5,11 +5,20 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   let(:inst) { described_class }
   let(:connector) { inst.connector }
   let(:payload_klass) { PubSubModelSync::Payload }
+
   it '.publish_data: publishes payload to connector' do
     data = { message: 'hello' }
     action = :greeting
     expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
     inst.publish_data(publisher_klass, data, action)
+  end
+
+  it 'does not publish payload if :on_before_publish returns :cancel' do
+    allow(inst).to receive(:log)
+    allow(inst.config.on_before_publish).to receive(:call).and_return(:cancel)
+    expect(inst).to receive(:log).with(include('Publish message cancelled'))
+    expect(connector).not_to receive(:publish)
+    inst.publish_data(publisher_klass, {}, :greeting)
   end
 
   describe '.publish_model' do
@@ -85,9 +94,9 @@ RSpec.describe PubSubModelSync::MessagePublisher do
     end
     describe 'when failed sending message' do
       before { allow(connector).to receive(:publish).and_raise('Error sending msg') }
-      it 'notifies #on_publish_error when error publishing' do
+      it 'notifies #on_error_publish when error publishing' do
         args = [be_kind_of(StandardError), be_kind_of(payload_klass)]
-        expect(config.on_publish_error).to receive(:call).with(*args)
+        expect(config.on_error_publish).to receive(:call).with(*args)
         inst.publish_data(publisher_klass, {}, action)
       end
 
@@ -96,8 +105,8 @@ RSpec.describe PubSubModelSync::MessagePublisher do
         inst.publish_data(publisher_klass, {}, action)
       end
 
-      it 'skips error log when #on_publish_error returns :skip_log' do
-        allow(config.on_publish_error).to receive(:call).and_return(:skip_log)
+      it 'skips error log when #on_error_publish returns :skip_log' do
+        allow(config.on_error_publish).to receive(:call).and_return(:skip_log)
         expect(config).not_to receive(:log).with(include('Error publishing'), :error)
         inst.publish_data(publisher_klass, {}, action)
       end

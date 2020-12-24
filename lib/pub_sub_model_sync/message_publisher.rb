@@ -29,8 +29,12 @@ module PubSubModelSync
       end
 
       def publish(payload)
-        log("Publishing message: #{[payload]}") if config.debug
-        config.on_before_publish.call(payload)
+        if config.on_before_publish.call(payload) == :cancel
+          log("Publish message cancelled: #{payload}") if config.debug
+          return
+        end
+
+        log("Publishing message: #{[payload]}")
         connector.publish(payload)
         config.on_after_publish.call(payload)
       rescue => e
@@ -41,7 +45,7 @@ module PubSubModelSync
 
       def notify_error(exception, payload)
         info = [payload, exception.message, exception.backtrace]
-        res = config.on_publish_error.call(exception, payload)
+        res = config.on_error_publish.call(exception, payload)
         log("Error publishing: #{info}", :error) if res != :skip_log
       end
     end

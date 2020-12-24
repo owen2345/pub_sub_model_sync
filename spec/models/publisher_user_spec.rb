@@ -92,13 +92,13 @@ RSpec.describe PublisherUser do
 
     describe 'when publisher is disabled' do
       it 'does not publish if disabled' do
-        allow(PubSubModelSync::Config).to receive(:disabled) { true }
+        allow(PubSubModelSync::Config.disabled_callback_publisher).to receive(:call) { true }
         expect(publisher_klass).not_to receive(:publish_model)
         PublisherUser.create(name: 'name')
       end
 
       it 'publishes if not disabled' do
-        allow(PubSubModelSync::Config).to receive(:disabled) { false }
+        allow(PubSubModelSync::Config.disabled_callback_publisher).to receive(:call) { false }
         expect(publisher_klass).to receive(:publish_model)
         PublisherUser.create(name: 'name')
       end

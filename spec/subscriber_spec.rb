@@ -2,6 +2,7 @@
 
 RSpec.describe PubSubModelSync::Subscriber do
   let(:message) { { name: 'sample name', email: 'sample email', age: '10' } }
+  let(:payload) { PubSubModelSync::Payload.new(message, {}) }
   describe 'class message' do
     let(:action) { :action_name }
     let(:model_klass) { SubscriberUser }
@@ -13,7 +14,7 @@ RSpec.describe PubSubModelSync::Subscriber do
     it 'calls received action' do
       model_klass.create_class_method(action) do
         expect(model_klass).to receive(action).with(message)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
     end
   end
@@ -31,7 +32,7 @@ RSpec.describe PubSubModelSync::Subscriber do
     describe 'call action' do
       it 'calls :save! method when received :create action' do
         expect_any_instance_of(model_klass).to receive(:save!)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
       describe 'when update' do
         let(:action) { :update }
@@ -40,7 +41,7 @@ RSpec.describe PubSubModelSync::Subscriber do
           inst.action = action
           allow(inst).to receive(:find_model).and_return(model)
         end
-        after { inst.eval_message(message) }
+        after { inst.process!(payload) }
 
         it 'updates with received data' do
           message[:name] = 'Changed Name'
@@ -58,7 +59,15 @@ RSpec.describe PubSubModelSync::Subscriber do
         action = :destroy
         inst.action = action
         expect_any_instance_of(model_klass).to receive(:destroy!)
-        inst.eval_message(message)
+        inst.process!(payload)
+      end
+
+      it 'does not call action when :ps_before_save_sync returns :cancel' do
+        action = :destroy
+        inst.action = action
+        allow_any_instance_of(model_klass).to receive(:ps_before_save_sync) { :cancel }
+        expect_any_instance_of(model_klass).not_to receive(:destroy!)
+        inst.process!(payload)
       end
     end
 
@@ -67,7 +76,7 @@ RSpec.describe PubSubModelSync::Subscriber do
         model = model_klass.new
         model_klass.create_class_method(:ps_find_model) do
           expect(model_klass).to receive(:ps_find_model).with(message) { model }
-          inst.eval_message(message)
+          inst.process!(payload)
         end
       end
 
@@ -76,7 +85,7 @@ RSpec.describe PubSubModelSync::Subscriber do
         inst.settings[:id] = :name
         allow(model_klass).to receive(:where).and_call_original
         expect(model_klass).to receive(:where).with(name: model.name)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
 
       it 'supports for multiple identifiers' do
@@ -85,7 +94,7 @@ RSpec.describe PubSubModelSync::Subscriber do
         allow(model_klass).to receive(:where).and_call_original
         args = { name: model.name, email: model.email }
         expect(model_klass).to receive(:where).with(args)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
     end
 
@@ -94,7 +103,7 @@ RSpec.describe PubSubModelSync::Subscriber do
         model = model_klass.create(name: 'original name')
         allow(inst).to receive(:find_model) { model }
         inst.attrs = %i[name email]
-        inst.eval_message(message)
+        inst.process!(payload)
         inst.attrs.each do |attr|
           expect(model.send(attr)).to eq message[attr]
         end
@@ -105,7 +114,7 @@ RSpec.describe PubSubModelSync::Subscriber do
         model = model_klass.create(name: original_name)
         allow(inst).to receive(:find_model) { model }
         inst.attrs = %i[email]
-        inst.eval_message(message)
+        inst.process!(payload)
         expect(model.name).to eq original_name
       end
     end
