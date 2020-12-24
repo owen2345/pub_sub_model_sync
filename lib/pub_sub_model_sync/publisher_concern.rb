@@ -11,13 +11,12 @@ module PubSubModelSync
       false
     end
 
-    # TODO: make it using respond_to?(:ps_skip_sync?)
     # before preparing data to sync
     def ps_skip_sync?(_action)
       false
     end
 
-    # before delivering data
+    # before delivering data (return :cancel to cancel sync)
     def ps_before_sync(_action, _data); end
 
     # after delivering data
@@ -64,7 +63,7 @@ module PubSubModelSync
 
       def ps_register_callback(action, publisher)
         after_commit(on: action) do |model|
-          disabled = PubSubModelSync::Config.disabled
+          disabled = PubSubModelSync::Config.disabled_callback_publisher.call(model, action)
           if !disabled && !model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
             klass.publish_model(model, action.to_sym, publisher)
