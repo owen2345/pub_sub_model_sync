@@ -41,28 +41,43 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       end
     end
 
+    it 'does not process if returns :cancel from :on_before_processing' do
+      allow(inst.config.on_before_processing).to receive(:call).and_return(:cancel)
+      stub_subscriber(subscriber) do
+        allow(inst).to receive(:log)
+        expect(inst).to receive(:log).with(include('process message cancelled'))
+        expect(subscriber).not_to receive(:process!)
+        inst.process
+      end
+    end
+
     describe 'when notifying' do
       before do
         allow(inst).to receive(:filter_subscribers).and_return([subscriber])
-        allow(subscriber).to receive(:eval_message)
+        allow(subscriber).to receive(:process!)
       end
       after { inst.process }
 
-      it 'notifies #on_process_success hook when success' do
+      it 'notifies #on_before_processing hook before processing' do
         args = [payload, be_kind_of(PubSubModelSync::Subscriber)]
-        expect(inst.config.on_process_success).to receive(:call).with(*args)
+        expect(inst.config.on_before_processing).to receive(:call).with(*args)
+      end
+
+      it 'notifies #on_success_processing hook when success' do
+        args = [payload, be_kind_of(PubSubModelSync::Subscriber)]
+        expect(inst.config.on_success_processing).to receive(:call).with(*args)
       end
 
       describe 'when failed' do
         before do
-          allow(subscriber).to receive(:eval_message).and_raise('error processing')
+          allow(subscriber).to receive(:process!).and_raise('error processing')
           allow(inst.config).to receive(:log)
         end
-        it 'notifies #on_process_error hook when failed' do
-          expect(inst.config.on_process_error).to receive(:call).with(be_kind_of(StandardError), payload)
+        it 'notifies #on_error_processing hook when failed' do
+          expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), payload)
         end
-        it 'skips error logs when #on_process_error returns :skip_log' do
-          allow(inst.config.on_process_error).to receive(:call).and_return(:skip_log)
+        it 'skips error logs when #on_error_processing returns :skip_log' do
+          allow(inst.config.on_error_processing).to receive(:call).and_return(:skip_log)
           expect(inst.config).not_to receive(:log).with(include('Error processing message'))
         end
       end
