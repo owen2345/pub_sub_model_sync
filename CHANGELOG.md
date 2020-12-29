@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.1.1 (December 29, 2020)
+- Hotfix: auto convert class name into string
+
 # 0.5.1 (December 24, 2020)
 - feat: rename publisher callbacks to be more understandable
 - feat: add callbacks to listen when processing a message (before saving sync)

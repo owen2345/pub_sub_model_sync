@@ -8,7 +8,7 @@ module PubSubModelSync
       end
 
       def publish_data(klass, data, action)
-        payload = PubSubModelSync::Payload.new(data, { klass: klass, action: action.to_sym })
+        payload = PubSubModelSync::Payload.new(data, { klass: klass.to_s, action: action.to_sym })
         publish(payload)
       end
 
