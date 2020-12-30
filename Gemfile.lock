@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (0.5.1.1)
+    pub_sub_model_sync (0.5.2)
       rails
 
 GEM
