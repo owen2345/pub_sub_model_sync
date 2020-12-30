@@ -19,8 +19,7 @@ module PubSubModelSync
         return if model.ps_skip_sync?(action)
 
         publisher ||= model.class.ps_publisher(action)
-        payload_info = publisher.payload(model, action)
-        payload = PubSubModelSync::Payload.new(payload_info[:data], payload_info[:attrs])
+        payload = publisher.payload(model, action)
         res_before = model.ps_before_sync(action, payload.data)
         return if res_before == :cancel
 

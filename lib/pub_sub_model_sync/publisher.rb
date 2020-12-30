@@ -12,7 +12,7 @@ module PubSubModelSync
     end
 
     def payload(model, action)
-      { data: payload_data(model), attrs: payload_attrs(model, action) }
+      PubSubModelSync::Payload.new(payload_data(model), payload_attrs(model, action))
     end
 
     private
