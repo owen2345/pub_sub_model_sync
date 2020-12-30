@@ -40,6 +40,7 @@ module PubSubModelSync
 
     def stop
       log('Listener stopping...')
+      channel&.close
       service.close
     end
 
@@ -48,8 +49,13 @@ module PubSubModelSync
     def message_settings
       {
         routing_key: queue.name,
-        type: SERVICE_KEY
+        type: SERVICE_KEY,
+        persistent: true
       }
+    end
+
+    def queue_settings
+      { durable: true, auto_delete: false }
     end
 
     def subscribe_settings
@@ -65,8 +71,7 @@ module PubSubModelSync
     def subscribe_to_queue
       service.start
       @channel = service.create_channel
-      queue_settings = { durable: true, auto_delete: false }
-      @queue = channel.queue(config.queue_name, queue_settings)
+      @queue = channel.queue(config.subscription_key, queue_settings)
       subscribe_to_exchange
     end
 

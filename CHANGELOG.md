@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.5.2 (December 30, 2020)
+- fix: rabbitmq deliver messages to all subscribers
+- fix: rabbitmq persist messages to recover after restarting
+
 # 0.5.1.1 (December 29, 2020)
 - Hotfix: auto convert class name into string
 
