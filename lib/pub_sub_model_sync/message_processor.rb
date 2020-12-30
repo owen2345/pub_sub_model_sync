@@ -25,8 +25,8 @@ module PubSubModelSync
       return unless processable?(subscriber)
 
       subscriber.process!(payload)
-      config.on_success_processing.call(payload, subscriber)
-      log "processed message with: #{payload}"
+      res = config.on_success_processing.call(payload, subscriber)
+      log "processed message with: #{payload.inspect}" if res != :skip_log
     rescue => e
       print_subscriber_error(e)
     end
