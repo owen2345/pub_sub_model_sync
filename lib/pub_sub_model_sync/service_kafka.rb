@@ -14,6 +14,8 @@ module PubSubModelSync
 
     def initialize
       @config = PubSubModelSync::Config
+      settings = config.kafka_connection
+      settings[1][:client_id] ||= config.subscription_key
       @service = Kafka.new(*config.kafka_connection)
     end
 

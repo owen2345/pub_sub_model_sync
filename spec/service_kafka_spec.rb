@@ -12,6 +12,8 @@ RSpec.describe PubSubModelSync::ServiceKafka do
   let(:inst) { described_class.new }
   let(:service) { inst.service }
   let(:producer) { inst.send(:producer) }
+  let(:config) { PubSubModelSync::Config }
+  before { allow(config).to receive(:kafka_connection).and_return([[8080], { log: nil }]) }
 
   describe 'initializer' do
     it 'connects to pub/sub service' do
