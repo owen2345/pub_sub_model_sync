@@ -39,8 +39,8 @@ module PubSubModelSync
     private
 
     def subscribe_to_topic
-      topic.subscription(config.subscription_name) ||
-        topic.subscribe(config.subscription_name)
+      topic.subscription(config.subscription_key) ||
+        topic.subscribe(config.subscription_key)
     end
 
     def process_message(received_message)

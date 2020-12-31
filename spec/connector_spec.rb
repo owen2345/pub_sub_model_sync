@@ -32,7 +32,10 @@ RSpec.describe PubSubModelSync::Connector do
   end
 
   describe 'Kafka' do
-    before { allow(config).to receive(:service_name).and_return(:kafka) }
+    before do
+      allow(config).to receive(:service_name).and_return(:kafka)
+      allow(config).to receive(:kafka_connection).and_return([[8080], { log: nil }])
+    end
     it 'initializes Kafka service' do
       expect(inst.service).to be_a(PubSubModelSync::ServiceKafka)
     end

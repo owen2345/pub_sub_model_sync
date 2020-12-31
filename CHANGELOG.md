@@ -1,5 +1,9 @@
 # Change Log
 
+# 0.5.3 (December 30, 2020)
+- fix: kafka consume all messages from different apps
+- style: use the correct consumer key
+
 # 0.5.2 (December 30, 2020)
 - fix: rabbitmq deliver messages to all subscribers
 - fix: rabbitmq persist messages to recover after restarting
