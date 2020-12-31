@@ -28,10 +28,9 @@ And then execute: $ bundle install
     ```ruby
     # initializers/pub_sub_config.rb
     PubSubModelSync::Config.service_name = :google 
-    PubSubModelSync::Config.project = 'project-id'
+    PubSubModelSync::Config.project = 'google-project-id'
     PubSubModelSync::Config.credentials = 'path-to-the-config'
     PubSubModelSync::Config.topic_name = 'sample-topic'
-    PubSubModelSync::Config.subscription_name = 'p1-subscriber'
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
@@ -40,7 +39,7 @@ And then execute: $ bundle install
     ```ruby
     PubSubModelSync::Config.service_name = :rabbitmq
     PubSubModelSync::Config.bunny_connection = 'amqp://guest:guest@localhost'
-    PubSubModelSync::Config.queue_name = ''
+    PubSubModelSync::Config.queue_name = 'model-sync'
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
     See details here: https://github.com/ruby-amqp/bunny
@@ -283,23 +282,25 @@ config = PubSubModelSync::Config
 config.debug = true
 ```
 
-- ```debug = true```    
+- ```.subscription_name = 'app-2'```    
+    Permit to define a custom consumer identifier (Default: Rails application name)
+- ```.debug = true```    
     (true/false*) => show advanced log messages
-- ```logger = Rails.logger```   
+- ```.logger = Rails.logger```   
     (Logger) => define custom logger
-- ```disabled_callback_publisher = ->(_model, _action) { false }```   
+- ```.disabled_callback_publisher = ->(_model, _action) { false }```   
     (true/false*) => if true, does not listen model callbacks for auto sync (Create/Update/Destroy) 
-- ```on_before_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_before_processing = ->(payload, subscriber) { puts payload }```    
     (Proc) => called before processing received message (:cancel can be returned to skip processing)   
-- ```on_success_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_success_processing = ->(payload, subscriber) { puts payload }```    
     (Proc) => called when a message was successfully processed
-- ```on_error_processing = ->(exception, payload) { sleep 1; payload.process! }```    
+- ```.on_error_processing = ->(exception, payload) { sleep 1; payload.process! }```    
     (Proc) => called when a message failed when processing
-- ```on_before_publish = ->(payload) { puts payload }```    
+- ```.on_before_publish = ->(payload) { puts payload }```    
     (Proc) => called before publishing a message (:cancel can be returned to skip publishing)    
-- ```on_after_publish = ->(payload) { puts payload }```    
+- ```.on_after_publish = ->(payload) { puts payload }```    
     (Proc) => called after publishing a message
-- ```on_error_publish = ->(exception, payload) { sleep 1; payload.publish! }```    
+- ```.on_error_publish = ->(exception, payload) { sleep 1; payload.publish! }```    
     (Proc) => called when failed publishing a message
     
 ## TODO
