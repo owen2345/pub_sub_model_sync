@@ -10,13 +10,11 @@ module PubSubModelSync
     cattr_accessor :producer
     attr_accessor :config, :service, :consumer
 
-    CONSUMER_GROUP = 'service_model_sync'
-
     def initialize
       @config = PubSubModelSync::Config
       settings = config.kafka_connection
       settings[1][:client_id] ||= config.subscription_key
-      @service = Kafka.new(*config.kafka_connection)
+      @service = Kafka.new(*settings)
     end
 
     def listen_messages
@@ -46,7 +44,7 @@ module PubSubModelSync
     end
 
     def start_consumer
-      @consumer = service.consumer(group_id: CONSUMER_GROUP)
+      @consumer = service.consumer(group_id: config.subscription_key)
       consumer.subscribe(config.topic_name)
     end
 
