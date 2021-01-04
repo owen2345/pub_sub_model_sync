@@ -7,8 +7,7 @@ end
 
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
-    attr_accessor :service, :channel, :queue, :topic
-    attr_accessor :config
+    attr_accessor :config, :service, :channel, :queue, :topic
 
     def initialize
       @config = PubSubModelSync::Config
@@ -22,26 +21,26 @@ module PubSubModelSync
       queue.subscribe(subscribe_settings, &method(:process_message))
       loop { sleep 5 }
     rescue PubSubModelSync::Runner::ShutDown
-      raise
+      log('Listener stopped')
     rescue => e
       log("Error listening message: #{[e.message, e.backtrace]}", :error)
     end
 
-    def publish(data, attributes)
-      log("Publishing: #{[attributes, data]}")
-      deliver_data(data, attributes)
-    # TODO: max retry
-    rescue Timeout::Error => e
-      log("Error publishing (retrying....): #{e.message}", :error)
-      initialize
-      retry
+    def publish(payload)
+      qty_retry ||= 0
+      deliver_data(payload)
     rescue => e
-      info = [attributes, data, e.message, e.backtrace]
-      log("Error publishing: #{info}", :error)
+      if e.is_a?(Timeout::Error) && (qty_retry += 1) <= 2
+        log("Error publishing (retrying....): #{e.message}", :error)
+        initialize
+        retry
+      end
+      raise
     end
 
     def stop
       log('Listener stopping...')
+      channel&.close
       service.close
     end
 
@@ -51,8 +50,12 @@ module PubSubModelSync
       {
         routing_key: queue.name,
         type: SERVICE_KEY,
-        app_id: app_id
+        persistent: true
       }
+    end
+
+    def queue_settings
+      { durable: true, auto_delete: false }
     end
 
     def subscribe_settings
@@ -61,23 +64,14 @@ module PubSubModelSync
 
     def process_message(_delivery_info, meta_info, payload)
       return unless meta_info[:type] == SERVICE_KEY
-      return if meta_info[:app_id] && meta_info[:app_id] == app_id
 
-      perform_message(payload)
-    rescue => e
-      error = [payload, e.message, e.backtrace]
-      log("Error processing message: #{error}", :error)
-    end
-
-    def app_id
-      (Rails.application.class.parent_name rescue '') # rubocop:disable Style/RescueModifier
+      super(payload)
     end
 
     def subscribe_to_queue
       service.start
       @channel = service.create_channel
-      queue_settings = { durable: true, auto_delete: false }
-      @queue = channel.queue(config.queue_name, queue_settings)
+      @queue = channel.queue(config.subscription_key, queue_settings)
       subscribe_to_exchange
     end
 
@@ -86,13 +80,8 @@ module PubSubModelSync
       queue.bind(topic, routing_key: queue.name)
     end
 
-    def log(msg, kind = :info)
-      config.log("Rabbit Service ==> #{msg}", kind)
-    end
-
-    def deliver_data(data, attributes)
+    def deliver_data(payload)
       subscribe_to_queue
-      payload = { data: data, attributes: attributes }
       topic.publish(payload.to_json, message_settings)
 
       # Ugly fix: "IO timeout when reading 7 bytes"

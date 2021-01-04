@@ -16,6 +16,7 @@ end
 
 # raise sync errors during tests
 PubSubModelSync::Config.logger = :raise_error
+PubSubModelSync::Config.debug = true
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -26,6 +27,11 @@ RSpec.configure do |config|
 
   config.expect_with :rspec do |c|
     c.syntax = :expect
+  end
+
+  config.before(:each) do
+    klass = PubSubModelSync::ServiceBase
+    allow_any_instance_of(klass).to receive(:same_app_message?).and_return(false)
   end
 
   # mock google service

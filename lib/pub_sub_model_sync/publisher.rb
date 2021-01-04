@@ -3,6 +3,7 @@
 module PubSubModelSync
   class Publisher
     attr_accessor :attrs, :actions, :klass, :as_klass
+
     def initialize(attrs, klass, actions = nil, as_klass = nil)
       @attrs = attrs
       @klass = klass
@@ -11,7 +12,7 @@ module PubSubModelSync
     end
 
     def payload(model, action)
-      { data: payload_data(model), attrs: payload_attrs(model, action) }
+      PubSubModelSync::Payload.new(payload_data(model), payload_attrs(model, action))
     end
 
     private

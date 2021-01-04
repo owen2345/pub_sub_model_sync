@@ -8,14 +8,13 @@ end
 module PubSubModelSync
   class ServiceKafka < ServiceBase
     cattr_accessor :producer
-
-    attr_accessor :service, :consumer
-    attr_accessor :config
-    CONSUMER_GROUP = 'service_model_sync'
+    attr_accessor :config, :service, :consumer
 
     def initialize
       @config = PubSubModelSync::Config
-      @service = Kafka.new(*config.kafka_connection)
+      settings = config.kafka_connection
+      settings[1][:client_id] ||= config.subscription_key
+      @service = Kafka.new(*settings)
     end
 
     def listen_messages
@@ -23,19 +22,14 @@ module PubSubModelSync
       start_consumer
       consumer.each_message(&method(:process_message))
     rescue PubSubModelSync::Runner::ShutDown
-      raise
+      log('Listener stopped')
     rescue => e
       log("Error listening message: #{[e.message, e.backtrace]}", :error)
     end
 
-    def publish(data, attributes)
-      log("Publishing: #{[attributes, data]}")
-      payload = { data: data, attributes: attributes }
+    def publish(payload)
       producer.produce(payload.to_json, message_settings)
       producer.deliver_messages
-    rescue => e
-      info = [attributes, data, e.message, e.backtrace]
-      log("Error publishing: #{info}", :error)
     end
 
     def stop
@@ -50,7 +44,7 @@ module PubSubModelSync
     end
 
     def start_consumer
-      @consumer = service.consumer(group_id: CONSUMER_GROUP)
+      @consumer = service.consumer(group_id: config.subscription_key)
       consumer.subscribe(config.topic_name)
     end
 
@@ -64,14 +58,7 @@ module PubSubModelSync
     def process_message(message)
       return unless message.headers[SERVICE_KEY]
 
-      perform_message(message.value)
-    rescue => e
-      error = [message, e.message, e.backtrace]
-      log("Error processing message: #{error}", :error)
-    end
-
-    def log(msg, kind = :info)
-      config.log("Kafka Service ==> #{msg}", kind)
+      super(message.value)
     end
   end
 end

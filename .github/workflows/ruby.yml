@@ -42,9 +42,14 @@ jobs:
           gem install bundler -v "~> $bundler_v"
           bundle _${bundler_v}_ install --jobs 4 --retry 3
 
+#      remote ssh debugger
+#      - name: Setup tmate session (remote session debugger)
+#        uses: mxschmitt/action-tmate@v3
+
       - name: Tests (rspec)
         run: |
           bundle exec rspec
 
       - name: Code style (Rubocop)
         run: bundle exec rubocop
+        if: matrix.ruby == '2.6' && matrix.rails == '6'

@@ -8,7 +8,7 @@ def prepare_database!
   File.delete(db_path) if File.exist?(db_path)
 
   # ActiveRecord::Base.colorize_logging = false
-  ActiveRecord::Base.logger = Logger.new(STDERR)
+  ActiveRecord::Base.logger = Logger.new($stderr)
   ActiveRecord::Base.establish_connection(
     adapter: 'sqlite3',
     database: db

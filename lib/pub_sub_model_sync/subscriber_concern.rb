@@ -12,6 +12,10 @@ module PubSubModelSync
       changed?
     end
 
+    # permit to apply custom actions before applying sync
+    # @return (nil|:cancel): nil to continue sync OR :cancel to skip sync
+    def ps_before_save_sync(_payload); end
+
     module ClassMethods
       def ps_subscribe(attrs, actions: nil, from_klass: name, id: :id)
         settings = { id: id, from_klass: from_klass }

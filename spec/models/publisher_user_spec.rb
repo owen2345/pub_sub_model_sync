@@ -61,20 +61,20 @@ RSpec.describe PublisherUser do
     describe 'publish only specified attrs' do
       let(:model) { PublisherUser2.create(name: 'name') }
       after { model.update(name: 'changed name') }
-      it 'model attributes (PublisherUser2 limited to name, custom_name)' do
+      it 'publishes model attributes' do
         expected_data = hash_including(:name)
         expected_attrs = hash_including(action: :update)
-        expect_publish([expected_data, expected_attrs])
+        expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
       end
-      it 'ability to use methods as attributes' do
+      it 'supports ability to use methods as attributes' do
         expected_data = hash_including(:custom_name)
         expected_attrs = hash_including(action: :update)
-        expect_publish([expected_data, expected_attrs])
+        expect_publish(have_attributes(data: expected_data, attributes: expected_attrs))
       end
     end
 
     describe 'limit actions (PublisherUser2 is :update only)' do
-      it 'when update, then publish message' do
+      it 'publishes update event' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, :update, anything]
@@ -82,18 +82,32 @@ RSpec.describe PublisherUser do
         model.save!
       end
 
-      it 'when create, then do not publish' do
+      it 'does not publish create event' do
         model = PublisherUser2.new(name: 'name')
         args = [anything, 'create']
         expect_no_publish_model(args)
         model.save!
       end
     end
+
+    describe 'when publisher is disabled' do
+      it 'does not publish if disabled' do
+        allow(PubSubModelSync::Config.disabled_callback_publisher).to receive(:call) { true }
+        expect(publisher_klass).not_to receive(:publish_model)
+        PublisherUser.create(name: 'name')
+      end
+
+      it 'publishes if not disabled' do
+        allow(PubSubModelSync::Config.disabled_callback_publisher).to receive(:call) { false }
+        expect(publisher_klass).to receive(:publish_model)
+        PublisherUser.create(name: 'name')
+      end
+    end
   end
 
   describe 'methods' do
     describe '#ps_skip_callback?' do
-      it 'cancel push notification' do
+      it 'cancels push notification' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
         args = [anything, 'update']
@@ -105,29 +119,28 @@ RSpec.describe PublisherUser do
 
     describe '.ps_perform_sync' do
       let(:model) { PublisherUser.new(name: 'name') }
-      it 'perform manual create sync' do
+      let(:attrs) { %i[name] }
+      it 'performs manual create sync' do
         action = :create
         args = [model, action, anything]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
-      it 'manual perform update sync' do
+      it 'performs manual update sync' do
         action = :update
         args = [model, action, anything]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
-      it 'perform with custom settings' do
-        attrs = %i[name]
+      it 'performs with custom settings' do
         args = [model, anything, have_attributes(attrs: attrs)]
         expect_publish_model(args)
         model.ps_perform_sync(:create, attrs: attrs)
       end
 
-      it 'perform with custom publisher' do
-        attrs = %i[name]
+      it 'performs with custom publisher' do
         klass = PubSubModelSync::MessagePublisher
         publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
         exp_args = [anything, anything, publisher]

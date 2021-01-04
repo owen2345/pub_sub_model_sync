@@ -1,14 +1,16 @@
 # frozen_string_literal: true
 
+require 'pub_sub_model_sync/payload'
 module PubSubModelSync
-  class ServiceBase
+  class ServiceBase < PubSubModelSync::Base
     SERVICE_KEY = 'service_model_sync'
 
     def listen_messages
       raise 'method :listen_messages must be defined in service'
     end
 
-    def publish(_data, _attributes)
+    # @param _payload (Payload)
+    def publish(_payload)
       raise 'method :publish must be defined in service'
     end
 
@@ -18,19 +20,29 @@ module PubSubModelSync
 
     private
 
-    # @param payload (String JSON): '{"data":{}, "attributes":{..}}'
-    #   refer: PubSubModelSync::MessagePublisher(.publish_model | .publish_data)
-    def perform_message(payload)
-      data, attrs = parse_message_payload(payload)
-      args = [data, attrs[:klass], attrs[:action]]
-      PubSubModelSync::MessageProcessor.new(*args).process
+    # @param (String: Payload in json format)
+    def process_message(payload_info)
+      payload = parse_payload(payload_info)
+      log("Received message: #{[payload]}") if config.debug
+      if same_app_message?(payload)
+        log("Skip message from same origin: #{[payload]}") if config.debug
+      else
+        payload.process!
+      end
+    rescue => e
+      error = [payload, e.message, e.backtrace]
+      log("Error parsing received message: #{error}", :error)
     end
 
-    def parse_message_payload(payload)
-      message_payload = JSON.parse(payload).symbolize_keys
-      data = message_payload[:data].symbolize_keys
-      attrs = message_payload[:attributes].symbolize_keys
-      [data, attrs]
+    def parse_payload(payload_info)
+      info = JSON.parse(payload_info).deep_symbolize_keys
+      ::PubSubModelSync::Payload.new(info[:data], info[:attributes], info[:headers])
+    end
+
+    # @param payload (Payload)
+    def same_app_message?(payload)
+      key = payload.headers[:app_key]
+      key && key == config.subscription_key
     end
   end
 end

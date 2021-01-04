@@ -28,10 +28,9 @@ And then execute: $ bundle install
     ```ruby
     # initializers/pub_sub_config.rb
     PubSubModelSync::Config.service_name = :google 
-    PubSubModelSync::Config.project = 'project-id'
+    PubSubModelSync::Config.project = 'google-project-id'
     PubSubModelSync::Config.credentials = 'path-to-the-config'
     PubSubModelSync::Config.topic_name = 'sample-topic'
-    PubSubModelSync::Config.subscription_name = 'p1-subscriber'
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
@@ -40,7 +39,7 @@ And then execute: $ bundle install
     ```ruby
     PubSubModelSync::Config.service_name = :rabbitmq
     PubSubModelSync::Config.bunny_connection = 'amqp://guest:guest@localhost'
-    PubSubModelSync::Config.queue_name = ''
+    PubSubModelSync::Config.queue_name = 'model-sync'
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
     See details here: https://github.com/ruby-amqp/bunny
@@ -48,7 +47,7 @@ And then execute: $ bundle install
 - configuration for Apache Kafka (You need kafka installed)
     ```ruby
     PubSubModelSync::Config.service_name = :kafka
-    PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "localhost:2121"], logger: Rails.logger]
+    PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "localhost:2121"], { logger: Rails.logger }]
     PubSubModelSync::Config.topic_name = 'sample-topic'
     ```
     See details here: https://github.com/zendesk/ruby-kafka    
@@ -59,7 +58,13 @@ And then execute: $ bundle install
     ```ruby
     rake pub_sub_model_sync:start
     ```
-    Note: Publishers do not need todo this
+    Note: Publishers do not need todo this    
+    Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing outside ```rake pub_sub_model_sync:start```
+    ```ruby 
+      # PubSubModelSync::Config.subscribers ==> []
+      Rails.application.try(:eager_load!)
+      # PubSubModelSync::Config.subscribers ==> [#<PubSubModelSync::Subscriber:0x000.. @klass="Article", @action=:create..., ....]
+    ``` 
 
 - Check the service status with:    
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
@@ -163,6 +168,9 @@ Note: Be careful with collision of names
   ```.ps_subscriber_changed?(data)```    
   By default: ```model.changed?```
 
+- Permit to perform custom actions before saving sync of the model (:cancel can be returned to skip sync)   
+  ```.ps_before_save_sync(payload)```    
+
 ### Publishers
 - Permit to configure crud publishers
   ```ps_publish(attrs, actions: nil, as_klass: nil)```
@@ -198,11 +206,11 @@ Note: Be careful with collision of names
   * action_name: (required, :sim) Action name    
   * as_klass: (optional, :string) Custom class name (Default current model name)
       
-- Publish a class level notification (Same as above: on demand call)    
-  ```PubSubModelSync::MessagePublisher.publish_data(Klass_name, data, action_name)```  
-  * klass_name: (required, Class) same class name as defined in ps_class_subscribe(...)
-  * data: (required, :hash) message value to deliver    
-  * action_name: (required, :sim) same action name as defined in ps_class_subscribe(...)
+- Publish a class level notification (Same as above: manual call)    
+  ```ruby
+    payload = PubSubModelSync::Payload.new({ title: 'hello' }, { action: :greeting, klass: 'User' })
+    payload.publish!
+  ```
   
 - Get crud publisher configured for the class   
   ```User.ps_publisher(action_name)```  
@@ -238,27 +246,23 @@ Note: Be careful with collision of names
     ```ruby
     # Subscriber
     it 'receive model message' do
-      action = :create
       data = { name: 'name', id: 999 }
-      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
-      publisher.process
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
+      payload.process!
       expect(User.where(id: data[:id]).any?).to be_truth
     end
       
     it 'receive class message' do
-      action = :greeting
       data = { msg: 'hello' }
-      publisher = PubSubModelSync::MessageProcessor.new(data, 'User', action)
-      publisher.process
+      action = :greeting
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action })
+      payload.process!
       expect(User).to receive(action)
     end
   
     # Publisher
     it 'publish model action' do
       publisher = PubSubModelSync::MessagePublisher  
-      data = { name: 'hello'}
-      action = :create
-      User.ps_class_publish(data, action: action)
       user = User.create(name: 'name', email: 'email')
       expect(publisher).to receive(:publish_model).with(user, :create, anything)
     end
@@ -272,11 +276,38 @@ Note: Be careful with collision of names
     end
     ```
 
+## Extra configurations
+```ruby
+config = PubSubModelSync::Config
+config.debug = true
+```
+
+- ```.subscription_name = 'app-2'```    
+    Permit to define a custom consumer identifier (Default: Rails application name)
+- ```.debug = true```    
+    (true/false*) => show advanced log messages
+- ```.logger = Rails.logger```   
+    (Logger) => define custom logger
+- ```.disabled_callback_publisher = ->(_model, _action) { false }```   
+    (true/false*) => if true, does not listen model callbacks for auto sync (Create/Update/Destroy) 
+- ```.on_before_processing = ->(payload, subscriber) { puts payload }```    
+    (Proc) => called before processing received message (:cancel can be returned to skip processing)   
+- ```.on_success_processing = ->(payload, subscriber) { puts payload }```    
+    (Proc) => called when a message was successfully processed
+- ```.on_error_processing = ->(exception, payload) { sleep 1; payload.process! }```    
+    (Proc) => called when a message failed when processing
+- ```.on_before_publish = ->(payload) { puts payload }```    
+    (Proc) => called before publishing a message (:cancel can be returned to skip publishing)    
+- ```.on_after_publish = ->(payload) { puts payload }```    
+    (Proc) => called after publishing a message
+- ```.on_error_publish = ->(exception, payload) { sleep 1; payload.publish! }```    
+    (Proc) => called when failed publishing a message
+    
 ## TODO
-- Hooks/callbacks when message processed or failed
 - Add alias attributes when subscribing (similar to publisher)
 - Add flag ```model.ps_processing``` to indicate that the current transaction is being processed by pub/sub
- 
+- Auto publish update only if payload has changed
+- On delete, payload must only be composed by ids 
 
 ## Contributing
 

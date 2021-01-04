@@ -1,7 +1,7 @@
 # This is the configuration used to check the rubocop source code.
 
 AllCops:
-  TargetRubyVersion: 2.4
+  TargetRubyVersion: 2.6
   Exclude:
     - 'spec/spec_helper.rb'
     - 'Gemfile'
@@ -13,11 +13,14 @@ Metrics/BlockLength:
     - 'spec/**/*.rb'
 
 Layout/LineLength:
-  Max: 80
+  Max: 120
 
 Style/SymbolArray:
   Exclude:
     - 'Gemfile'
+
+Lint/MissingSuper:
+  Enabled: false
 
 Style/Documentation:
   Enabled: false

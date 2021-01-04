@@ -1,6 +1,32 @@
 # Change Log
 
-# 0.4.2.2 (November 29, 2020)
+# 0.5.3 (December 30, 2020)
+- fix: kafka consume all messages from different apps
+- style: use the correct consumer key
+
+# 0.5.2 (December 30, 2020)
+- fix: rabbitmq deliver messages to all subscribers
+- fix: rabbitmq persist messages to recover after restarting
+
+# 0.5.1.1 (December 29, 2020)
+- Hotfix: auto convert class name into string
+
+# 0.5.1 (December 24, 2020)
+- feat: rename publisher callbacks to be more understandable
+- feat: add callbacks to listen when processing a message (before saving sync)
+
+# 0.5.0.1 (December 22, 2020)
+- fix: add missing rabbit mock method
+
+# 0.5.0 (December 22, 2020)
+- feat: add :publish! and :process! methods to payloads
+- feat: add ability to disable publisher globally
+- fix: skip notifications from the same application
+- fix: rabbitmq use fanout instead of queue to deliver messages to multiple apps
+- refactor: include payload object to carry message info
+- feat: include notification events (when publishing and when processing messages)
+
+# 0.4.2.2 (November 29, 2020, deleted cause of typo)
 - feat: rabbitMQ skip receiving messages from the same app
 - feat: rabbitmq use fanout instead of queue to deliver messages to multiple apps
  

@@ -2,6 +2,7 @@
 
 RSpec.describe PubSubModelSync::Subscriber do
   let(:message) { { name: 'sample name', email: 'sample email', age: '10' } }
+  let(:payload) { PubSubModelSync::Payload.new(message, {}) }
   describe 'class message' do
     let(:action) { :action_name }
     let(:model_klass) { SubscriberUser }
@@ -10,10 +11,10 @@ RSpec.describe PubSubModelSync::Subscriber do
       described_class.new(model_klass.name, action, settings: settings)
     end
 
-    it 'call action' do
+    it 'calls received action' do
       model_klass.create_class_method(action) do
         expect(model_klass).to receive(action).with(message)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
     end
   end
@@ -29,9 +30,9 @@ RSpec.describe PubSubModelSync::Subscriber do
     end
 
     describe 'call action' do
-      it 'when create' do
+      it 'calls :save! method when received :create action' do
         expect_any_instance_of(model_klass).to receive(:save!)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
       describe 'when update' do
         let(:action) { :update }
@@ -40,7 +41,7 @@ RSpec.describe PubSubModelSync::Subscriber do
           inst.action = action
           allow(inst).to receive(:find_model).and_return(model)
         end
-        after { inst.eval_message(message) }
+        after { inst.process!(payload) }
 
         it 'updates with received data' do
           message[:name] = 'Changed Name'
@@ -54,58 +55,66 @@ RSpec.describe PubSubModelSync::Subscriber do
         end
       end
 
-      it 'when destroy' do
+      it 'calls :destroy when destroy action received' do
         action = :destroy
         inst.action = action
         expect_any_instance_of(model_klass).to receive(:destroy!)
-        inst.eval_message(message)
+        inst.process!(payload)
+      end
+
+      it 'does not call action when :ps_before_save_sync returns :cancel' do
+        action = :destroy
+        inst.action = action
+        allow_any_instance_of(model_klass).to receive(:ps_before_save_sync) { :cancel }
+        expect_any_instance_of(model_klass).not_to receive(:destroy!)
+        inst.process!(payload)
       end
     end
 
     describe 'find model' do
-      it 'custom finder' do
+      it 'supports for custom finder' do
         model = model_klass.new
         model_klass.create_class_method(:ps_find_model) do
           expect(model_klass).to receive(:ps_find_model).with(message) { model }
-          inst.eval_message(message)
+          inst.process!(payload)
         end
       end
 
-      it 'find by custom attr' do
+      it 'supports for custom identifier' do
         model = model_klass.create(message)
         inst.settings[:id] = :name
         allow(model_klass).to receive(:where).and_call_original
         expect(model_klass).to receive(:where).with(name: model.name)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
 
-      it 'find by multiple attribute' do
+      it 'supports for multiple identifiers' do
         model = model_klass.create(message)
         inst.settings[:id] = %i[name email]
         allow(model_klass).to receive(:where).and_call_original
         args = { name: model.name, email: model.email }
         expect(model_klass).to receive(:where).with(args)
-        inst.eval_message(message)
+        inst.process!(payload)
       end
     end
 
     describe 'populate model' do
-      it 'all permitted attrs' do
+      it 'extracts all permitted attrs' do
         model = model_klass.create(name: 'original name')
         allow(inst).to receive(:find_model) { model }
         inst.attrs = %i[name email]
-        inst.eval_message(message)
+        inst.process!(payload)
         inst.attrs.each do |attr|
           expect(model.send(attr)).to eq message[attr]
         end
       end
 
-      it 'do not touch not permitted attrs' do
+      it 'does not touch not permitted attrs' do
         original_name = 'original name'
         model = model_klass.create(name: original_name)
         allow(inst).to receive(:find_model) { model }
         inst.attrs = %i[email]
-        inst.eval_message(message)
+        inst.process!(payload)
         expect(model.name).to eq original_name
       end
     end
