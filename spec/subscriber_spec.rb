@@ -82,7 +82,7 @@ RSpec.describe PubSubModelSync::Subscriber do
 
       it 'supports for custom identifier' do
         model = model_klass.create(message)
-        inst.settings[:id] = :name
+        inst.identifiers = %i[name]
         allow(model_klass).to receive(:where).and_call_original
         expect(model_klass).to receive(:where).with(name: model.name)
         inst.process!(payload)
@@ -90,7 +90,7 @@ RSpec.describe PubSubModelSync::Subscriber do
 
       it 'supports for multiple identifiers' do
         model = model_klass.create(message)
-        inst.settings[:id] = %i[name email]
+        inst.identifiers = %i[name email]
         allow(model_klass).to receive(:where).and_call_original
         args = { name: model.name, email: model.email }
         expect(model_klass).to receive(:where).with(args)
