@@ -312,6 +312,11 @@ config.debug = true
 - Auto publish update only if payload has changed
 - On delete, payload must only be composed by ids 
 
+## Q&A
+- Error "could not obtain a connection from the pool within 5.000 seconds"    
+  This problem occurs because pub/sub dependencies (kafka, google-pubsub, rabbitmq) use many threads to perform notifications where the qty of threads is greater than qty of DB pools ([Google pubsub info](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-pubsub/lib/google/cloud/pubsub/subscription.rb#L888))     
+  To fix the problem, edit config/database.yml and increase the quantity of ```pool: 15```    
+
 ## Contributing
 
 Bug reports and pull requests are welcome on GitHub at https://github.com/owen2345/pub_sub_model_sync. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
