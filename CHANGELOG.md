@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.4.1 (January 8, 2021)
+- fix: make sequential message processor google-pub/sub
+
 # 0.5.4 (January 8, 2021)
 - fix: exclude identifiers when syncing model
 - feat: callbacks support for future extra params

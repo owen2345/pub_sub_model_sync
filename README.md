@@ -315,7 +315,10 @@ config.debug = true
 ## Q&A
 - Error "could not obtain a connection from the pool within 5.000 seconds"    
   This problem occurs because pub/sub dependencies (kafka, google-pubsub, rabbitmq) use many threads to perform notifications where the qty of threads is greater than qty of DB pools ([Google pubsub info](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-pubsub/lib/google/cloud/pubsub/subscription.rb#L888))     
-  To fix the problem, edit config/database.yml and increase the quantity of ```pool: 15```    
+  To fix the problem, edit config/database.yml and increase the quantity of ```pool: 10```
+- Google pubsub: How to process notifications parallely and not sequentially (default 1 thread)?    
+  ```ruby  PubSubModelSync::ServiceGoogle::LISTEN_SETTINGS = { threads: { callback: qty_threads } } ```    
+  Note: by this way some notifications can be processed before others thus missing relationship errors can appear 
 
 ## Contributing
 

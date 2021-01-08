@@ -7,6 +7,7 @@ end
 
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
+    LISTEN_SETTINGS = { threads: { callback: 1 } }.freeze
     attr_accessor :service, :topic, :subscription, :subscriber
 
     def initialize
