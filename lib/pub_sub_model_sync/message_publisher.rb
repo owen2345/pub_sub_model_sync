@@ -44,7 +44,7 @@ module PubSubModelSync
 
       def notify_error(exception, payload)
         info = [payload, exception.message, exception.backtrace]
-        res = config.on_error_publish.call(exception, payload)
+        res = config.on_error_publish.call(exception, { payload: payload })
         log("Error publishing: #{info}", :error) if res != :skip_log
       end
     end

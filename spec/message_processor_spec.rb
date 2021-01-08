@@ -68,12 +68,12 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       after { inst.process }
 
       it 'notifies #on_before_processing hook before processing' do
-        args = [payload, be_kind_of(PubSubModelSync::Subscriber)]
+        args = [payload, hash_including(subscriber: be_kind_of(PubSubModelSync::Subscriber))]
         expect(inst.config.on_before_processing).to receive(:call).with(*args)
       end
 
       it 'notifies #on_success_processing hook when success' do
-        args = [payload, be_kind_of(PubSubModelSync::Subscriber)]
+        args = [payload, hash_including(subscriber: be_kind_of(PubSubModelSync::Subscriber))]
         expect(inst.config.on_success_processing).to receive(:call).with(*args)
       end
 
@@ -83,7 +83,8 @@ RSpec.describe PubSubModelSync::MessageProcessor do
           allow(inst.config).to receive(:log)
         end
         it 'notifies #on_error_processing hook when failed' do
-          expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), payload)
+          exp_info = hash_including(payload: payload)
+          expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), exp_info)
         end
         it 'skips error logs when #on_error_processing returns :skip_log' do
           allow(inst.config.on_error_processing).to receive(:call).and_return(:skip_log)

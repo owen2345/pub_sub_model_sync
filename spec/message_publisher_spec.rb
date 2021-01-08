@@ -95,7 +95,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
     describe 'when failed sending message' do
       before { allow(connector).to receive(:publish).and_raise('Error sending msg') }
       it 'notifies #on_error_publish when error publishing' do
-        args = [be_kind_of(StandardError), be_kind_of(payload_klass)]
+        args = [be_kind_of(StandardError), hash_including(payload: be_kind_of(payload_klass))]
         expect(config.on_error_publish).to receive(:call).with(*args)
         inst.publish_data(publisher_klass, {}, action)
       end

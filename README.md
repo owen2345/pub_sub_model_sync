@@ -293,17 +293,17 @@ config.debug = true
     (Logger) => define custom logger
 - ```.disabled_callback_publisher = ->(_model, _action) { false }```   
     (true/false*) => if true, does not listen model callbacks for auto sync (Create/Update/Destroy) 
-- ```.on_before_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_before_processing = ->(payload, {subscriber:}) { puts payload }```    
     (Proc) => called before processing received message (:cancel can be returned to skip processing)   
-- ```.on_success_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_success_processing = ->(payload, {subscriber:}) { puts payload }```    
     (Proc) => called when a message was successfully processed
-- ```.on_error_processing = ->(exception, payload) { payload.delay(...).process! }```    
+- ```.on_error_processing = ->(exception, {payload:, subscriber:}) { payload.delay(...).process! }```    
     (Proc) => called when a message failed when processing (delayed_job or similar can be used for retrying)
 - ```.on_before_publish = ->(payload) { puts payload }```    
     (Proc) => called before publishing a message (:cancel can be returned to skip publishing)    
 - ```.on_after_publish = ->(payload) { puts payload }```    
     (Proc) => called after publishing a message
-- ```.on_error_publish = ->(exception, payload) { payload.delay(...).publish! }```    
+- ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```    
     (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
     
 ## TODO
