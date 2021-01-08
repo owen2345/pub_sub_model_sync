@@ -20,7 +20,7 @@ module PubSubModelSync
     def listen_messages
       log('Listener starting...')
       start_consumer
-      consumer.each_message(&method(:process_message))
+      consumer.each_message(LISTEN_SETTINGS, &method(:process_message))
     rescue PubSubModelSync::Runner::ShutDown
       log('Listener stopped')
     rescue => e
@@ -28,7 +28,11 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      producer.produce(payload.to_json, message_settings)
+      settings = {
+        topic: config.topic_name,
+        headers: { SERVICE_KEY => true }
+      }.merge(PUBLISH_SETTINGS)
+      producer.produce(payload.to_json, settings)
       producer.deliver_messages
     end
 
@@ -38,10 +42,6 @@ module PubSubModelSync
     end
 
     private
-
-    def message_settings
-      { topic: config.topic_name, headers: { SERVICE_KEY => true } }
-    end
 
     def start_consumer
       @consumer = service.consumer(group_id: config.subscription_key)

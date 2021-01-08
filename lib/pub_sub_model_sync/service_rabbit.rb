@@ -51,7 +51,7 @@ module PubSubModelSync
         routing_key: queue.name,
         type: SERVICE_KEY,
         persistent: true
-      }
+      }.merge(PUBLISH_SETTINGS)
     end
 
     def queue_settings
@@ -59,7 +59,7 @@ module PubSubModelSync
     end
 
     def subscribe_settings
-      { manual_ack: false }
+      { manual_ack: false }.merge(LISTEN_SETTINGS)
     end
 
     def process_message(_delivery_info, meta_info, payload)
