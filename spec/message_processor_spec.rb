@@ -41,6 +41,15 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       end
     end
 
+    it 'retries 2 times if error "could not obtain a database connection ..."' do
+      times = 2
+      stub_subscriber(subscriber) do
+        allow(subscriber).to receive(:process!).and_raise(ActiveRecord::ConnectionTimeoutError)
+        expect(subscriber).to receive(:process!).exactly(times + 1).times
+        suppress(Exception) { inst.process }
+      end
+    end
+
     it 'does not process if returns :cancel from :on_before_processing' do
       allow(inst.config.on_before_processing).to receive(:call).and_return(:cancel)
       stub_subscriber(subscriber) do

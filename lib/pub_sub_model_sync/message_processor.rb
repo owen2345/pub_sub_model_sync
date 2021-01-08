@@ -24,9 +24,11 @@ module PubSubModelSync
     def run_subscriber(subscriber)
       return unless processable?(subscriber)
 
-      subscriber.process!(payload)
-      res = config.on_success_processing.call(payload, subscriber)
-      log "processed message with: #{payload.inspect}" if res != :skip_log
+      retry_error(ActiveRecord::ConnectionTimeoutError, qty: 2) do
+        subscriber.process!(payload)
+        res = config.on_success_processing.call(payload, subscriber)
+        log "processed message with: #{payload.inspect}" if res != :skip_log
+      end
     rescue => e
       print_subscriber_error(e)
     end
