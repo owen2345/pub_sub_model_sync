@@ -10,12 +10,12 @@ module PubSubModelSync
     cattr_accessor(:debug) { false }
     cattr_accessor :logger # LoggerInst
 
-    cattr_accessor(:on_before_processing) { ->(_payload, _subscriber) {} } # return :cancel to skip
-    cattr_accessor(:on_success_processing) { ->(_payload, _subscriber) {} }
-    cattr_accessor(:on_error_processing) { ->(_exception, _payload) {} }
+    cattr_accessor(:on_before_processing) { ->(_payload, _info) {} } # return :cancel to skip
+    cattr_accessor(:on_success_processing) { ->(_payload, _info) {} }
+    cattr_accessor(:on_error_processing) { ->(_exception, _info) {} }
     cattr_accessor(:on_before_publish) { ->(_payload) {} } # return :cancel to skip
     cattr_accessor(:on_after_publish) { ->(_payload) {} }
-    cattr_accessor(:on_error_publish) { ->(_exception, _payload) {} }
+    cattr_accessor(:on_error_publish) { ->(_exception, _info) {} }
     cattr_accessor(:disabled_callback_publisher) { ->(_model, _action) { false } }
 
     # google service

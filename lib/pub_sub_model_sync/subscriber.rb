@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class Subscriber
-    attr_accessor :klass, :action, :attrs, :settings
+    attr_accessor :klass, :action, :attrs, :settings, :identifiers
     attr_reader :payload
 
     # @param settings: (Hash) { id: :id, direct_mode: false,
@@ -14,6 +14,7 @@ module PubSubModelSync
       @action = action
       @attrs = attrs
       @settings = def_settings.merge(settings)
+      @identifiers = Array(settings[:id]).map(&:to_sym)
     end
 
     def process!(payload)
@@ -55,12 +56,11 @@ module PubSubModelSync
     end
 
     def model_identifiers
-      identifiers = Array(settings[:id])
       identifiers.map { |key| [key, payload.data[key.to_sym]] }.to_h
     end
 
     def populate_model(model)
-      values = payload.data.slice(*attrs)
+      values = payload.data.slice(*attrs).except(*identifiers)
       values.each do |attr, value|
         model.send("#{attr}=", value)
       end

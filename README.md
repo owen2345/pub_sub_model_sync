@@ -206,10 +206,13 @@ Note: Be careful with collision of names
   * action_name: (required, :sim) Action name    
   * as_klass: (optional, :string) Custom class name (Default current model name)
       
-- Publish a class level notification (Same as above: manual call)    
+- Payload actions  
   ```ruby
     payload = PubSubModelSync::Payload.new({ title: 'hello' }, { action: :greeting, klass: 'User' })
-    payload.publish!
+    payload.publish! # publishes notification data. It raises exception if fails and does not call ```:on_error_publishing``` callback
+    payload.publish # publishes notification data. On error does not raise exception but calls ```:on_error_publishing``` callback
+    payload.process! # process a notification data. It raises exception if fails and does not call ```.on_error_processing``` callback
+    payload.publish # process a notification data. It does not raise exception if fails but calls ```.on_error_processing``` callback
   ```
   
 - Get crud publisher configured for the class   
@@ -290,18 +293,18 @@ config.debug = true
     (Logger) => define custom logger
 - ```.disabled_callback_publisher = ->(_model, _action) { false }```   
     (true/false*) => if true, does not listen model callbacks for auto sync (Create/Update/Destroy) 
-- ```.on_before_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_before_processing = ->(payload, {subscriber:}) { puts payload }```    
     (Proc) => called before processing received message (:cancel can be returned to skip processing)   
-- ```.on_success_processing = ->(payload, subscriber) { puts payload }```    
+- ```.on_success_processing = ->(payload, {subscriber:}) { puts payload }```    
     (Proc) => called when a message was successfully processed
-- ```.on_error_processing = ->(exception, payload) { sleep 1; payload.process! }```    
-    (Proc) => called when a message failed when processing
+- ```.on_error_processing = ->(exception, {payload:, subscriber:}) { payload.delay(...).process! }```    
+    (Proc) => called when a message failed when processing (delayed_job or similar can be used for retrying)
 - ```.on_before_publish = ->(payload) { puts payload }```    
     (Proc) => called before publishing a message (:cancel can be returned to skip publishing)    
 - ```.on_after_publish = ->(payload) { puts payload }```    
     (Proc) => called after publishing a message
-- ```.on_error_publish = ->(exception, payload) { sleep 1; payload.publish! }```    
-    (Proc) => called when failed publishing a message
+- ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```    
+    (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
     
 ## TODO
 - Add alias attributes when subscribing (similar to publisher)

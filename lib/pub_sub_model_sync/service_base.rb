@@ -4,6 +4,8 @@ require 'pub_sub_model_sync/payload'
 module PubSubModelSync
   class ServiceBase < PubSubModelSync::Base
     SERVICE_KEY = 'service_model_sync'
+    PUBLISH_SETTINGS = {}.freeze
+    LISTEN_SETTINGS = {}.freeze
 
     def listen_messages
       raise 'method :listen_messages must be defined in service'

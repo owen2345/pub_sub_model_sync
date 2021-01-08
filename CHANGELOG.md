@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.5.4 (January 8, 2021)
+- fix: exclude identifiers when syncing model
+- feat: callbacks support for future extra params
+- feat: make connectors configurable
+- feat: add :process! and :process, :publish!, :publish methods to payload
+- feat: auto retry 2 times when "could not obtain a database connection within 5.000 seconds..." error occurs
+
 # 0.5.3 (December 30, 2020)
 - fix: kafka consume all messages from different apps
 - style: use the correct consumer key

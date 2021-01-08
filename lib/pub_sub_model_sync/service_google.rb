@@ -18,7 +18,7 @@ module PubSubModelSync
 
     def listen_messages
       @subscription = subscribe_to_topic
-      @subscriber = subscription.listen(&method(:process_message))
+      @subscriber = subscription.listen(LISTEN_SETTINGS, &method(:process_message))
       log('Listener starting...')
       subscriber.start
       log('Listener started')
@@ -28,7 +28,7 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      topic.publish(payload.to_json, { SERVICE_KEY => true })
+      topic.publish(payload.to_json, { SERVICE_KEY => true }.merge(PUBLISH_SETTINGS))
     end
 
     def stop
