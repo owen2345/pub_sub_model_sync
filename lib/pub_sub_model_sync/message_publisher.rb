@@ -27,7 +27,7 @@ module PubSubModelSync
         model.ps_after_sync(action, payload.data)
       end
 
-      def publish(payload)
+      def publish(payload, raise_error: false)
         if config.on_before_publish.call(payload) == :cancel
           log("Publish message cancelled: #{payload}") if config.debug
           return
@@ -37,7 +37,7 @@ module PubSubModelSync
         connector.publish(payload)
         config.on_after_publish.call(payload)
       rescue => e
-        notify_error(e, payload)
+        raise_error ? raise : notify_error(e, payload)
       end
 
       private

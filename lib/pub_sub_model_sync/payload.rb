@@ -26,11 +26,23 @@ module PubSubModelSync
     end
 
     def process!
+      process do |publisher|
+        publisher.raise_error = true
+      end
+    end
+
+    def process
       publisher = PubSubModelSync::MessageProcessor.new(self)
+      yield(publisher) if block_given?
       publisher.process
     end
 
     def publish!
+      klass = PubSubModelSync::MessagePublisher
+      klass.publish(self, raise_error: true)
+    end
+
+    def publish
       klass = PubSubModelSync::MessagePublisher
       klass.publish(self)
     end

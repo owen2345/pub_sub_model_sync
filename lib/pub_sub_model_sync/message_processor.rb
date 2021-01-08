@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class MessageProcessor < PubSubModelSync::Base
-    attr_accessor :payload
+    attr_accessor :payload, :raise_error
 
     # @param payload (Payload): payload to be delivered
     # @Deprecated: def initialize(data, klass, action)
@@ -30,7 +30,7 @@ module PubSubModelSync
         log "processed message with: #{payload.inspect}" if res != :skip_log
       end
     rescue => e
-      print_subscriber_error(e)
+      raise_error ? raise : print_subscriber_error(e)
     end
 
     def processable?(subscriber)
