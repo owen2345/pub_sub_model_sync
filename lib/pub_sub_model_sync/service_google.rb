@@ -8,6 +8,7 @@ end
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
     LISTEN_SETTINGS = { threads: { callback: 1 } }.freeze
+    SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
     attr_accessor :service, :topic, :subscription, :subscriber
 
     def initialize
@@ -41,7 +42,7 @@ module PubSubModelSync
 
     def subscribe_to_topic
       topic.subscription(config.subscription_key) ||
-        topic.subscribe(config.subscription_key)
+        topic.subscribe(config.subscription_key, SUBSCRIPTION_SETTINGS)
     end
 
     def process_message(received_message)

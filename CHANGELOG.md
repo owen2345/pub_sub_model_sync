@@ -1,7 +1,10 @@
 # Change Log
 
+# 0.5.5 (January 11, 2021)
+- feat: google-pub/sub receive messages in the same order they were delivered
+
 # 0.5.4.1 (January 8, 2021)
-- fix: make sequential message processor google-pub/sub
+- fix: google-pub/sub receive messages sequentially and not in parallel (default 5 threads).
 
 # 0.5.4 (January 8, 2021)
 - fix: exclude identifiers when syncing model

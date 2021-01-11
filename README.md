@@ -310,7 +310,8 @@ config.debug = true
 - Add alias attributes when subscribing (similar to publisher)
 - Add flag ```model.ps_processing``` to indicate that the current transaction is being processed by pub/sub
 - Auto publish update only if payload has changed
-- On delete, payload must only be composed by ids 
+- On delete, payload must only be composed by ids
+- Change notifications into messages 
 
 ## Q&A
 - Error "could not obtain a connection from the pool within 5.000 seconds"    
