@@ -2,7 +2,8 @@
 
 RSpec.describe PubSubModelSync::Subscriber do
   let(:message) { { name: 'sample name', email: 'sample email', age: '10' } }
-  let(:payload) { PubSubModelSync::Payload.new(message, {}) }
+  let(:payload_attrs) { { klass: 'Tester', action: :test } }
+  let(:payload) { PubSubModelSync::Payload.new(message, payload_attrs) }
   describe 'class message' do
     let(:action) { :action_name }
     let(:model_klass) { SubscriberUser }

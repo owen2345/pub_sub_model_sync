@@ -22,6 +22,18 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h[:headers][:uuid].present?).to be_truthy
   end
 
+  it 'validates for required info' do
+    attrs_without_klass = { action: :test }
+    expect { described_class.new({}, attrs_without_klass) }
+      .to raise_error(PubSubModelSync::Payload::MissingInfo)
+  end
+
+  it 'rebuilds from payload data' do
+    payload_data = { data: {}, attributes: { klass: 'Tester', action: :test }, headers: {} }
+    res = described_class.from_payload_data(payload_data)
+    expect(res).to be_kind_of(described_class)
+  end
+
   describe 'when success process / publish' do
     describe '#process!' do
       it 'does process the payload' do

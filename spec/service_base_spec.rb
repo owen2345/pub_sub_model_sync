@@ -2,7 +2,8 @@
 
 RSpec.describe PubSubModelSync::ServiceBase do
   let(:inst) { described_class.new }
-  let(:payload) { PubSubModelSync::Payload.new({}, {}) }
+  let(:payload_attrs) { { klass: 'Tester', action: :test } }
+  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
   let(:config) { PubSubModelSync::Config }
 
   describe 'when processing message' do

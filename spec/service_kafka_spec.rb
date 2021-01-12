@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::ServiceKafka do
-  let(:payload) { PubSubModelSync::Payload.new({}, {}) }
+  let(:payload_attrs) { { klass: 'Tester', action: :test } }
+  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
   let(:message) do
     OpenStruct.new(value: payload.to_json,
                    headers: { 'service_model_sync' => true })

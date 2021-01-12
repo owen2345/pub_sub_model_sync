@@ -2,6 +2,7 @@
 
 module PubSubModelSync
   class Payload
+    class MissingInfo < StandardError; end
     attr_reader :data, :attributes, :headers
 
     # @param data (Hash: { any value }):
@@ -11,8 +12,10 @@ module PubSubModelSync
       @attributes = attributes
       @headers = headers
       build_headers
+      validate!
     end
 
+    # @return Hash: payload data
     def to_h
       { data: data, attributes: attributes, headers: headers }
     end
@@ -25,26 +28,41 @@ module PubSubModelSync
       attributes[:action]
     end
 
+    # Process payload data
+    #   (If error will raise exception and wont call on_error_processing callback)
     def process!
       process do |publisher|
         publisher.raise_error = true
       end
     end
 
+    # Process payload data
+    #   (If error will call on_error_processing callback)
     def process
       publisher = PubSubModelSync::MessageProcessor.new(self)
       yield(publisher) if block_given?
       publisher.process
     end
 
+    # Publish payload to pubsub
+    #   (If error will raise exception and wont call on_error_publish callback)
     def publish!
       klass = PubSubModelSync::MessagePublisher
       klass.publish(self, raise_error: true)
     end
 
+    # Publish payload to pubsub
+    #   (If error will call on_error_publish callback)
     def publish
       klass = PubSubModelSync::MessagePublisher
       klass.publish(self)
+    end
+
+    # convert payload data into Payload
+    # @param data [Hash]: payload data (:data, :attributes, :headers)
+    def self.from_payload_data(data)
+      data = data.deep_symbolize_keys
+      new(data[:data], data[:attributes], data[:headers])
     end
 
     private
@@ -52,6 +70,10 @@ module PubSubModelSync
     def build_headers
       headers[:uuid] ||= SecureRandom.uuid
       headers[:app_key] ||= PubSubModelSync::Config.subscription_key
+    end
+
+    def validate!
+      raise MissingInfo if !attributes[:klass] || !attributes[:action]
     end
   end
 end
