@@ -4,7 +4,8 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
   let(:meta_info) { { type: 'service_model_sync' } }
   let(:invalid_meta_info) { { type: 'unknown' } }
   let(:delivery_info) { {} }
-  let(:payload) { PubSubModelSync::Payload.new({}, {}) }
+  let(:payload_attrs) { { klass: 'Tester', action: :test } }
+  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
   let(:inst) { described_class.new }
   let(:service) { inst.service }
   let(:channel) { service.channel }

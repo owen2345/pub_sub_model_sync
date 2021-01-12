@@ -2,7 +2,8 @@
 
 RSpec.describe PubSubModelSync::ServiceGoogle do
   let(:msg_attrs) { { 'service_model_sync' => true } }
-  let(:payload) { PubSubModelSync::Payload.new({}, {}) }
+  let(:payload_attrs) { { klass: 'Tester', action: :test } }
+  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
   let(:mock_message) do
     double('Message', data: payload.to_json, attributes: msg_attrs)
   end

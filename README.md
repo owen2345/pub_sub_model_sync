@@ -319,7 +319,28 @@ config.debug = true
   To fix the problem, edit config/database.yml and increase the quantity of ```pool: 10```
 - Google pubsub: How to process notifications parallely and not sequentially (default 1 thread)?    
   ```ruby  PubSubModelSync::ServiceGoogle::LISTEN_SETTINGS = { threads: { callback: qty_threads } } ```    
-  Note: by this way some notifications can be processed before others thus missing relationship errors can appear 
+  Note: by this way some notifications can be processed before others thus missing relationship errors can appear
+- How to retry failed syncs with sidekiq?
+  ```ruby
+    # lib/initializers/pub_sub_config.rb
+  
+    class PubSubRecovery
+      include Sidekiq::Worker
+      sidekiq_options queue: :pubsub, retry: 2, backtrace: true
+  
+      def perform(payload_data, action)
+        payload = PubSubModelSync::Payload.from_payload_data(payload_data)
+        payload.send(action)
+      end
+    end
+  
+    PubSubModelSync::Config.on_error_publish = lambda do |_e, data|
+      PubSubRecovery.perform_async(data[:payload].to_h, :publish!)
+    end
+    PubSubModelSync::Config.on_error_processing = lambda do |_e, data|
+      PubSubRecovery.perform_async(data[:payload].to_h, :process!)
+    end
+  ``` 
 
 ## Contributing
 
