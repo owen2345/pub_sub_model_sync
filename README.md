@@ -62,7 +62,7 @@ And then execute: $ bundle install
     Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing without mentioned task (like rails console)
     ```ruby 
       # PubSubModelSync::Config.subscribers ==> []
-      Rails.application.try(:eager_load!)
+      PubSubModelSync::Runner.preload_listeners
       # PubSubModelSync::Config.subscribers ==> [#<PubSubModelSync::Subscriber:0x000.. @klass="Article", @action=:create..., ....]
     ``` 
 
