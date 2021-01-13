@@ -59,7 +59,7 @@ And then execute: $ bundle install
     rake pub_sub_model_sync:start
     ```
     Note: Publishers do not need todo this    
-    Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing outside ```rake pub_sub_model_sync:start```
+    Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing without mentioned task (like rails console)
     ```ruby 
       # PubSubModelSync::Config.subscribers ==> []
       Rails.application.try(:eager_load!)
