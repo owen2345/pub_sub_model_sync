@@ -13,7 +13,7 @@ RSpec.describe PubSubModelSync::Runner do
   end
 
   it '.preload_framework' do
-    expect(inst).to receive(:preload_framework!)
+    expect(described_class).to receive(:preload_listeners)
   end
 
   it '.start_listeners' do

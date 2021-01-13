@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.5.7 (January 13, 2021)
+- feat: add method to preload sync listeners
+
+# 0.5.6 (January 12, 2021)
+- feat: add payload validation
+- feat: add method to rebuild payload
+
 # 0.5.5 (January 11, 2021)
 - feat: google-pub/sub receive messages in the same order they were delivered
 

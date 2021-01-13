@@ -4,6 +4,7 @@ require 'active_support/core_ext/module'
 module PubSubModelSync
   class Runner
     class ShutDown < StandardError; end
+    delegate :preload_listeners, to: :class
     attr_accessor :connector
 
     def initialize
@@ -12,10 +13,15 @@ module PubSubModelSync
 
     def run
       trap_signals!
-      preload_framework!
+      preload_listeners
       start_listeners
     rescue ShutDown
       connector.stop
+    end
+
+    def self.preload_listeners
+      Rails.application.try(:eager_load!) if defined?(Rails)
+      Zeitwerk::Loader.eager_load_all if defined?(Zeitwerk::Loader)
     end
 
     private
@@ -30,11 +36,6 @@ module PubSubModelSync
         raise ShutDown
       end
       %w[INT QUIT TERM].each { |signal| Signal.trap(signal, handler) }
-    end
-
-    def preload_framework!
-      Rails.application.try(:eager_load!) if defined?(Rails)
-      Zeitwerk::Loader.eager_load_all if defined?(Zeitwerk::Loader)
     end
   end
 end
