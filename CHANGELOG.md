@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.7.1 (January 26, 2021)
+- fix: does not call :on_error_processing when processing a message 
+
 # 0.5.7 (January 13, 2021)
 - feat: add method to preload sync listeners
 
