@@ -308,10 +308,11 @@ config.debug = true
     
 ## TODO
 - Add alias attributes when subscribing (similar to publisher)
-- Add flag ```model.ps_processing``` to indicate that the current transaction is being processed by pub/sub
+- Add flag ```model.ps_process_payload``` to retrieve the payload used to process the pub/sub sync
 - Auto publish update only if payload has changed
 - On delete, payload must only be composed by ids
-- Change notifications into messages 
+- Feature to publish multiple message at a time with the ability to exclude similar messages by klass and action (use the last one)
+    PubSubModelSync::MessagePublisher.batch_publish({ skip_same_keys: true })
 
 ## Q&A
 - Error "could not obtain a connection from the pool within 5.000 seconds"    
