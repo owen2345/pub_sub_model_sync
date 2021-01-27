@@ -29,7 +29,7 @@ module PubSubModelSync
       if same_app_message?(payload)
         log("Skip message from same origin: #{[payload]}") if config.debug
       else
-        payload.process!
+        payload.process
       end
     rescue => e
       error = [payload, e.message, e.backtrace]
