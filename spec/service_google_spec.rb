@@ -24,6 +24,12 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
     it 'connects to topic' do
       expect(inst.topic).not_to be_nil
     end
+
+    it 'enables message ordering' do
+      topic_klass = PubSubModelSync::MockGoogleService::MockTopic
+      expect_any_instance_of(topic_klass).to receive(:enable_message_ordering!)
+      described_class.new
+    end
   end
 
   describe '.listen_messages' do
@@ -84,7 +90,13 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
 
   describe '.publish' do
     it 'delivery message' do
-      expect(inst.topic).to receive(:publish).with(payload.to_json, anything)
+      expect(inst.topic).to receive(:publish_async).with(payload.to_json, anything)
+      inst.publish(payload)
+    end
+
+    it 'publishes ordered messages' do
+      expected_hash = hash_including(ordering_key: anything)
+      expect(inst.topic).to receive(:publish_async).with(anything, expected_hash)
       inst.publish(payload)
     end
   end

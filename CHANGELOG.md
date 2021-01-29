@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.8 (January 29, 2021)
+- fix: keep message ordering with google pubsub
+
 # 0.5.7.1 (January 26, 2021)
 - fix: does not call :on_error_processing when processing a message 
 

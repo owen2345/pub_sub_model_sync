@@ -34,6 +34,14 @@ module PubSubModelSync
       def publish(*_args)
         true
       end
+
+      def publish_async(*_args)
+        yield(OpenStruct.new(succeeded?: true)) if block_given?
+      end
+
+      def enable_message_ordering!
+        true
+      end
     end
 
     def topic(*_args)
