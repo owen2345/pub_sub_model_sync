@@ -8,6 +8,7 @@ end
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
     LISTEN_SETTINGS = { threads: { callback: 1 } }.freeze
+    TOPIC_SETTINGS = { async: { threads: { publish: 1, callback: 1 } } }.freeze
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
     attr_accessor :service, :topic, :subscription, :subscriber
 
@@ -15,7 +16,8 @@ module PubSubModelSync
       @service = Google::Cloud::Pubsub.new(project: config.project,
                                            credentials: config.credentials)
       @topic = service.topic(config.topic_name) ||
-               service.create_topic(config.topic_name)
+               service.create_topic(config.topic_name, TOPIC_SETTINGS)
+      topic.enable_message_ordering!
     end
 
     def listen_messages
@@ -30,7 +32,9 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      topic.publish(payload.to_json, { SERVICE_KEY => true }.merge(PUBLISH_SETTINGS))
+      topic.publish_async(payload.to_json, message_headers) do |res|
+        raise 'Failed to publish the message.' unless res.succeeded?
+      end
     end
 
     def stop
@@ -39,6 +43,10 @@ module PubSubModelSync
     end
 
     private
+
+    def message_headers
+      { SERVICE_KEY => true, ordering_key: Time.current.to_i }.merge(PUBLISH_SETTINGS)
+    end
 
     def subscribe_to_topic
       topic.subscription(config.subscription_key) ||
