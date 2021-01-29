@@ -15,7 +15,7 @@ Add this line to your application's Gemfile:
 ```ruby
 gem 'pub_sub_model_sync'
 
-gem 'google-cloud-pubsub' # to use google pub/sub service
+gem 'google-cloud-pubsub', '>= 1.9' # to use google pub/sub service
 gem 'bunny' # to use rabbit-mq pub/sub service
 gem 'ruby-kafka' # to use apache kafka pub/sub service
 ```
@@ -312,7 +312,7 @@ config.debug = true
 - Auto publish update only if payload has changed
 - On delete, payload must only be composed by ids
 - Feature to publish multiple message at a time with the ability to exclude similar messages by klass and action (use the last one)
-    PubSubModelSync::MessagePublisher.batch_publish({ skip_same_keys: true })
+    PubSubModelSync::MessagePublisher.batch_publish({ same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })
 
 ## Q&A
 - Error "could not obtain a connection from the pool within 5.000 seconds"    
