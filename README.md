@@ -313,6 +313,8 @@ config.debug = true
 - On delete, payload must only be composed by ids
 - Feature to publish multiple message at a time with the ability to exclude similar messages by klass and action (use the last one)
     PubSubModelSync::MessagePublisher.batch_publish({ same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })
+- Add DB table to use as a shield to skip publishing similar notifications or publish partial notifications (similar idea when processing notif)
+- add callback: on_message_received(payload)
 
 ## Q&A
 - Error "could not obtain a connection from the pool within 5.000 seconds"    
