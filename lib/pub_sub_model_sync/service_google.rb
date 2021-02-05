@@ -7,7 +7,7 @@ end
 
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
-    LISTEN_SETTINGS = { threads: { callback: 1 } }.freeze
+    LISTEN_SETTINGS = { threads: { callback: 1 }, message_ordering: true, streams: 1 }.freeze
     TOPIC_SETTINGS = { async: { threads: { publish: 1, callback: 1 } } }.freeze
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
     attr_accessor :service, :topic, :subscription, :subscriber
@@ -45,7 +45,7 @@ module PubSubModelSync
     private
 
     def message_headers
-      { SERVICE_KEY => true, ordering_key: Time.current.to_i }.merge(PUBLISH_SETTINGS)
+      { SERVICE_KEY => true, ordering_key: SERVICE_KEY }.merge(PUBLISH_SETTINGS)
     end
 
     def subscribe_to_topic

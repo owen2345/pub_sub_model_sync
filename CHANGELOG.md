@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.8.1 (February 05, 2021)
+- fix: keep message ordering with google pubsub
+
 # 0.5.8 (January 29, 2021)
 - fix: keep message ordering with google pubsub
 
