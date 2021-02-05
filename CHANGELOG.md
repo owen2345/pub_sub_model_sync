@@ -1,5 +1,7 @@
 # Change Log
 
+# 0.5.8.2 (February 05, 2021)
+- fix: restore google pubsub topic settings
 # 0.5.8.1 (February 05, 2021)
 - fix: keep message ordering with google pubsub
 
