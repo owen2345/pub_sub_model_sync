@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::Publisher do
-  let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
+  let(:model) { PublisherUser2.new(id: 1, name: 'name', email: 'email', age: 10) }
   let(:klass_name) { model.class.name }
   let(:action) { :update }
 
@@ -9,7 +9,13 @@ RSpec.describe PubSubModelSync::Publisher do
     it 'includes action and klass' do
       inst = described_class.new([:name], klass_name, action)
       payload = inst.payload(model, action)
-      expect(payload.attributes).to include({ klass: klass_name, action: action, key: anything })
+      expect(payload.attributes).to include({ klass: klass_name, action: action })
+    end
+
+    it 'includes custom key' do
+      inst = described_class.new([:name], klass_name, action)
+      payload = inst.payload(model, action)
+      expect(payload.headers[:key]).to include("#{action}/#{model.id}")
     end
 
     it 'supports for custom class name' do

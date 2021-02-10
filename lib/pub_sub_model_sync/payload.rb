@@ -6,7 +6,8 @@ module PubSubModelSync
     attr_reader :data, :attributes, :headers
 
     # @param data (Hash: { any value }):
-    # @param attributes (Hash: { klass*: string, action*: :sym, key?: string }):
+    # @param attributes (Hash: { klass*: string, action*: :sym }):
+    # @param headers (Hash: { key?: string, ...any_key?: anything }):
     def initialize(data, attributes, headers = {})
       @data = data
       @attributes = attributes
@@ -68,6 +69,7 @@ module PubSubModelSync
     def build_headers
       headers[:uuid] ||= SecureRandom.uuid
       headers[:app_key] ||= PubSubModelSync::Config.subscription_key
+      headers[:key] ||= [klass.to_s, action].join('/')
     end
 
     def validate!
