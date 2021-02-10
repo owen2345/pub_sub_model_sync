@@ -12,7 +12,8 @@ module PubSubModelSync
       # @param data (Hash): Data to be delivered
       # @param action (:symbol): action name
       def publish_data(klass, data, action)
-        payload = PubSubModelSync::Payload.new(data, { klass: klass.to_s, action: action.to_sym })
+        attrs = { klass: klass.to_s, action: action.to_sym, key: [klass.to_s, action].join('/') }
+        payload = PubSubModelSync::Payload.new(data, attrs)
         publish(payload)
       end
 
