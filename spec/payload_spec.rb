@@ -22,6 +22,10 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h[:headers][:uuid].present?).to be_truthy
   end
 
+  it 'includes a key' do
+    expect(inst.headers[:key].present?).to be_truthy
+  end
+
   it 'validates for required info' do
     attrs_without_klass = { action: :test }
     expect { described_class.new({}, attrs_without_klass) }

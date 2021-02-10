@@ -1,5 +1,8 @@
 # Change Log
 
+# 0.5.9.1 (February 10, 2021)
+- feat: move :key into headers
+
 # 0.5.9 (February 10, 2021)
 - feat: reformat :publish and :process methods to include non silence methods
 - feat: add notification key to payloads (can be used for caching strategies)
