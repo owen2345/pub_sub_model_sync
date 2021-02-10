@@ -7,14 +7,19 @@ module PubSubModelSync
         @connector ||= PubSubModelSync::Connector.new
       end
 
+      # Publishes any value to pubsub
+      # @param klass (String): Class name
+      # @param data (Hash): Data to be delivered
+      # @param action (:symbol): action name
       def publish_data(klass, data, action)
         payload = PubSubModelSync::Payload.new(data, { klass: klass.to_s, action: action.to_sym })
         publish(payload)
       end
 
-      # @param model: ActiveRecord model
-      # @param action: (Sym) Action name
-      # @param publisher: (Publisher, optional) Publisher to be used
+      # Publishes model info to pubsub
+      # @param model (ActiveRecord model)
+      # @param action (Sym): Action name
+      # @param publisher (Publisher, optional): Publisher to be used
       def publish_model(model, action, publisher = nil)
         return if model.ps_skip_sync?(action)
 
@@ -27,7 +32,10 @@ module PubSubModelSync
         model.ps_after_sync(action, payload.data)
       end
 
-      def publish(payload, raise_error: false)
+      # Publishes payload to pubsub
+      # @attr payload (PubSubModelSync::Payload)
+      # Raises error if exist
+      def publish!(payload)
         if config.on_before_publish.call(payload) == :cancel
           log("Publish message cancelled: #{payload}") if config.debug
           return
@@ -36,8 +44,14 @@ module PubSubModelSync
         log("Publishing message: #{[payload]}")
         connector.publish(payload)
         config.on_after_publish.call(payload)
+      end
+
+      # Similar to :publish! method
+      # Notifies error via :on_error_publish instead of raising error
+      def publish(payload)
+        publish!(payload)
       rescue => e
-        raise_error ? raise : notify_error(e, payload)
+        notify_error(e, payload)
       end
 
       private

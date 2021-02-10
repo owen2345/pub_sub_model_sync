@@ -9,7 +9,7 @@ RSpec.describe PubSubModelSync::Publisher do
     it 'includes action and klass' do
       inst = described_class.new([:name], klass_name, action)
       payload = inst.payload(model, action)
-      expect(payload.attributes).to eq({ klass: klass_name, action: action })
+      expect(payload.attributes).to include({ klass: klass_name, action: action })
     end
 
     it 'supports for custom class name' do

@@ -38,7 +38,7 @@ RSpec.describe PubSubModelSync::Payload do
     describe '#process!' do
       it 'does process the payload' do
         klass = PubSubModelSync::MessageProcessor
-        expect_any_instance_of(klass).to receive(:process)
+        expect_any_instance_of(klass).to receive(:process!)
         inst.process!
       end
     end
@@ -46,7 +46,7 @@ RSpec.describe PubSubModelSync::Payload do
     describe '#publish!' do
       it 'publishes the payload' do
         klass = PubSubModelSync::MessagePublisher
-        expect(klass).to receive(:publish)
+        expect(klass).to receive(:publish!)
         inst.publish!
       end
     end

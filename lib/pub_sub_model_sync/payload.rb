@@ -6,7 +6,7 @@ module PubSubModelSync
     attr_reader :data, :attributes, :headers
 
     # @param data (Hash: { any value }):
-    # @param attributes (Hash: { klass: string, action: :sym }):
+    # @param attributes (Hash: { klass*: string, action*: :sym, key?: string }):
     def initialize(data, attributes, headers = {})
       @data = data
       @attributes = attributes
@@ -31,16 +31,14 @@ module PubSubModelSync
     # Process payload data
     #   (If error will raise exception and wont call on_error_processing callback)
     def process!
-      process do |publisher|
-        publisher.raise_error = true
-      end
+      publisher = PubSubModelSync::MessageProcessor.new(self)
+      publisher.process!
     end
 
     # Process payload data
     #   (If error will call on_error_processing callback)
     def process
       publisher = PubSubModelSync::MessageProcessor.new(self)
-      yield(publisher) if block_given?
       publisher.process
     end
 
@@ -48,7 +46,7 @@ module PubSubModelSync
     #   (If error will raise exception and wont call on_error_publish callback)
     def publish!
       klass = PubSubModelSync::MessagePublisher
-      klass.publish(self, raise_error: true)
+      klass.publish!(self)
     end
 
     # Publish payload to pubsub
