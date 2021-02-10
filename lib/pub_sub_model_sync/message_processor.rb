@@ -22,7 +22,7 @@ module PubSubModelSync
     def process
       process!
     rescue => e
-      print_subscriber_error(e)
+      notify_error(e)
     end
 
     private
@@ -44,7 +44,7 @@ module PubSubModelSync
     end
 
     # @param error (Error)
-    def print_subscriber_error(error)
+    def notify_error(error)
       info = [payload, error.message, error.backtrace]
       res = config.on_error_processing.call(error, { payload: payload })
       log("Error processing message: #{info}", :error) if res != :skip_log
