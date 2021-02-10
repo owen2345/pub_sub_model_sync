@@ -1,7 +1,12 @@
 # Change Log
 
+# 0.5.9 (February 10, 2021)
+- feat: reformat :publish and :process methods to include non silence methods
+- feat: add notification key to payloads (can be used for caching strategies)
+
 # 0.5.8.2 (February 05, 2021)
 - fix: restore google pubsub topic settings
+
 # 0.5.8.1 (February 05, 2021)
 - fix: keep message ordering with google pubsub
 
