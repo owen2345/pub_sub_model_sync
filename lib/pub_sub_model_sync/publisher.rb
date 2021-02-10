@@ -11,6 +11,7 @@ module PubSubModelSync
       @as_klass = as_klass || klass
     end
 
+    # Builds the payload with model information defined for :action (:create|:update|:destroy)
     def payload(model, action)
       PubSubModelSync::Payload.new(payload_data(model), payload_attrs(model, action))
     end
@@ -29,7 +30,11 @@ module PubSubModelSync
     end
 
     def payload_attrs(model, action)
-      { klass: (as_klass || model.class.name).to_s, action: action.to_sym }
+      {
+        klass: (as_klass || model.class.name).to_s,
+        action: action.to_sym,
+        key: [model.class.name, action, model.id].join('/')
+      }
     end
   end
 end

@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class MessageProcessor < PubSubModelSync::Base
-    attr_accessor :payload, :raise_error
+    attr_accessor :payload
 
     # @param payload (Payload): payload to be delivered
     # @Deprecated: def initialize(data, klass, action)
@@ -15,8 +15,14 @@ module PubSubModelSync
       @payload = PubSubModelSync::Payload.new(payload, { klass: klass, action: action })
     end
 
-    def process
+    def process!
       filter_subscribers.each(&method(:run_subscriber))
+    end
+
+    def process
+      process!
+    rescue => e
+      notify_error(e)
     end
 
     private
@@ -29,8 +35,6 @@ module PubSubModelSync
         res = config.on_success_processing.call(payload, { subscriber: subscriber })
         log "processed message with: #{payload.inspect}" if res != :skip_log
       end
-    rescue => e
-      raise_error ? raise : print_subscriber_error(e, subscriber)
     end
 
     def processable?(subscriber)
@@ -40,9 +44,9 @@ module PubSubModelSync
     end
 
     # @param error (Error)
-    def print_subscriber_error(error, subscriber)
+    def notify_error(error)
       info = [payload, error.message, error.backtrace]
-      res = config.on_error_processing.call(error, { payload: payload, subscriber: subscriber })
+      res = config.on_error_processing.call(error, { payload: payload })
       log("Error processing message: #{info}", :error) if res != :skip_log
     end
 
