@@ -16,7 +16,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   it 'does not publish payload if :on_before_publish returns :cancel' do
     allow(inst).to receive(:log)
     allow(inst.config.on_before_publish).to receive(:call).and_return(:cancel)
-    expect(inst).to receive(:log).with(include('Publish message cancelled'))
+    expect(inst).to receive(:log).with(include('Publish cancelled by'))
     expect(connector).not_to receive(:publish)
     inst.publish_data(publisher_klass, {}, :greeting)
   end
