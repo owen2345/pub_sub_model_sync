@@ -7,7 +7,10 @@ module PubSubModelSync
 
     # @param data (Hash: { any value }):
     # @param attributes (Hash: { klass*: string, action*: :sym }):
-    # @param headers (Hash: { key?: string, ...any_key?: anything }):
+    # @param headers (Hash: { key?: string,  ...any_key?: anything }):
+    #   key: identifier of the payload, default:
+    #        klass/action: when class message
+    #        klass/action/model.id: when model message
     def initialize(data, attributes, headers = {})
       @data = data
       @attributes = attributes
@@ -22,7 +25,7 @@ module PubSubModelSync
     end
 
     def klass
-      attributes[:klass]
+      attributes[:klass].to_s
     end
 
     def action
@@ -69,7 +72,7 @@ module PubSubModelSync
     def build_headers
       headers[:uuid] ||= SecureRandom.uuid
       headers[:app_key] ||= PubSubModelSync::Config.subscription_key
-      headers[:key] ||= [klass.to_s, action].join('/')
+      headers[:key] ||= [klass, action].join('/')
     end
 
     def validate!

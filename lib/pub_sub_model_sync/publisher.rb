@@ -13,7 +13,7 @@ module PubSubModelSync
 
     # Builds the payload with model information defined for :action (:create|:update|:destroy)
     def payload(model, action)
-      headers = { key: [model.class.name, action, model.id].join('/') }
+      headers = payload_headers(model, action)
       PubSubModelSync::Payload.new(payload_data(model), payload_attrs(model, action), headers)
     end
 
@@ -35,6 +35,14 @@ module PubSubModelSync
         klass: (as_klass || model.class.name).to_s,
         action: action.to_sym
       }
+    end
+
+    def payload_headers(model, action)
+      headers = {
+        key: [model.class.name, action, model.id].join('/')
+      }
+      headers.merge!(model.ps_syn_headers(action)) if model.respond_to?(:ps_syn_headers)
+      headers
     end
   end
 end
