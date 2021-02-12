@@ -103,6 +103,33 @@ RSpec.describe PublisherUser do
         PublisherUser.create(name: 'name')
       end
     end
+
+    describe 'when grouping all sub syncs', truncate: true do
+      it 'uses the same ordering_key for all syncs' do
+        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
+          PubSubModelSync::MessagePublisher.publish_data('Test', {}, :changed)
+        end
+        expect_publish_with_headers({ ordering_key: model.ps_transaction_key(:update) }, times: 2) do
+          model.update!(name: 'changed')
+        end
+      end
+
+      it 'restores parent ordering_key when finished' do
+        parent_key = 'parent_key'
+        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!)
+        publisher_klass.transaction(parent_key) do
+          model.update!(name: 'changed')
+          expect(publisher_klass.transaction_key).to eq parent_key
+        end
+      end
+
+      it 'restores transaction_key when failed' do
+        mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
+          raise 'failed saving'
+        end
+        expect(publisher_klass.transaction_key).to be_nil
+      end
+    end
   end
 
   describe 'methods' do
