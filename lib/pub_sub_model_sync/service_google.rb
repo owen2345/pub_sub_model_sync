@@ -10,30 +10,32 @@ module PubSubModelSync
     LISTEN_SETTINGS = { message_ordering: true }.freeze
     TOPIC_SETTINGS = {}.freeze
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
-    attr_accessor :service, :topic, :subscription, :subscriber
+
+    # @!attribute topics (Hash): { key: Topic1, ... }
+    attr_accessor :service, :topics, :subscriber
 
     def initialize
       @service = Google::Cloud::Pubsub.new(project: config.project,
                                            credentials: config.credentials)
-      @topic = service.topic(config.topic_name) ||
-               service.create_topic(config.topic_name, TOPIC_SETTINGS)
-      topic.enable_message_ordering!
+      @topics = Array(config.topic_name || 'model_sync').map do |topic_name|
+        topic = service.topic(topic_name) || service.create_topic(topic_name, TOPIC_SETTINGS)
+        topic.enable_message_ordering!
+        [topic_name.to_s, topic]
+      end.to_h
     end
 
     def listen_messages
-      @subscription = subscribe_to_topic
-      @subscriber = subscription.listen(LISTEN_SETTINGS, &method(:process_message))
       log('Listener starting...')
-      subscriber.start
+      subscribers = subscribe_to_topics
       log('Listener started')
       sleep
-      subscriber.stop.wait!
+      subscribers.each { |subscriber| subscriber.stop.wait! }
       log('Listener stopped')
     end
 
     # @param payload (PubSubModelSync::Payload)
     def publish(payload)
-      topic.publish_async(payload.to_json, message_headers(payload)) do |res|
+      find_topic(payload).publish_async(payload.to_json, message_headers(payload)) do |res|
         raise 'Failed to publish the message.' unless res.succeeded?
       end
     end
@@ -45,6 +47,10 @@ module PubSubModelSync
 
     private
 
+    def find_topic(payload)
+      topics[payload.headers[:topic_name].to_s] || topics.values.first
+    end
+
     # @param payload (PubSubModelSync::Payload)
     def message_headers(payload)
       {
@@ -53,9 +59,15 @@ module PubSubModelSync
       }.merge(PUBLISH_SETTINGS)
     end
 
-    def subscribe_to_topic
-      topic.subscription(config.subscription_key) ||
-        topic.subscribe(config.subscription_key, SUBSCRIPTION_SETTINGS)
+    # @return [Subscriber]
+    def subscribe_to_topics
+      topics.map do |_k, topic|
+        subscription = topic.subscription(config.subscription_key) ||
+                       topic.subscribe(config.subscription_key, SUBSCRIPTION_SETTINGS)
+        subscriber = subscription.listen(LISTEN_SETTINGS, &method(:process_message))
+        subscriber.start
+        subscriber
+      end
     end
 
     def process_message(received_message)

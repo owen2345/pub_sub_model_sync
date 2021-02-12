@@ -9,6 +9,8 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
   let(:inst) { described_class.new }
   let(:service) { inst.service }
   let(:channel) { service.channel }
+  let(:queue_klass) { PubSubModelSync::MockRabbitService::MockQueue }
+  let(:channel_klass) { PubSubModelSync::MockRabbitService::MockChannel }
 
   before { allow(inst).to receive(:loop) }
 
@@ -36,6 +38,14 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
     end
     it 'listens for messages' do
       expect(channel.queue).to receive(:subscribe)
+    end
+
+    it 'connects to multiple topics if provided' do
+      names = ['topic 1', 'topic 2']
+      allow(inst).to receive(:topic_names).and_return(names)
+      names.each do |name|
+        expect_any_instance_of(channel_klass).to receive(:fanout).with(name)
+      end
     end
   end
 
@@ -66,7 +76,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
   describe '.publish' do
     it 'deliveries message' do
       expected_args = [payload.to_json, hash_including(:routing_key, :type)]
-      expect(channel.queue).to receive(:publish).with(*expected_args)
+      expect_any_instance_of(queue_klass).to receive(:publish).with(*expected_args)
       inst.publish(payload)
     end
     it 'retries 2 times when TimeoutError' do

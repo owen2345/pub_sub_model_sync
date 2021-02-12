@@ -32,6 +32,15 @@ RSpec.describe PubSubModelSync::ServiceKafka do
     it 'listens for messages' do
       expect(consumer).to receive(:each_message)
     end
+
+    it 'subscribes to multiple topics if provided' do
+      names = ['topic 1', 'topic2']
+      allow(inst).to receive(:topic_names).and_return(names)
+      allow(consumer).to receive(:subscribe)
+      names.each do |name|
+        expect(consumer).to receive(:subscribe).with(name)
+      end
+    end
   end
 
   describe '.process_message' do
@@ -62,6 +71,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
       inst.publish(payload)
     end
     it 'delivers the message' do
+      described_class::QTY_BATCH_DELIVER = 1
       expect(producer).to receive(:deliver_messages)
       inst.publish(payload)
     end

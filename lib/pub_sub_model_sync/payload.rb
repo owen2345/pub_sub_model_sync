@@ -7,7 +7,8 @@ module PubSubModelSync
 
     # @param data (Hash: { any value }):
     # @param attributes (Hash: { klass*: string, action*: :sym }):
-    # @param headers (Hash: { key?: string, ordering_key?: string, ...any_key?: anything }):
+    # @param headers (Hash: { key?: string, ordering_key?: string, topic_name?: string,
+    #   ...any_key?: anything }):
     #   key: identifier of the payload, default:
     #        klass/action: when class message
     #        klass/action/model.id: when model message
@@ -15,6 +16,7 @@ module PubSubModelSync
     #        default:
     #        klass: when class message
     #        klass/id: when model message
+    #   topic_name: Specific topic name to be used when delivering the message (default first topic)
     def initialize(data, attributes, headers = {})
       @data = data
       @attributes = attributes
