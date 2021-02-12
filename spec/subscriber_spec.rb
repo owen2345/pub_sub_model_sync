@@ -70,6 +70,11 @@ RSpec.describe PubSubModelSync::Subscriber do
         expect_any_instance_of(model_klass).not_to receive(:destroy!)
         inst.process!(payload)
       end
+
+      it 'assigns processing payload to the model' do
+        expect_any_instance_of(model_klass).not_to receive(:ps_processed_payload).with(payload)
+        inst.process!(payload)
+      end
     end
 
     describe 'find model' do
