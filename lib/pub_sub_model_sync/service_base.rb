@@ -52,7 +52,7 @@ module PubSubModelSync
     def lost_db_connection_err?(error)
       return true if error.class.name == 'PG::UnableToSend'
 
-      error.message.include?('Lost connection')
+      error.message.match?(/lost connection/i)
     end
 
     def rescue_database_connection
