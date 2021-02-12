@@ -36,6 +36,7 @@ module PubSubModelSync
     # support for: create, update, destroy
     def run_model_message
       model = find_model
+      model.ps_processed_payload = payload
       return if model.ps_before_save_sync(payload) == :cancel
 
       if action == :destroy
