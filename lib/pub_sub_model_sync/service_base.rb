@@ -46,5 +46,12 @@ module PubSubModelSync
       key = payload.headers[:app_key]
       key && key == config.subscription_key
     end
+
+    def rescue_database_connection
+      ActiveRecord::Base.connection.reconnect!
+    rescue => e
+      log("Cannot reconnect to database, exiting...", :error)
+      Process.exit!(true)
+    end
   end
 end
