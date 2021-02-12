@@ -39,9 +39,10 @@ module PubSubModelSync
 
     def payload_headers(model, action)
       headers = {
+        ordering_key: model.ps_transaction_key(action),
         key: [model.class.name, action, model.id].join('/')
       }
-      headers.merge!(model.ps_syn_headers(action)) if model.respond_to?(:ps_syn_headers)
+      headers.merge!(model.ps_payload_headers(action))
       headers
     end
   end

@@ -7,7 +7,7 @@ end
 
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
-    LISTEN_SETTINGS = { threads: { callback: 1 }, message_ordering: true }.freeze
+    LISTEN_SETTINGS = { message_ordering: true }.freeze
     TOPIC_SETTINGS = {}.freeze
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
     attr_accessor :service, :topic, :subscription, :subscriber
@@ -31,8 +31,9 @@ module PubSubModelSync
       log('Listener stopped')
     end
 
+    # @param payload (PubSubModelSync::Payload)
     def publish(payload)
-      topic.publish_async(payload.to_json, message_headers) do |res|
+      topic.publish_async(payload.to_json, message_headers(payload)) do |res|
         raise 'Failed to publish the message.' unless res.succeeded?
       end
     end
@@ -44,8 +45,12 @@ module PubSubModelSync
 
     private
 
-    def message_headers
-      { SERVICE_KEY => true, ordering_key: SERVICE_KEY }.merge(PUBLISH_SETTINGS)
+    # @param payload (PubSubModelSync::Payload)
+    def message_headers(payload)
+      {
+        SERVICE_KEY => true,
+        ordering_key: payload.headers[:ordering_key]
+      }.merge(PUBLISH_SETTINGS)
     end
 
     def subscribe_to_topic
