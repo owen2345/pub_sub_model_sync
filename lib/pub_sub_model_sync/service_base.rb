@@ -24,15 +24,15 @@ module PubSubModelSync
 
     # @param (String: Payload in json format)
     def process_message(payload_info)
+      @retries ||= 0
       payload = parse_payload(payload_info)
       log("Received message: #{[payload]}") if config.debug
-      if same_app_message?(payload)
-        log("Skip message from same origin: #{[payload]}") if config.debug
-      else
-        payload.process
-      end
+      return payload.process unless same_app_message?(payload)
+
+      log("Skipping message from same origin: #{[payload]}") if config.debug
     rescue => e
       return rescue_database_connection if lost_db_connection_err?(e)
+      retry if (@retries +=1) == 1
 
       error = [payload, e.message, e.backtrace]
       log("Error parsing received message: #{error}", :error)
