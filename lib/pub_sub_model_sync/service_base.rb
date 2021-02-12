@@ -32,6 +32,8 @@ module PubSubModelSync
         payload.process
       end
     rescue => e
+      return rescue_database_connection if lost_db_connection_err?(e)
+
       error = [payload, e.message, e.backtrace]
       log("Error parsing received message: #{error}", :error)
     end
@@ -47,10 +49,17 @@ module PubSubModelSync
       key && key == config.subscription_key
     end
 
+    def lost_db_connection_err?(error)
+      return true if error.class.name == 'PG::UnableToSend'
+
+      error.message.include?('Lost connection')
+    end
+
     def rescue_database_connection
+      log('Lost DB connection. Attempting to reconnect...', :warn)
       ActiveRecord::Base.connection.reconnect!
     rescue => e
-      log("Cannot reconnect to database, exiting...", :error)
+      log('Cannot reconnect to database, exiting...', :error)
       Process.exit!(true)
     end
   end
