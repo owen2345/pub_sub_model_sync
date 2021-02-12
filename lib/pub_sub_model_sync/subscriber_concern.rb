@@ -4,7 +4,7 @@ module PubSubModelSync
   module SubscriberConcern
     def self.included(base)
       base.extend(ClassMethods)
-      base.attr_accessor :ps_processed_payload
+      base.send(:attr_accessor, :ps_processed_payload)
     end
 
     # check if model was changed to skip nonsense .update!()
