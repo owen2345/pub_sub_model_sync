@@ -6,6 +6,9 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   let(:connector) { inst.connector }
   let(:payload_klass) { PubSubModelSync::Payload }
 
+  let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
+  let(:action) { :update }
+
   it '.publish_data: publishes payload to connector' do
     data = { message: 'hello' }
     action = :greeting
@@ -22,9 +25,6 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   end
 
   describe '.publish_model' do
-    let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
-    let(:action) { :update }
-
     describe '#publish' do
       it 'publishes payload to connector' do
         expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
@@ -74,6 +74,40 @@ RSpec.describe PubSubModelSync::MessagePublisher do
           publisher = model.class.ps_publisher(action)
           inst.publish_model(model, action, publisher)
         end
+      end
+    end
+  end
+
+  describe '.transaction' do
+    it 'uses the same ordering key for all payload inside the transaction' do
+      key = 'trans_key'
+      expect_publish_with_headers({ ordering_key: key }, times: 2) do
+        described_class.transaction(key) do
+          inst.publish_model(model, action)
+          inst.publish_data(publisher_klass, {}, action)
+        end
+      end
+    end
+
+    it 'resets transaction key when finished' do
+      key = 'trans_key'
+      custom_key = 'custom_key'
+      expect_publish_with_headers({ ordering_key: custom_key }, times: 1) do
+        described_class.transaction(key) do
+          inst.publish_model(model, action)
+        end
+        inst.publish_data(publisher_klass, {}, action, { ordering_key: custom_key })
+      end
+    end
+
+    it 'uses the same ordering_key when publishing from :ps_before_sync callback' do
+      key = 'model-key'
+      allow(model).to receive(:ps_before_sync) do
+        inst.publish_data(publisher_klass, {}, action)
+      end
+      allow(model).to receive(:ps_transaction_key).and_return(key)
+      expect_publish_with_headers({ ordering_key: key }, times: 2) do
+        inst.publish_model(model, action)
       end
     end
   end
