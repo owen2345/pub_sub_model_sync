@@ -13,7 +13,7 @@ RSpec.describe PubSubModelSync::ServiceBase do
         allow_any_instance_of(described_class).to receive(:same_app_message?).and_call_original
       end
       it 'does not process if message is coming from same app' do
-        msg = 'Skip message from same origin'
+        msg = 'Skipping message from same origin'
         payload.headers[:app_key] = 'test_app'
         allow(config).to receive(:subscription_key).and_return('test_app')
         expect(config).to receive(:log).with(include(msg), anything)
