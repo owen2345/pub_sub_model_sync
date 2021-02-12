@@ -53,8 +53,8 @@ module PubSubModelSync
     def lost_db_connection_err?(error)
       # rubocop:disable Style/ClassEqualityComparison
       return true if error.class.name == 'PG::UnableToSend'
-      # rubocop:enable Style/ClassEqualityComparison
 
+      # rubocop:enable Style/ClassEqualityComparison
       error.message.match?(/lost connection/i)
     end
 
