@@ -69,7 +69,7 @@ module PubSubModelSync
       topic_names.each do |topic_name|
         subscribe_to_exchange(topic_name) do |channel, exchange|
           queue = channel.queue(config.subscription_key, QUEUE_SETTINGS)
-          queue.bind(exchange) # review missing routing_key
+          queue.bind(exchange) # TODO: review missing routing_key
           @channels << channel
           block.call(queue)
         end
