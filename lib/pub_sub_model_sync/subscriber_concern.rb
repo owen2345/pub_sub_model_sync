@@ -4,12 +4,7 @@ module PubSubModelSync
   module SubscriberConcern
     def self.included(base)
       base.extend(ClassMethods)
-    end
-
-    # check if model was changed to skip nonsense .update!()
-    def ps_subscriber_changed?(_data)
-      validate
-      changed?
+      base.send(:attr_accessor, :ps_processed_payload)
     end
 
     # permit to apply custom actions before applying sync
