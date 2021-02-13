@@ -210,12 +210,6 @@ Note: Be careful with collision of names
 
 #### **Instance Methods**
 
-- Detect if the subscribed model was changed in a relevant way (Only for update action, useful to avoid duplicated callbacks from recursive/redundant saving of an instance).
-  ```ruby
-  my_instance.ps_subscriber_changed?(data)
-  ```
-  By default this will use: ```model.changed?``` under the hood.
-
 - Perform custom actions before saving sync of the model (On-demand, `:cancel` can be returned to skip sync)
   ```ruby
   my_instance.ps_before_save_sync(payload)
