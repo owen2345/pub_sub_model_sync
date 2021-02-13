@@ -1,5 +1,12 @@
 # Change Log
 
+# 0.5.10 (February 13, 2021)
+- feat: remove duplicated callback :ps_before_save_sync (same result can be achieved with :ps_before_save_sync)
+- feat: improve message starter to retry when failed or exit system when persists
+- feat: fix and retry when database connection error (PG::UnableToSend)
+- feat: add method to save processed payload (:ps_processed_payload) when saving sync
+- chore: improved readme (Thanks @CharlieIGG)
+
 # 0.5.9.1 (February 10, 2021)
 - feat: move :key into headers
 
