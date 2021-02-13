@@ -24,17 +24,25 @@ module PubSubModelSync
 
     # @param (String: Payload in json format)
     def process_message(payload_info)
-      @retries ||= 0
+      retries ||= 0
       payload = parse_payload(payload_info)
       return payload.process unless same_app_message?(payload)
 
       log("Skipping message from same origin: #{[payload]}") if config.debug
     rescue => e
-      return rescue_database_connection if lost_db_connection_err?(e)
+      retry if can_retry_process_message?(e, payload, retries += 1)
+    end
 
-      retry if (@retries += 1) == 1
-      error = [payload, e.message, e.backtrace]
-      log("Error parsing received message: #{error}", :error)
+    def can_retry_process_message?(error, payload, retries)
+      error_payload = [payload, error.message, error.backtrace]
+      if retries == 1
+        log("Error while starting to process message (retrying...): #{error_payload}", :error)
+        rescue_database_connection if lost_db_connection_err?(error)
+      else
+        log("Retried 1 time and error persists, exiting...: #{error_payload}", :error)
+        Process.exit!(true)
+      end
+      retries == 1
     end
 
     def parse_payload(payload_info)
@@ -51,10 +59,8 @@ module PubSubModelSync
     end
 
     def lost_db_connection_err?(error)
-      # rubocop:disable Style/ClassEqualityComparison
-      return true if error.class.name == 'PG::UnableToSend'
+      return true if error.class.name == 'PG::UnableToSend' # rubocop:disable Style/ClassEqualityComparison
 
-      # rubocop:enable Style/ClassEqualityComparison
       error.message.match?(/lost connection/i)
     end
 
