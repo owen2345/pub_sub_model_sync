@@ -12,16 +12,13 @@ module PubSubModelSync
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
 
     # @!attribute topics (Hash): { key: Topic1, ... }
-    attr_accessor :service, :topics, :subscriber
+    # @!attribute publish_topics (Hash): { key: Topic1, ... }
+    attr_accessor :service, :topics, :subscriber, :publish_topics
 
     def initialize
       @service = Google::Cloud::Pubsub.new(project: config.project,
                                            credentials: config.credentials)
-      @topics = Array(config.topic_name || 'model_sync').map do |topic_name|
-        topic = service.topic(topic_name) || service.create_topic(topic_name, TOPIC_SETTINGS)
-        topic.enable_message_ordering!
-        [topic_name.to_s, topic]
-      end.to_h
+      Array(config.topic_name || 'model_sync').each(&method(:init_topic))
     end
 
     def listen_messages
@@ -48,7 +45,21 @@ module PubSubModelSync
     private
 
     def find_topic(payload)
-      topics[payload.headers[:topic_name].to_s] || topics.values.first
+      topic_name = payload.headers[:topic_name].to_s
+      topics[topic_name] || publish_topics[topic_name] || init_topic(topic_name, only_publish: true)
+    end
+
+    # @param only_publish (Boolean): if false is used to listen and publish messages
+    # @return (Topic): returns created or loaded topic
+    def init_topic(topic_name, only_publish: false)
+      topic_name = topic_name.to_s
+      @topics ||= {}
+      @publish_topics ||= {}
+      topic = service.topic(topic_name) || service.create_topic(topic_name, TOPIC_SETTINGS)
+      topic.enable_message_ordering!
+      publish_topics[topic_name] = topic if only_publish
+      topics[topic_name] = topic unless only_publish
+      topic
     end
 
     # @param payload (PubSubModelSync::Payload)
