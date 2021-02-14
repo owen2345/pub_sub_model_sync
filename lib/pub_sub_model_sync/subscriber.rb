@@ -37,16 +37,20 @@ module PubSubModelSync
     def run_model_message
       model = find_model
       model.ps_processed_payload = payload
-      return if model.ps_before_save_sync(payload) == :cancel
 
       if action == :destroy
-        model.destroy!
+        model.destroy! if ensure_sync(model)
       else
         populate_model(model)
-        return if action == :update && !model.ps_subscriber_changed?(payload.data)
-
-        model.save!
+        model.save! if ensure_sync(model)
       end
+    end
+
+    def ensure_sync(model)
+      config = PubSubModelSync::Config
+      cancelled = model.ps_before_save_sync(payload) == :cancel
+      config.log("Cancelled sync with ps_before_save_sync: #{[payload]}") if cancelled && config.debug
+      !cancelled
     end
 
     def find_model
