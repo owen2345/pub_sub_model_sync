@@ -79,6 +79,7 @@ module PubSubModelSync
       headers[:app_key] ||= PubSubModelSync::Config.subscription_key
       headers[:key] ||= [klass, action].join('/')
       headers[:ordering_key] ||= klass
+      headers[:uuid] ||= SecureRandom.uuid
     end
 
     def validate!

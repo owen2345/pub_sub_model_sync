@@ -46,6 +46,8 @@ module PubSubModelSync
 
     def find_topic(payload)
       topic_name = payload.headers[:topic_name].to_s
+      return topics.values.first unless topic_name.present?
+
       topics[topic_name] || publish_topics[topic_name] || init_topic(topic_name, only_publish: true)
     end
 
