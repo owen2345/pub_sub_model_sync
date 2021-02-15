@@ -30,7 +30,7 @@ module PubSubModelSync
     # @param error (Exception)
     # @param error_type (Class|String)
     def match_error?(error, error_type)
-      (error_type.is_a?(Class) && error.is_a?(error_type)) || error.message.include?(error_type)
+      error_type.is_a?(String) ? error.message.include?(error_type) : error.is_a?(error_type)
     end
   end
 end
