@@ -28,6 +28,7 @@ module PubSubModelSync
     private
 
     def run_subscriber(subscriber)
+      subscriber = subscriber.dup
       return unless processable?(subscriber)
 
       errors = [ActiveRecord::ConnectionTimeoutError, 'deadlock detected', 'could not serialize access']
