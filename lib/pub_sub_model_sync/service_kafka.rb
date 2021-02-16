@@ -19,7 +19,7 @@ module PubSubModelSync
       settings = config.kafka_connection
       settings[1][:client_id] ||= config.subscription_key
       @service = Kafka.new(*settings)
-      @topic_names = Array(config.topic_name || 'model_sync')
+      @topic_names = ensure_topics(Array(config.topic_name || 'model_sync'))
     end
 
     def listen_messages
@@ -49,7 +49,7 @@ module PubSubModelSync
 
     def message_settings(payload)
       {
-        topic: payload.headers[:topic_name] || topic_names.first,
+        topic: ensure_topics(payload.headers[:topic_name] || topic_names.first),
         partition_key: payload.headers[:ordering_key],
         headers: { SERVICE_KEY => true }
       }.merge(PUBLISH_SETTINGS)
@@ -88,6 +88,19 @@ module PubSubModelSync
     ensure
       consumer&.mark_message_as_processed(message)
       consumer&.commit_offsets
+    end
+
+    # Check topic existence, create if missing topic
+    # @param names (Array<String>|String)
+    # @return (Array|String) return @param names
+    def ensure_topics(names)
+      missing_topics = Array(names) - (@known_topics || service.topics)
+      missing_topics.each do |name|
+        service.create_topic(name)
+      end
+      @known_topics ||= [] # cache service.topics to reduce verification time
+      @known_topics = (@known_topics + Array(names)).uniq
+      names
     end
   end
 end
