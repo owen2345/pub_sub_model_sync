@@ -13,7 +13,7 @@ module PubSubModelSync
 
     # @!attribute topics (Hash): { key: Topic1, ... }
     # @!attribute publish_topics (Hash): { key: Topic1, ... }
-    attr_accessor :service, :topics, :subscriber, :publish_topics
+    attr_accessor :service, :topics, :subscribers, :publish_topics
 
     def initialize
       @service = Google::Cloud::Pubsub.new(project: config.project,
@@ -23,7 +23,7 @@ module PubSubModelSync
 
     def listen_messages
       log('Listener starting...')
-      subscribers = subscribe_to_topics
+      @subscribers = subscribe_to_topics
       log('Listener started')
       sleep
       subscribers.each { |subscriber| subscriber.stop.wait! }
@@ -39,7 +39,7 @@ module PubSubModelSync
 
     def stop
       log('Listener stopping...')
-      subscriber.stop!
+      subscribers.each(&:stop!)
     end
 
     private
