@@ -55,6 +55,7 @@ And then execute: $ bundle install
     PubSubModelSync::Config.project = 'google-project-id'
     PubSubModelSync::Config.credentials = 'path-to-the-config'
     PubSubModelSync::Config.topic_name = 'sample-topic'
+    PubSubModelSync::Config.subscription_name = 'my-app1'
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
@@ -65,6 +66,7 @@ And then execute: $ bundle install
     PubSubModelSync::Config.bunny_connection = 'amqp://guest:guest@localhost'
     PubSubModelSync::Config.queue_name = 'model-sync'
     PubSubModelSync::Config.topic_name = 'sample-topic'
+    PubSubModelSync::Config.subscription_name = 'my-app2'
     ```
     See details here: https://github.com/ruby-amqp/bunny
 
@@ -73,22 +75,17 @@ And then execute: $ bundle install
     PubSubModelSync::Config.service_name = :kafka
     PubSubModelSync::Config.kafka_connection = [["kafka1:9092", "localhost:2121"], { logger: Rails.logger }]
     PubSubModelSync::Config.topic_name = 'sample-topic'
+    PubSubModelSync::Config.subscription_name = 'my-app3'
     ```
     See details here: https://github.com/zendesk/ruby-kafka
 
 - Add publishers/subscribers to your models (See examples below)
 
 - Start subscribers to listen for publishers (Only in the app that has subscribers)
-    ```ruby
-    rake pub_sub_model_sync:start
+    ```bash
+    DB_POOL=20 bundle exec rake pub_sub_model_sync:start
     ```
-    Note: Publishers do not need todo this
-    Note2 (Rails 6+): Due to Zeitwerk, you need to load listeners manually when syncing without mentioned task (like rails console)
-    ```ruby
-      # PubSubModelSync::Config.subscribers ==> []
-      PubSubModelSync::Runner.preload_listeners
-      # PubSubModelSync::Config.subscribers ==> [#<PubSubModelSync::Subscriber:0x000.. @klass="Article", @action=:create..., ....]
-    ```
+    Note: You need more than 15 DB pools to avoid "could not obtain a connection from the pool within 5.000 seconds"
 
 - Check the service status with:
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
@@ -352,7 +349,7 @@ config = PubSubModelSync::Config
 config.debug = true
 ```
 
-- ```.subscription_name = 'app-2'```
+- ```.subscription_name = 'my-app-2'```
     Permit to define a custom consumer identifier (Default: Rails application name)
 - ```.debug = true```
     (true/false*) => show advanced log messages
