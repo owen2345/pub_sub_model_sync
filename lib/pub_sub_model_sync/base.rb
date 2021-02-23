@@ -19,8 +19,9 @@ module PubSubModelSync
       retries ||= 0
       block.call
     rescue => e
+      retries += 1
       res = errors.find { |e_type| match_error?(e, e_type) }
-      raise if !res || (qty += 1) > retries
+      raise if !res || retries > qty
 
       sleep(qty * 0.1) && retry
     end

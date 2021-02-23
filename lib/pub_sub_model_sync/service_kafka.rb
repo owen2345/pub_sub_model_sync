@@ -35,8 +35,6 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      @counter ||= 0
-      @counter += 1
       producer.produce(payload.to_json, message_settings(payload))
     end
 

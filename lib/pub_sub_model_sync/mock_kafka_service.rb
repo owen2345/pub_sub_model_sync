@@ -43,6 +43,14 @@ module PubSubModelSync
       MockConsumer.new
     end
 
+    def topics
+      []
+    end
+
+    def create_topic(_name)
+      true
+    end
+
     def close
       true
     end
