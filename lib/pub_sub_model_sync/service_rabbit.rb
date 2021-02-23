@@ -13,13 +13,15 @@ module PubSubModelSync
 
     # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
     # @!attribute channels (Array): [Channel1]
-    attr_accessor :config, :service, :topic_names, :channels
+    # @!attribute exchanges (Hash<key: Exchange>): {topic_name: Exchange1}
+    attr_accessor :config, :service, :topic_names, :channels, :exchanges
 
     def initialize
       @config = PubSubModelSync::Config
       @service = Bunny.new(*config.bunny_connection)
       @topic_names = Array(config.topic_name || 'model_sync')
       @channels = []
+      @exchanges = {}
     end
 
     def listen_messages
@@ -70,7 +72,7 @@ module PubSubModelSync
       topic_names.each do |topic_name|
         subscribe_to_exchange(topic_name) do |channel, exchange|
           queue = channel.queue(config.subscription_key, QUEUE_SETTINGS)
-          queue.bind(exchange) # TODO: review missing routing_key
+          queue.bind(exchange)
           @channels << channel
           block.call(queue)
         end
@@ -78,10 +80,13 @@ module PubSubModelSync
     end
 
     def subscribe_to_exchange(topic_name, &block)
-      service.start
-      channel = service.create_channel
-      exchange = channel.fanout(topic_name)
-      block.call(channel, exchange)
+      topic_name = topic_name.to_s
+      exchanges[topic_name] ||= begin
+        service.start
+        channel = service.create_channel
+        channel.fanout(topic_name)
+      end
+      block.call(channel, exchanges[topic_name])
     end
 
     def find_topic_name(payload)
@@ -89,13 +94,8 @@ module PubSubModelSync
     end
 
     def deliver_data(payload)
-      subscribe_to_exchange(find_topic_name(payload)) do |channel, exchange|
+      subscribe_to_exchange(find_topic_name(payload)) do |_channel, exchange|
         exchange.publish(payload.to_json, message_settings(payload))
-
-        # Ugly fix: "IO timeout when reading 7 bytes"
-        # https://stackoverflow.com/questions/39039129/rabbitmq-timeouterror-io-timeout-when-reading-7-bytes
-        channel.close
-        service.close
       end
     end
   end
