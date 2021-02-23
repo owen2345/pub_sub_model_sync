@@ -10,7 +10,7 @@ module PubSubModelSync
     QTY_WORKERS = 10
     LISTEN_SETTINGS = {}.freeze
     PUBLISH_SETTINGS = {}.freeze
-    PRODUCER_SETTINGS = {}.freeze
+    PRODUCER_SETTINGS = { delivery_threshold: 200, delivery_interval: 30 }.freeze
     cattr_accessor :producer
 
     # @!attribute topic_names (Array): ['topic 1', 'topic 2']
@@ -38,7 +38,6 @@ module PubSubModelSync
       @counter ||= 0
       @counter += 1
       producer.produce(payload.to_json, message_settings(payload))
-      stop_timeout
     end
 
     def stop
@@ -54,22 +53,6 @@ module PubSubModelSync
         partition_key: payload.headers[:ordering_key],
         headers: { SERVICE_KEY => true }
       }.merge(PUBLISH_SETTINGS)
-    end
-
-    def deliver_messages
-      producer.deliver_messages
-      producer.shutdown
-    end
-
-    def stop_timeout
-      timeout.exit if timeout&.alive?
-    end
-
-    def await(seconds, &block)
-      @timeout = Thread.new do
-        sleep seconds
-        block.call
-      end
     end
 
     def start_consumer
