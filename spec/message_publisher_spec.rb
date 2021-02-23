@@ -9,19 +9,29 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   let(:model) { PublisherUser2.new(name: 'name', email: 'email', age: 10) }
   let(:action) { :update }
 
-  it '.publish_data: publishes payload to connector' do
-    data = { message: 'hello' }
-    action = :greeting
-    expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
-    inst.publish_data(publisher_klass, data, action)
-  end
-
   it 'does not publish payload if :on_before_publish returns :cancel' do
     allow(inst).to receive(:log)
     allow(inst.config.on_before_publish).to receive(:call).and_return(:cancel)
     expect(inst).to receive(:log).with(include('Publish cancelled by'))
     expect(connector).not_to receive(:publish)
     inst.publish_data(publisher_klass, {}, :greeting)
+  end
+
+  describe '.publish_data' do
+    let(:data) { { message: 'hello' } }
+    let(:action) { :greeting }
+
+    it 'publishes payload to connector' do
+      expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
+      inst.publish_data(publisher_klass, data, action)
+    end
+
+    it 'includes custom header data' do
+      custom_headers = { ordering_key: 'my order key', topic_name: 'my topic name' }
+      exp_attrs = have_attributes(headers: hash_including(custom_headers))
+      expect(connector).to receive(:publish).with(exp_attrs)
+      inst.publish_data(publisher_klass, data, action, custom_headers)
+    end
   end
 
   describe '.publish_model' do

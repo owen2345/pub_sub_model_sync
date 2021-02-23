@@ -7,6 +7,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   let!(:subscriber) do
     subs_klass.new(payload.klass, payload.action, settings: { direct_mode: true })
   end
+  before { allow(subscriber).to receive(:dup).and_return(subscriber) }
 
   it 'supports for deprecated initializer' do
     inst = described_class.new({}, 'User', :create)

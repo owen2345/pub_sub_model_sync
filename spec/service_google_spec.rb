@@ -16,7 +16,10 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
   end
   let(:inst) { described_class.new }
   let(:topic) { inst.topics.values.first }
-  before { allow(inst).to receive(:sleep) }
+  before do
+    allow(inst).to receive(:sleep)
+    allow(Process).to receive(:exit!)
+  end
 
   describe 'initializer' do
     it 'connects to pub/sub service' do
@@ -98,22 +101,29 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
   end
 
   describe '.publish' do
-    it 'delivery message' do
+    it 'deliveries message' do
       expect(topic).to receive(:publish_async).with(payload.to_json, anything)
       inst.publish(payload)
     end
 
-    it 'publishes ordered messages' do
-      expected_hash = hash_including(ordering_key: anything)
+    it 'uses defined ordering_key as the :ordering_key' do
+      expected_hash = hash_including(ordering_key: payload.headers[:ordering_key])
       expect(topic).to receive(:publish_async).with(anything, expected_hash)
+      inst.publish(payload)
+    end
+
+    it 'uses custom topic if defined' do
+      topic_name = 'custom_topic_name'
+      payload.headers[:topic_name] = topic_name
+      expect(inst.service).to receive(:topic).with(topic_name)
       inst.publish(payload)
     end
   end
 
   describe '.stop' do
     before { inst.listen_messages }
-    it 'stop current subscription' do
-      expect(inst.subscriber).to receive(:stop!)
+    it 'stops all subscribers' do
+      expect(inst.subscribers.first).to receive(:stop!)
       inst.stop
     end
   end
