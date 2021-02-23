@@ -383,6 +383,11 @@ config.debug = true
 - Add DB table to use as a shield to skip publishing similar notifications or publish partial notifications (similar idea when processing notif)
 - add callback: on_message_received(payload)
 
+- Publish by using a custom topic for Kafka and Rabbit
+- Add rspec to test only publish tocpis for Google, kafka and rabbit
+- Retry with "could not obtain a connection from the pool within 5.000 seconds"
+#### thinking- Add instance method "ps_perform_custom_sync(action, data, as_klass)" 
+
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?
   This problem occurs because pub/sub dependencies (kafka, google-pubsub, rabbitmq) use many threads to perform notifications where the qty of threads is greater than qty of DB pools ([Google pubsub info](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-pubsub/lib/google/cloud/pubsub/subscription.rb#L888))

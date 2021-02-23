@@ -10,29 +10,33 @@ module PubSubModelSync
       end
 
       # Permits to group all payloads with the same ordering_key and be processed in the same order
-      #   they are published by the subscribers
+      #   they are published by the subscribers. Grouping by ordering_key allows us to enable
+      #   multiple workers in our Pub/Sub service(s), and still guarantee that related payloads will
+      #   be processed in the correct order, despite of the multiple threads. This thanks to the fact
+      #   that Pub/Sub services will always send messages with the same `ordering_key` into the same
+      #   worker/thread.
       # @param key (String): This key will be used as the ordering_key for all payload
       #     inside this transaction.
       def transaction(key, &block)
-        old_key = init_transaction(key)
+        parent_key = init_transaction(key)
         begin
           block.call
         ensure
-          end_transaction(old_key)
+          end_transaction(parent_key)
         end
       end
 
       # Starts a news transaction
-      # @return (String) returns old transaction key
+      # @return (String) returns parent transaction key
       def init_transaction(key)
-        old_key = transaction_key
+        parent_key = transaction_key
         self.transaction_key = transaction_key.presence || key
-        old_key
+        parent_key
       end
 
       # Restores to the last transaction key
-      def end_transaction(old_key)
-        self.transaction_key = old_key
+      def end_transaction(parent_key)
+        self.transaction_key = parent_key
       end
 
       # Publishes any value to pubsub

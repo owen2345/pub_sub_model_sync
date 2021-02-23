@@ -8,6 +8,7 @@ end
 module PubSubModelSync
   class ServiceGoogle < ServiceBase
     LISTEN_SETTINGS = { message_ordering: true }.freeze
+    PUBLISH_SETTINGS = {}.freeze
     TOPIC_SETTINGS = {}.freeze
     SUBSCRIPTION_SETTINGS = { message_ordering: true }.freeze
 
