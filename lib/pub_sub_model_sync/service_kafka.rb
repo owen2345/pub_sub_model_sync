@@ -7,8 +7,10 @@ end
 
 module PubSubModelSync
   class ServiceKafka < ServiceBase
-    QTY_BATCH_DELIVER = 50
-    LISTEN_SETTINGS = { automatically_mark_as_processed: false }.freeze
+    QTY_WORKERS = 10
+    LISTEN_SETTINGS = {}.freeze
+    PUBLISH_SETTINGS = {}.freeze
+    PRODUCER_SETTINGS = {}.freeze
     cattr_accessor :producer
 
     # @!attribute topic_names (Array): ['topic 1', 'topic 2']
@@ -37,7 +39,6 @@ module PubSubModelSync
       @counter += 1
       producer.produce(payload.to_json, message_settings(payload))
       stop_timeout
-      (@counter % QTY_BATCH_DELIVER).zero? ? deliver_messages : await(3, &method(:deliver_messages))
     end
 
     def stop
@@ -80,14 +81,11 @@ module PubSubModelSync
       return self.class.producer if self.class.producer
 
       at_exit { self.class.producer.shutdown }
-      self.class.producer = service.async_producer
+      self.class.producer = service.async_producer(PRODUCER_SETTINGS)
     end
 
     def process_message(message)
       super(message.value) if message.headers[SERVICE_KEY]
-    ensure
-      consumer&.mark_message_as_processed(message)
-      consumer&.commit_offsets
     end
 
     # Check topic existence, create if missing topic
