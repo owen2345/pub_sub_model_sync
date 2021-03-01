@@ -24,8 +24,7 @@ module PubSubModelSync
     def ps_after_sync(_action, _payload); end
 
     # To perform sync on demand
-    # @param action (Sym): Action name (can be actions configured with "ps_publish" or custom actions)
-    #   To deliver custom actions (not configured with "ps_publish"), custom_data is mandatory.
+    # @param action (Sym): CRUD action name
     # @param custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E.
     #   data generator will be ignored
     # @param custom_headers (Hash, optional): refer Payload.headers

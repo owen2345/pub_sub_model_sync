@@ -114,8 +114,8 @@ end
 User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
 User.new(name: 'test user').ps_perform_sync(:create) # similar to above to perform sync on demand
 
-User.ps_class_publish({ msg: 'Hello' }, action: :greeting) # User.greeting method (Class method) will be called in App2
-PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting) # similar to above when not included publisher concern
+PubSubModelSync::MessagePublisher.publish_model_data(my_user, { msg: 'Hello' }, :greeting, { as_klass: 'RegisteredUser' }) # custom data publishing (preferred: includes model info in the headers)
+PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting) # custom data publishing
 ```
 
 ## **Advanced Example**
@@ -217,11 +217,17 @@ Note: Be careful with collision of names
 #### **Registering Publishing Callbacks**
 - You can register Model-level lifecycle callbacks (CRUD) that will trigger publishing events like this:
   ```ruby
-  ps_publish(attrs, actions: nil, as_klass: nil)
+  ps_publish(attrs, actions: nil, as_klass: nil, headers: { ordering_key: 'custom-key', topic_name: 'my-custom-topic' })
   ```
   * `attrs`: (Array/Required) Array of attributes to be published
   * `actions`: (Array/Optional, default: create/update/destroy) permit to customize action names
   * `as_klass`: (String/Optional) Output class name (Instead of the model class name, will use this value)
+  * `headers`: (Hash/Optional) Message configurations:
+    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message
+    - `ordering_key`: (String, optional): messages with the same key are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when model message
+    - `topic_name`: (String|Array<String>, optional): Specific topic name to be used when delivering the message (default first topic from config)
+    - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
+    
 
 
 #### **Instance Methods**
@@ -241,32 +247,23 @@ Note: Be careful with collision of names
 
 - **Execute a callback before sync** (On-demand, before sync is executed, but after payload is received )
   ```ruby
-  model_instance.ps_before_sync(action, data_to_deliver)
+  model_instance.ps_before_sync(action, payload)
   ```
   Note: If the method returns ```:cancel```, the sync will be stopped (message will not be published)
 
 - **Execute a callback after sync**
   ```ruby
-  model_instance.ps_after_sync(action, data_delivered)
+  model_instance.ps_after_sync(action, payload)
   ```
 
 - **Trigger a sync on-demand** (:create, :update, :destroy):
   The target model will receive a notification to perform the indicated action
   ```ruby
-  model_instance.ps_perform_sync(action_name, custom_settings = {})
+  model_instance.ps_perform_sync(action_name, custom_data: {}, custom_headers: {})
   ```
-  * `custom_settings`: override default settings defined for action_name ({ attrs: [], as_klass: nil })
-
-#### **Class Methods**
-
-- **Publish a class level notification**:
-  ```ruby
-  User.ps_class_publish(data, action: action_name, as_klass: custom_klass_name)
-  ```
-  Target class ```User.action_name``` will be called when message is received
-  * `data`: (required, :hash) message value to deliver
-  * `action_name`: (required, :sim) Action name
-  * `as_klass`: (optional, :string) Custom class name (Default current model name)
+  * `action`: (Sym) CRUD action name
+  * `custom_data`: custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E. data generator will be ignored
+  * `custom_headers`: (Hash, optional) override default headers. Refer `ps_publish.headers`
 
 #### **Payload actions**
   ```ruby
@@ -338,7 +335,7 @@ Note: Be careful with collision of names
       publisher = PubSubModelSync::MessagePublisher
       data = {msg: 'hello'}
       action = :greeting
-      User.ps_class_publish(data, action: action)
+      PubSubModelSync::MessagePublisher.publish_data('User', data, action)
       expect(publisher).to receive(:publish_data).with('User', data, action)
     end
     ```
