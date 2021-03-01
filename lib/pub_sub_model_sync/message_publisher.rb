@@ -45,24 +45,34 @@ module PubSubModelSync
       # @param action (:symbol): action name
       # @param headers (Hash, optional): header settings (More in Payload.headers)
       # @return Payload
-      def publish_data(klass, data, action, headers = {})
+      def publish_data(klass, data, action, headers: {})
         attrs = { klass: klass.to_s, action: action.to_sym }
         payload = PubSubModelSync::Payload.new(data, attrs, headers)
         publish(payload)
+      end
+
+      # Similar to .publish_data except that includes model info as the payload header
+      #   (Preferred way if publishing model info)
+      # @param model (ActiveRecord): Model object where to retrieve headers info from
+      # @param as_klass (String, optional): Class name (default model class name)
+      def publish_model_data(model, data, action, as_klass: nil, headers: {})
+        headers = PubSubModelSync::Publisher.headers_for(model, action).merge(headers)
+        publish_data(as_klass || model.class.name, data, action, headers: headers)
       end
 
       # Publishes model info to pubsub
       # @param model (ActiveRecord model)
       # @param action (Sym): Action name
       # @param publisher (Publisher, optional): Publisher to be used
+      # @param custom_headers (Hash): Refer Payload.headers
       # @return Payload
-      def publish_model(model, action, publisher = nil)
+      def publish_model(model, action, publisher: nil, custom_headers: {})
         return if model.ps_skip_sync?(action)
 
         publisher ||= model.class.ps_publisher(action)
-        payload = publisher.payload(model, action)
+        payload = publisher.payload(model, action, custom_headers: custom_headers)
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_sync syncs
-          publish(payload) { model.ps_after_sync(action, payload.data) } if ensure_model_publish(model, action, payload)
+          publish(payload) { model.ps_after_sync(action, payload) } if ensure_model_publish(model, action, payload)
         end
       end
 
@@ -93,13 +103,15 @@ module PubSubModelSync
 
       def ensure_publish(payload)
         payload.headers[:ordering_key] = @transaction_key if @transaction_key.present?
+        forced_order_key = payload.headers[:forced_ordering_key]
+        payload.headers[:ordering_key] = forced_order_key if forced_order_key
         cancelled = config.on_before_publish.call(payload) == :cancel
         log("Publish cancelled by config.on_before_publish: #{payload}") if config.debug && cancelled
         !cancelled
       end
 
       def ensure_model_publish(model, action, payload)
-        res_before = model.ps_before_sync(action, payload.data)
+        res_before = model.ps_before_sync(action, payload)
         cancelled = res_before == :cancel
         log("Publish cancelled by model.ps_before_sync: #{payload}") if config.debug && cancelled
         !cancelled

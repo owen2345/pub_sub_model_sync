@@ -24,14 +24,6 @@ RSpec.describe PubSubModelSync::Publisher do
       payload = inst.payload(model, action)
       expect(payload.attributes).to match(hash_including(klass: as_klass))
     end
-
-    it 'includes custom headers if defined' do
-      key = 'custom_key'
-      inst = described_class.new([:name], klass_name, action)
-      allow(model).to receive(:ps_payload_headers).and_return(ordering_key: key)
-      payload = inst.payload(model, action)
-      expect(payload.headers[:ordering_key]).to eq key
-    end
   end
 
   describe 'data' do
@@ -49,6 +41,20 @@ RSpec.describe PubSubModelSync::Publisher do
       expected_data = { full_name: model.name, email: model.email }
       payload = inst.payload(model, action)
       expect(payload.data).to eq expected_data
+    end
+
+    it 'includes custom headers when provided' do
+      custom_headers = { key: 'custom key' }
+      inst = described_class.new([], klass_name, action)
+      payload = inst.payload(model, action, custom_headers: custom_headers)
+      expect(payload).to have_attributes(headers: include(custom_headers))
+    end
+
+    it 'uses custom_data as the payload data when defined' do
+      custom_data = { id: 100 }
+      inst = described_class.new([], klass_name, action)
+      inst.custom_data = custom_data
+      expect(inst.payload(model, action)).to have_attributes(data: custom_data)
     end
   end
 end
