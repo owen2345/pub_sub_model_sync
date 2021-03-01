@@ -3,6 +3,7 @@
 module PubSubModelSync
   class MessagePublisher < PubSubModelSync::Base
     class << self
+      class MissingPublisher < StandardError; end
       attr_accessor :transaction_key
 
       def connector
@@ -63,14 +64,16 @@ module PubSubModelSync
       # Publishes model info to pubsub
       # @param model (ActiveRecord model)
       # @param action (Sym): Action name
-      # @param publisher (Publisher, optional): Publisher to be used
+      # @param custom_data (Hash, optional): If present custom_data will be used as the payload data.
       # @param custom_headers (Hash): Refer Payload.headers
       # @return Payload
-      def publish_model(model, action, publisher: nil, custom_headers: {})
+      def publish_model(model, action, custom_data: nil, custom_headers: {})
         return if model.ps_skip_sync?(action)
 
-        publisher ||= model.class.ps_publisher(action)
-        payload = publisher.payload(model, action, custom_headers: custom_headers)
+        publisher = model.class.ps_publisher(action)
+        raise(MissingPublisher, "No publisher found for: \"#{[action, model]}\" action") unless publisher
+
+        payload = publisher.payload(model, action, custom_data: custom_data, custom_headers: custom_headers)
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_sync syncs
           publish(payload) { model.ps_after_sync(action, payload) } if ensure_model_publish(model, action, payload)
         end

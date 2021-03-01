@@ -11,6 +11,7 @@ module SpecHelpers
 
   def mock_publisher_callback(callback, model_attrs, method = :new, &block)
     klass = Class.new(PublisherUser)
+    allow(klass).to receive(:name).and_return('PublisherUser')
     klass.send(callback, &block)
     klass.send(method, model_attrs)
   end

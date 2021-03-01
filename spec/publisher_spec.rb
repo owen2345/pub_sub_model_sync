@@ -53,8 +53,8 @@ RSpec.describe PubSubModelSync::Publisher do
     it 'uses custom_data as the payload data when defined' do
       custom_data = { id: 100 }
       inst = described_class.new([], klass_name, action)
-      inst.custom_data = custom_data
-      expect(inst.payload(model, action)).to have_attributes(data: custom_data)
+      payload = inst.payload(model, action, custom_data: custom_data)
+      expect(payload).to have_attributes(data: custom_data)
     end
   end
 end

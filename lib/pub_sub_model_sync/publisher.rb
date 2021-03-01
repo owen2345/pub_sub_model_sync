@@ -3,8 +3,6 @@
 module PubSubModelSync
   class Publisher
     attr_accessor :attrs, :actions, :klass, :as_klass, :headers
-    # @return (Hash, default nil): custom data to be delivered instead of parsed_data
-    attr_accessor :custom_data
 
     # @param headers (Hash): refer Payload.headers
     def initialize(attrs, klass, actions = nil, as_klass = nil, headers: {})
@@ -17,7 +15,7 @@ module PubSubModelSync
 
     # Builds the payload with model information defined for :action (:create|:update|:destroy)
     # @param custom_headers (Hash, default {}): refer Payload.headers
-    def payload(model, action, custom_headers: {})
+    def payload(model, action, custom_data: nil, custom_headers: {})
       all_headers = self.class.headers_for(model, action).merge(headers).merge(custom_headers)
       data = custom_data || payload_data(model)
       PubSubModelSync::Payload.new(data, payload_attrs(model, action), all_headers)

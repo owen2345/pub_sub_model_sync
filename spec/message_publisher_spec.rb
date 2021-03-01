@@ -55,13 +55,6 @@ RSpec.describe PubSubModelSync::MessagePublisher do
         expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
         inst.publish_model(model, action)
       end
-
-      it 'uses custom publisher when provided' do
-        attrs = %i[name email]
-        publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
-        expect(connector).to receive(:publish).with(be_kind_of(payload_klass))
-        inst.publish_model(model, action, publisher: publisher)
-      end
     end
 
     describe 'callbacks' do
@@ -96,8 +89,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
       describe '#ps_after_sync' do
         it 'calls callback method after publishing' do
           expect(model).to receive(:ps_after_sync).with(action, any_args)
-          publisher = model.class.ps_publisher(action)
-          inst.publish_model(model, action, publisher: publisher)
+          inst.publish_model(model, action)
         end
       end
     end

@@ -29,10 +29,8 @@ module PubSubModelSync
     #   data generator will be ignored
     # @param custom_headers (Hash, optional): refer Payload.headers
     def ps_perform_sync(action = :create, custom_data: nil, custom_headers: {})
-      publisher = self.class.ps_publisher(action).dup
-      publisher.custom_data = custom_data if custom_data
       p_klass = PubSubModelSync::MessagePublisher
-      p_klass.publish_model(self, action, publisher: publisher, custom_headers: custom_headers)
+      p_klass.publish_model(self, action, custom_data: custom_data, custom_headers: custom_headers)
     end
 
     module ClassMethods
@@ -43,7 +41,7 @@ module PubSubModelSync
         publisher = klass.new(attrs, name, actions, as_klass, headers: headers)
         PubSubModelSync::Config.publishers << publisher
         actions.each do |action|
-          ps_register_callback(action.to_sym, publisher)
+          ps_register_callback(action.to_sym)
         end
       end
 
@@ -72,12 +70,12 @@ module PubSubModelSync
       end
 
       # Configure specific callback and execute publisher when called callback
-      def ps_register_callback(action, publisher)
+      def ps_register_callback(action)
         after_commit(on: action) do |model|
           disabled = PubSubModelSync::Config.disabled_callback_publisher.call(model, action)
           if !disabled && !model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
-            klass.publish_model(model, action.to_sym, publisher: publisher)
+            klass.publish_model(model, action.to_sym)
           end
         end
       end

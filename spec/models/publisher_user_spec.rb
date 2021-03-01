@@ -29,7 +29,7 @@ RSpec.describe PublisherUser do
   describe 'callbacks' do
     it '.create' do
       model = described_class.new(name: 'name')
-      args = [be_a(model.class), :create, anything]
+      args = [be_a(model.class), :create]
       expect_publish_model(args)
       model.save!
     end
@@ -37,7 +37,7 @@ RSpec.describe PublisherUser do
     it '.update' do
       model = described_class.create(name: 'name')
       model.name = 'Changed'
-      args = [model, :update, anything]
+      args = [model, :update]
       expect_publish_model(args)
       model.save!
     end
@@ -46,14 +46,14 @@ RSpec.describe PublisherUser do
     #   including in virtual attrs or use cache
     xit '.update: not published if no changes' do
       model = described_class.create(name: 'name')
-      args = [model, :update, anything]
+      args = [model, :update]
       expect_no_publish_model(args)
       model.save!
     end
 
     it '.destroy' do
       model = described_class.create(name: 'name')
-      args = [model, :destroy, anything]
+      args = [model, :destroy]
       expect_publish_model(args)
       model.destroy!
     end
@@ -77,7 +77,7 @@ RSpec.describe PublisherUser do
       it 'publishes update event' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
-        args = [anything, :update, anything]
+        args = [anything, :update]
         expect_publish_model(args)
         model.save!
       end
@@ -157,7 +157,7 @@ RSpec.describe PublisherUser do
 
       it 'performs manual update sync' do
         action = :update
-        args = [model, action, anything]
+        args = [model, action, be_a(Hash)]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
