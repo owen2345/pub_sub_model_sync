@@ -99,6 +99,15 @@ RSpec.describe PubSubModelSync::ServiceKafka do
       expect(service).to receive(:create_topic).with(topic_name)
       inst.publish(payload)
     end
+
+    it 'publishes to all topics when defined' do
+      topic_names = %w[topic1 topic2]
+      payload.headers[:topic_name] = topic_names
+      topic_names.each do |topic_name|
+        expect(service).to receive(:create_topic).with(topic_name)
+      end
+      inst.publish(payload)
+    end
   end
 
   describe '.stop' do

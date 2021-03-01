@@ -33,8 +33,11 @@ module PubSubModelSync
 
     # @param payload (PubSubModelSync::Payload)
     def publish(payload)
-      find_topic(payload).publish_async(encode_payload(payload), message_headers(payload)) do |res|
-        raise 'Failed to publish the message.' unless res.succeeded?
+      message_topics = Array(payload.headers[:topic_name] || '').map(&method(:find_topic))
+      message_topics.each do |topic|
+        topic.publish_async(encode_payload(payload), message_headers(payload)) do |res|
+          raise 'Failed to publish the message.' unless res.succeeded?
+        end
       end
     end
 
@@ -45,8 +48,8 @@ module PubSubModelSync
 
     private
 
-    def find_topic(payload)
-      topic_name = payload.headers[:topic_name].to_s
+    def find_topic(topic_name)
+      topic_name = topic_name.to_s
       return topics.values.first unless topic_name.present?
 
       topics[topic_name] || publish_topics[topic_name] || init_topic(topic_name, only_publish: true)

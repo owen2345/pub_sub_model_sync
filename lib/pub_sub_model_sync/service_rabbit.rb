@@ -89,13 +89,12 @@ module PubSubModelSync
       block.call(channel, exchanges[topic_name])
     end
 
-    def find_topic_name(payload)
-      payload.headers[:topic_name] || topic_names.first
-    end
-
     def deliver_data(payload)
-      subscribe_to_exchange(find_topic_name(payload)) do |_channel, exchange|
-        exchange.publish(encode_payload(payload), message_settings(payload))
+      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics.each do |topic_name|
+        subscribe_to_exchange(topic_name) do |_channel, exchange|
+          exchange.publish(encode_payload(payload), message_settings(payload))
+        end
       end
     end
   end

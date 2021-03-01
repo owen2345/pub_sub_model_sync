@@ -5,6 +5,7 @@ RSpec.describe PubSubModelSync::ServiceBase do
   let(:payload_attrs) { { klass: 'Tester', action: :test } }
   let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs, { app_key: 'unknown_app' }) }
   let(:config) { PubSubModelSync::Config }
+  before { allow(Process).to receive(:exit!) }
 
   describe 'when publishing message' do
     before { payload.headers[:forced_ordering_key] = 'mandatory_key' }

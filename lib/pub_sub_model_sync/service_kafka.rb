@@ -35,7 +35,10 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      producer.produce(encode_payload(payload), message_settings(payload))
+      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics.each do |topic_name|
+        producer.produce(encode_payload(payload), message_settings(payload, topic_name))
+      end
     end
 
     def stop
@@ -45,9 +48,9 @@ module PubSubModelSync
 
     private
 
-    def message_settings(payload)
+    def message_settings(payload, topic_name)
       {
-        topic: ensure_topics(payload.headers[:topic_name] || topic_names.first),
+        topic: ensure_topics(topic_name),
         partition_key: payload.headers[:ordering_key],
         headers: { SERVICE_KEY => true }
       }.merge(PUBLISH_SETTINGS)

@@ -100,6 +100,15 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
       inst.publish(payload)
     end
 
+    it 'publishes to all topics when defined' do
+      topic_names = %w[topic1 topic2]
+      payload.headers[:topic_name] = topic_names
+      topic_names.each do |topic_name|
+        expect(channel).to receive(:fanout).with(topic_name).and_call_original
+      end
+      inst.publish(payload)
+    end
+
     it 'uses :ordering_key as the :routing_key when defined' do
       order_key = 'custom_order_key'
       payload.headers[:ordering_key] = order_key
