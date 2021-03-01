@@ -35,7 +35,7 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      producer.produce(payload.to_json, message_settings(payload))
+      producer.produce(encode_payload(payload), message_settings(payload))
     end
 
     def stop

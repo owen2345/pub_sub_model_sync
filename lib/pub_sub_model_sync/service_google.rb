@@ -33,7 +33,7 @@ module PubSubModelSync
 
     # @param payload (PubSubModelSync::Payload)
     def publish(payload)
-      find_topic(payload).publish_async(payload.to_json, message_headers(payload)) do |res|
+      find_topic(payload).publish_async(encode_payload(payload), message_headers(payload)) do |res|
         raise 'Failed to publish the message.' unless res.succeeded?
       end
     end

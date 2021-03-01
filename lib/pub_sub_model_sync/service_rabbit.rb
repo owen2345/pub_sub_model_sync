@@ -95,7 +95,7 @@ module PubSubModelSync
 
     def deliver_data(payload)
       subscribe_to_exchange(find_topic_name(payload)) do |_channel, exchange|
-        exchange.publish(payload.to_json, message_settings(payload))
+        exchange.publish(encode_payload(payload), message_settings(payload))
       end
     end
   end
