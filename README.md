@@ -222,11 +222,7 @@ Note: Be careful with collision of names
   * `attrs`: (Array/Required) Array of attributes to be published
   * `actions`: (Array/Optional, default: create/update/destroy) permit to customize action names
   * `as_klass`: (String/Optional) Output class name (Instead of the model class name, will use this value)
-  * `headers`: (Hash/Optional) Message configurations:
-    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message
-    - `ordering_key`: (String, optional): messages with the same key are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when model message
-    - `topic_name`: (String|Array<String>, optional): Specific topic name to be used when delivering the message (default first topic from config)
-    - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
+  * `headers`: (Hash/Optional) Notification settings (Refer Payload.headers)
     
 
 
@@ -265,9 +261,25 @@ Note: Be careful with collision of names
   * `custom_data`: custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E. data generator will be ignored
   * `custom_headers`: (Hash, optional) override default headers. Refer `ps_publish.headers`
 
-#### **Payload actions**
+#### **Payload**
+Any notification before delivering is transformed as a Payload for a better understanding. 
+
+- Initialize  
   ```ruby
-    payload = PubSubModelSync::Payload.new({ title: 'hello' }, { action: :greeting, klass: 'User' })
+    payload = PubSubModelSync::Payload.new(data, attributes, headers)
+  ```
+  * `data`: (Hash) Data to be published
+  * `attributes`: (Hash) Action info
+    - `action`: (String) action name
+    - `klass`: (String) class name
+  * `headers`: (Hash) Notification settings. 
+    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message
+    - `ordering_key`: (String, optional): messages with the same key are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when model message
+    - `topic_name`: (String|Array<String>, optional): Specific topic name to be used when delivering the message (default first topic from config)
+    - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
+  
+- Actions for payloads
+  ```ruby
     payload.publish! # publishes notification data. It raises exception if fails and does not call ```:on_error_publishing``` callback
     payload.publish # publishes notification data. On error does not raise exception but calls ```:on_error_publishing``` callback
     payload.process! # process a notification data. It raises exception if fails and does not call ```.on_error_processing``` callback
