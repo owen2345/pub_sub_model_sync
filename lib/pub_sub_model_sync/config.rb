@@ -22,7 +22,7 @@ module PubSubModelSync
     cattr_accessor :project, :credentials, :topic_name, :subscription_name
 
     # rabbitmq service
-    cattr_accessor :bunny_connection, :queue_name, :topic_name, :subscription_name
+    cattr_accessor :bunny_connection, :topic_name, :subscription_name
 
     # kafka service
     cattr_accessor :kafka_connection, :topic_name, :subscription_name

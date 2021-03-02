@@ -6,8 +6,9 @@ Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_
 - [**PubSubModelSync**](#pubsubmodelsync)
   - [**Features**](#features)
   - [**Installation**](#installation)
-  - [**Usage**](#usage)
-  - [**Examples**](#examples)
+  - [**Configuration**](#configuration)
+  - [**Notifications Diagram**](#notifications-diagram)
+  - [**Basic Example**](#basic-example)
   - [**Advanced Example**](#advanced-example)
   - [**API**](#api)
     - [**Subscribers**](#subscribers)
@@ -50,7 +51,7 @@ gem 'ruby-kafka' # to use apache kafka pub/sub service
 And then execute: $ bundle install
 
 
-## **Usage**
+## **Configuration**
 
 - Configuration for google pub/sub (You need google pub/sub service account)
     ```ruby
@@ -63,16 +64,11 @@ And then execute: $ bundle install
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
-    * `topic_name`: (String|Array<String>) Topic name(s) to be used to listen all notifications from when listening. Default topic name used when publishing a notification. 
-    * `subscription_name`: (String, default Rails.application.name) Subscriber's identifier which helps to: 
-      - skip self messages
-      - continue the sync from the last synced notification when service was restarted.
 
 - configuration for RabbitMq (You need rabbitmq installed)
     ```ruby
     PubSubModelSync::Config.service_name = :rabbitmq
     PubSubModelSync::Config.bunny_connection = 'amqp://guest:guest@localhost'
-    PubSubModelSync::Config.queue_name = 'model-sync'
     PubSubModelSync::Config.topic_name = 'sample-topic'
     PubSubModelSync::Config.subscription_name = 'my-app2'
     ```
@@ -101,7 +97,7 @@ And then execute: $ bundle install
 ## **Notifications Diagram**
 ![Diagram](/docs/notifications-diagram.png?raw=true)
 
-## **Examples**
+## **Basic Example**
 ```ruby
 # App 1 (Publisher)
 # attributes: name email age
@@ -125,7 +121,7 @@ end
 User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
 User.new(name: 'test user').ps_perform_sync(:create) # similar to above to perform sync on demand
 
-PubSubModelSync::MessagePublisher.publish_model_data(my_user, { msg: 'Hello' }, :greeting, { as_klass: 'RegisteredUser' }) # custom data publishing (preferred: includes model info in the headers)
+PubSubModelSync::MessagePublisher.publish_model_data(my_user, { msg: 'Hello' }, :greeting, { as_klass: 'RegisteredUser' }) # custom data publishing (preferred way: includes model info in the headers)
 PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting) # custom data publishing
 ```
 
@@ -135,7 +131,7 @@ PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[id:client_id name:full_name email], actions: %i[update], as_klass: 'Client')
+  ps_publish(%i[id:client_id name:full_name email], actions: %i[update], as_klass: 'Client', headers: { topic: ['topic1', 'topic N'] })
 
   def ps_skip_callback?(_action)
     false # here logic with action to skip push message
@@ -164,18 +160,12 @@ class User < ActiveRecord::Base
 end
 ```
 
-Note: Be careful with collision of names
-```
-  # ps_publish %i[name_data:name name:key] # key will be replaced with name_data
-  ps_publish %i[name_data:name key_data:key] # use alias to avoid collision
-```
-
 ## **API**
 ### **Subscribers**
 
-#### **Registering Subscription Callbacks**
+#### **Registering Subscriptions**
 
-- Configure model-level subscriptions
+- Configure class subscriptions
   ```ruby
   class MyModel < ActiveRecord::Base
     ps_class_subscribe(action_name, from_action: nil, from_klass: nil)
@@ -184,7 +174,7 @@ Note: Be careful with collision of names
   * `from_action`: (Optional) Source method name
   * `from_klass`: (Optional) Source class name
 
-- Configure instance-level subscriptions (CRUD)
+- Configure CRUD subscriptions (CRUD)
   ```ruby
   class MyModel < ActiveRecord::Base
     ps_subscribe(attrs, from_klass: nil, actions: nil, id: nil)
@@ -195,111 +185,149 @@ Note: Be careful with collision of names
   * `actions`: (Array/Optional, default: create/update/destroy) permit to customize action names
   * `id`: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
 
-- Configure a custom model finder
+- Perform custom actions before saving sync of the model (`:cancel` can be returned to skip sync)
   ```ruby
   class MyModel < ActiveRecord::Base
-    ps_find_model(data)
+    def ps_before_save_sync(payload)
+      # puts payload.data[:id]
+    end
+  end
+  ```
+  
+- Configure a custom model finder (optional)
+  ```ruby
+  class MyModel < ActiveRecord::Base
+    def ps_find_model(data)
+      where(custom_finder: data[:custom_value]).first_or_initialize
+    end
   end
   ```
   * `data`: (Hash) Data received from sync
   Must return an existent or a new model object
 
-#### **Class Methods**
-- Configure CRUD subscription for the class
-  ```ruby
-  MyModel.ps_subscriber(action_name)
-  ```
-  * `action_name` (default :create, :sym): can be :create, :update, :destroy
-
-- Inspect all configured subscribers
+#### **Subscription helpers**
+- Inspect all configured subscriptions
   ```ruby
   PubSubModelSync::Config.subscribers
   ```
-
-#### **Instance Methods**
-
-- Perform custom actions before saving sync of the model (On-demand, `:cancel` can be returned to skip sync)
+- Manually process or reprocess a notification
   ```ruby
-  my_instance.ps_before_save_sync(payload)
+  payload = PubSubModelSync::Payload.new(data, attributes, headers)
+  payload.process!
   ```
+
 
 ### **Publishers**
 
 #### **Registering Publishing Callbacks**
-- You can register Model-level lifecycle callbacks (CRUD) that will trigger publishing events like this:
+- Register CRUD notifications that will trigger publishing events
   ```ruby
-  ps_publish(attrs, actions: nil, as_klass: nil, headers: { ordering_key: 'custom-key', topic_name: 'my-custom-topic' })
+  class MyModel < ActiveRecord::Base
+    ps_publish([:id, 'created_at:published_at', :full_name], actions: [:update], as_klass: nil, headers: { ordering_key: 'custom-key', topic_name: 'my-custom-topic' })
+    def full_name
+      [first_name, last_name].join(' ')
+    end
+  end
   ```
-  * `attrs`: (Array/Required) Array of attributes to be published
-  * `actions`: (Array/Optional, default: create/update/destroy) permit to customize action names
+  * `attrs`: (Array/Required) Array of attributes to be published. Supports for:
+    - aliases: permits to publish with different names, sample: "created_at:published_at" where "created_at" will be published as "published_at" 
+    - methods: permits to publish method values as attributes, sample: "full_name"  
+  * `actions`: (Array/Optional, default: %i[create update destroy]) permit to define action names
   * `as_klass`: (String/Optional) Output class name (Instead of the model class name, will use this value)
-  * `headers`: (Hash/Optional) Notification settings (Refer Payload.headers)
-    
+  * `headers`: (Hash/Optional) Notification settings which permit to customize the way and the target of the notification (Refer Payload.headers)
+  
 
-#### **Instance Methods**
+#### **Publishing notifications**
+- CRUD notifications
+  ```ruby MyModel.create!(...) ```    
+  "Create" notification will be delivered with the configured attributes as the payload data
 
-- **Prevent PS-related callback** (On-demand, before the callback gets triggered)
+- Manual CRUD notifications
   ```ruby
-  model_instance.ps_skip_callback?(action)
+  MyModel.ps_perform_sync(action, custom_data: {}, custom_headers: {})
   ```
-  Default: False
-  Note: Return true to cancel sync
-
--  **Prevent sync after create/update/destroy action** (On-demand, before the sync gets triggered)
-    ```ruby
-    model_instance.ps_skip_sync?(action)
-    ```
-     Note: return true to cancel sync
-
-- **Execute a callback before sync** (On-demand, before sync is executed, but after payload is received )
-  ```ruby
-  model_instance.ps_before_sync(action, payload)
-  ```
-  Note: If the method returns ```:cancel```, the sync will be stopped (message will not be published)
-
-- **Execute a callback after sync**
-  ```ruby
-  model_instance.ps_after_sync(action, payload)
-  ```
-
-- **Trigger a sync on-demand** (:create, :update, :destroy):
-  The target model will receive a notification to perform the indicated action
-  ```ruby
-  model_instance.ps_perform_sync(action_name, custom_data: {}, custom_headers: {})
-  ```
-  * `action`: (Sym) CRUD action name
+  * `action`: (Sym) CRUD action name (create, update or destroy)
   * `custom_data`: custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E. data generator will be ignored
-  * `custom_headers`: (Hash, optional) override default headers. Refer `ps_publish.headers`
+  * `custom_headers`: (Hash, optional) override default headers. Refer `payload.headers`
+  
+- Custom notifications
+  * Custom notification
+    ```ruby PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )```
+      Publishes any data on demand.
+      - `klass`: (String) Class name to be used
+      - `data`: (Hash) Data to be delivered
+      - `action`: (Sym) Action name
+      - `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
+    
+  * Custom model notification
+    ```ruby PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)```
+      Similar to .publish_data except that includes model info as the payload header (Preferred way if publishing model data)
+      - `model`: (ActiveRecord) model owner of the data
+      - `as_klass`: (String, optional) if not provided, `model.class.name` will be used instead
+  
+  * Manually publish or republish a notification
+    ```ruby
+    payload = PubSubModelSync::Payload.new(data, attributes, headers)
+    payload.publish!
+    ```    
 
-#### **Publish custom actions**
-- PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )`
-  Publishes any data on demand.
-  * `klass`: (String) Class name to be used
-  * `data`: (Hash) Data to be delivered
-  * `action`: (Sym) Action name
-  * `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
+#### ** publishing callbacks**
 
-- `PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)`
-  Similar to .publish_data except that includes model info as the payload header (Preferred way if publishing model data)
-  * `model`: (ActiveRecord) model owner of the data
-  * `as_klass`: (String, optional) if not provided, `model.class.name` will be used instead
+- Prevent CRUD sync at model callback level (Called right after :after_create, :after_update, :after_destroy). 
+  If returns "true", sync will be cancelled.
+  ```ruby
+  class MyModel < ActiveRecord::Base
+    def ps_skip_callback?(action)
+      # logic here
+    end
+  end
+  ```
+
+- Prevent CRUD sync before processing payload (Affects model.ps_perform_sync(...))).
+  If returns "true", sync will be cancelled
+    ```ruby
+    class MyModel < ActiveRecord::Base
+      def ps_skip_sync?(action)
+        # logic here
+      end
+    end
+    ```
+
+- Do some actions before publishing a CRUD notification.
+  If returns ":cancel", sync will be cancelled
+  ```ruby
+      class MyModel < ActiveRecord::Base
+        def ps_before_sync(action, payload)
+          # logic here
+        end
+      end
+  ```
+
+- Do some actions after CRUD notification was published.
+  ```ruby
+    class MyModel < ActiveRecord::Base
+      def ps_after_sync(action, payload)
+        # logic here
+      end
+    end
+  ```
 
 
 ### **Payload**
-Any notification before delivering is transformed as a Payload for a better understanding. 
+Any notification before delivering is transformed as a Payload for a better portability. 
 
 - Initialize  
   ```ruby
     payload = PubSubModelSync::Payload.new(data, attributes, headers)
   ```
-  * `data`: (Hash) Data to be published
-  * `attributes`: (Hash) Action info
+  * `data`: (Hash) Data to be published or processed
+  * `attributes`: (Hash) Includes class and method info
     - `action`: (String) action name
     - `klass`: (String) class name
-  * `headers`: (Hash) Notification settings. 
-    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message
+  * `headers`: (Hash) Notification settings that defines how the notification will be processed or delivered. 
+    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message (Useful for caching techniques).
     - `ordering_key`: (String, optional): messages with the same key are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when model message
-    - `topic_name`: (String|Array<String>, optional): Specific topic name to be used when delivering the message (default first topic from config)
+    - `topic_name`: (String|Array<String>, optional): Specific topic name to be used when delivering the message (default first topic from config).
     - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
   
 - Actions for payloads
@@ -309,12 +337,6 @@ Any notification before delivering is transformed as a Payload for a better unde
     payload.process! # process a notification data. It raises exception if fails and does not call ```.on_error_processing``` callback
     payload.publish # process a notification data. It does not raise exception if fails but calls ```.on_error_processing``` callback
   ```
-
-- Get crud publisher configured for the class
-  ```ruby
-  User.ps_publisher(action_name)
-  ```
-  * `action_name` (default :create, :sym): can be :create, :update, :destroy
 
 ## **Testing with RSpec**
 - Config: (spec/rails_helper.rb)
@@ -381,9 +403,12 @@ Any notification before delivering is transformed as a Payload for a better unde
 config = PubSubModelSync::Config
 config.debug = true
 ```
-
-- ```.subscription_name = 'my-app-2'```
-    Permit to define a custom consumer identifier (Default: Rails application name)
+- `.topic_name = ['topic1', 'topic 2']`: (String|Array<String>)    
+    Topic name(s) to be used to listen all notifications from when listening. Additional first topic name is used as the default topic name when publishing a notification. 
+- `.subscription_name = "my-app-1"`:  (String, default Rails.application.name)     
+    Subscriber's identifier which helps to: 
+    * skip self messages
+    * continue the sync from the last synced notification when service was restarted.
 - ```.debug = true```
     (true/false*) => show advanced log messages
 - ```.logger = Rails.logger```
@@ -408,18 +433,15 @@ config.debug = true
 - Add flag ```model.ps_process_payload``` to retrieve the payload used to process the pub/sub sync
 - Auto publish update only if payload has changed
 - On delete, payload must only be composed by ids
-- Feature to publish multiple message at a time with the ability to exclude similar messages by klass and action (use the last one)
-    PubSubModelSync::MessagePublisher.batch_publish({ same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })
-- Add DB table to use as a shield to skip publishing similar notifications or publish partial notifications (similar idea when processing notif)
+- Improve transactions to exclude similar messages by klass and action. Sample:
+    ```PubSubModelSync::MessagePublisher.transaction(key, { same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })```
+- Add DB table to use as a shield to prevent publishing similar notifications and publish partial notifications (similar idea when processing notif)
 - add callback: on_message_received(payload)
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?
   This problem occurs because pub/sub dependencies (kafka, google-pubsub, rabbitmq) use many threads to perform notifications where the qty of threads is greater than qty of DB pools ([Google pubsub info](https://github.com/googleapis/google-cloud-ruby/blob/master/google-cloud-pubsub/lib/google/cloud/pubsub/subscription.rb#L888))
-  To fix the problem, edit config/database.yml and increase the quantity of ```pool: 10```
-- Google pubsub: How to process notifications parallely and not sequentially (default 1 thread)?
-  ```ruby  PubSubModelSync::ServiceGoogle::LISTEN_SETTINGS = { threads: { callback: qty_threads } } ```
-  Note: by this way some notifications can be processed before others thus missing relationship errors can appear
+  To fix the problem, edit config/database.yml and increase the quantity of ```pool: 20```
 - How to retry failed syncs with sidekiq?
   ```ruby
     # lib/initializers/pub_sub_config.rb
