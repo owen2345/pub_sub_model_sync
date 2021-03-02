@@ -99,7 +99,7 @@ And then execute: $ bundle install
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
 
 ## **Notifications Diagram**
-![Diagram](/docs/diagram.png?raw=true)
+![Diagram](/docs/notifications-diagram.png?raw=true)
 
 ## **Examples**
 ```ruby
