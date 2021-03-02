@@ -14,10 +14,9 @@ module PubSubModelSync
     # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
     # @!attribute channels (Array): [Channel1]
     # @!attribute exchanges (Hash<key: Exchange>): {topic_name: Exchange1}
-    attr_accessor :config, :service, :topic_names, :channels, :exchanges
+    attr_accessor :service, :topic_names, :channels, :exchanges
 
     def initialize
-      @config = PubSubModelSync::Config
       @service = Bunny.new(*config.bunny_connection)
       @topic_names = Array(config.topic_name || 'model_sync')
       @channels = []

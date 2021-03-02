@@ -38,7 +38,7 @@ module PubSubModelSync
       # @param headers (Hash, optional): Refer Payload.headers
       def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil, headers: {})
         klass = PubSubModelSync::Publisher
-        publisher = klass.new(attrs, name, actions, as_klass, headers: headers)
+        publisher = klass.new(attrs, name, actions, as_klass: as_klass, headers: headers)
         PubSubModelSync::Config.publishers << publisher
         actions.each do |action|
           ps_register_callback(action.to_sym)

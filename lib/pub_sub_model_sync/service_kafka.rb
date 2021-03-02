@@ -14,10 +14,9 @@ module PubSubModelSync
     cattr_accessor :producer
 
     # @!attribute topic_names (Array): ['topic 1', 'topic 2']
-    attr_accessor :config, :service, :consumer, :timeout, :topic_names
+    attr_accessor :service, :consumer, :topic_names
 
     def initialize
-      @config = PubSubModelSync::Config
       settings = config.kafka_connection
       settings[1][:client_id] ||= config.subscription_key
       @service = Kafka.new(*settings)

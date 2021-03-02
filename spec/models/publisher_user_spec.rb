@@ -7,25 +7,6 @@ RSpec.describe PublisherUser do
     expect(info).not_to be_nil
   end
 
-  describe 'class messages' do
-    xdescribe '.ps_class_publish' do
-      let(:action) { :greeting }
-      let(:data) { { msg: 'Hello' } }
-      it 'default values' do
-        args = [described_class.name, data, action]
-        expect_publish_data(args)
-        described_class.ps_class_publish(data, action: action)
-      end
-      it 'custom class name' do
-        as_klass = 'User'
-        args = [as_klass, data, action]
-        expect_publish_data(args)
-        described_class
-          .ps_class_publish(data, action: action, as_klass: as_klass)
-      end
-    end
-  end
-
   describe 'callbacks' do
     it '.create' do
       model = described_class.new(name: 'name')

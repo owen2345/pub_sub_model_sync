@@ -33,6 +33,10 @@ Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_
 - Ability to make class level communication
     Example: If User from App1 wants to generate_email, this can be listened on App2, App3, ... to make corresponding actions
 - Change pub/sub service at any time
+- Support for transactions: Permits to group all payloads with the same ordering_key and be processed in the same order they are published by the subscribers. 
+  Grouping by ordering_key allows us to enable multiple workers in our Pub/Sub service(s), and still guarantee that related payloads will be processed in the correct order, despite of the multiple threads. 
+  This thanks to the fact that Pub/Sub services will always send messages with the same `ordering_key` into the same worker/thread.
+- Ability to send notifications to a specific topic or multiple topics
 
 ## **Installation**
 Add this line to your application's Gemfile:
@@ -54,11 +58,15 @@ And then execute: $ bundle install
     PubSubModelSync::Config.service_name = :google
     PubSubModelSync::Config.project = 'google-project-id'
     PubSubModelSync::Config.credentials = 'path-to-the-config'
-    PubSubModelSync::Config.topic_name = 'sample-topic'
+    PubSubModelSync::Config.topic_name = 'sample-topic' 
     PubSubModelSync::Config.subscription_name = 'my-app1'
     ```
     See details here:
     https://github.com/googleapis/google-cloud-ruby/tree/master/google-cloud-pubsub
+    * `topic_name`: (String|Array<String>) Topic name(s) to be used to listen all notifications from when listening. Default topic name used when publishing a notification. 
+    * `subscription_name`: (String, default Rails.application.name) Subscriber's identifier which helps to: 
+      - skip self messages
+      - continue the sync from the last synced notification when service was restarted.
 
 - configuration for RabbitMq (You need rabbitmq installed)
     ```ruby
@@ -85,7 +93,7 @@ And then execute: $ bundle install
     ```bash
     DB_POOL=20 bundle exec rake pub_sub_model_sync:start
     ```
-    Note: You need more than 15 DB pools to avoid "could not obtain a connection from the pool within 5.000 seconds"
+    Note: You need more than 15 DB pools to avoid "could not obtain a connection from the pool within 5.000 seconds". https://devcenter.heroku.com/articles/concurrency-and-database-connections
 
 - Check the service status with:
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
@@ -225,7 +233,6 @@ Note: Be careful with collision of names
   * `headers`: (Hash/Optional) Notification settings (Refer Payload.headers)
     
 
-
 #### **Instance Methods**
 
 - **Prevent PS-related callback** (On-demand, before the callback gets triggered)
@@ -261,7 +268,21 @@ Note: Be careful with collision of names
   * `custom_data`: custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E. data generator will be ignored
   * `custom_headers`: (Hash, optional) override default headers. Refer `ps_publish.headers`
 
-#### **Payload**
+#### **Publish custom actions**
+- PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )`
+  Publishes any data on demand.
+  * `klass`: (String) Class name to be used
+  * `data`: (Hash) Data to be delivered
+  * `action`: (Sym) Action name
+  * `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
+
+- `PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)`
+  Similar to .publish_data except that includes model info as the payload header (Preferred way if publishing model data)
+  * `model`: (ActiveRecord) model owner of the data
+  * `as_klass`: (String, optional) if not provided, `model.class.name` will be used instead
+
+
+### **Payload**
 Any notification before delivering is transformed as a Payload for a better understanding. 
 
 - Initialize  
@@ -388,11 +409,6 @@ config.debug = true
     PubSubModelSync::MessagePublisher.batch_publish({ same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })
 - Add DB table to use as a shield to skip publishing similar notifications or publish partial notifications (similar idea when processing notif)
 - add callback: on_message_received(payload)
-
-- Publish by using a custom topic for Kafka and Rabbit
-- Add rspec to test only publish tocpis for Google, kafka and rabbit
-- Retry with "could not obtain a connection from the pool within 5.000 seconds"
-#### thinking- Add instance method "ps_perform_custom_sync(action, data, as_klass)" 
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?

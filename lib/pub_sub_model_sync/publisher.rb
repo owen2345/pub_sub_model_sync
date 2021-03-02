@@ -5,7 +5,7 @@ module PubSubModelSync
     attr_accessor :attrs, :actions, :klass, :as_klass, :headers
 
     # @param headers (Hash): refer Payload.headers
-    def initialize(attrs, klass, actions = nil, as_klass = nil, headers: {})
+    def initialize(attrs, klass, actions = nil, as_klass: nil, headers: {})
       @attrs = attrs
       @klass = klass
       @actions = actions || %i[create update destroy]
@@ -16,9 +16,11 @@ module PubSubModelSync
     # Builds the payload with model information defined for :action (:create|:update|:destroy)
     # @param custom_headers (Hash, default {}): refer Payload.headers
     def payload(model, action, custom_data: nil, custom_headers: {})
-      all_headers = self.class.headers_for(model, action).merge(headers).merge(custom_headers)
+      payload_headers = self.class.headers_for(model, action)
+                            .merge(headers)
+                            .merge(custom_headers)
       data = custom_data || payload_data(model)
-      PubSubModelSync::Payload.new(data, payload_attrs(model, action), all_headers)
+      PubSubModelSync::Payload.new(data, payload_attrs(model, action), payload_headers)
     end
 
     def self.headers_for(model, action)

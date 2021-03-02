@@ -27,7 +27,7 @@ module PubSubModelSync
         end
       end
 
-      # Starts a news transaction
+      # Starts a new transaction
       # @return (String) returns parent transaction key
       def init_transaction(key)
         parent_key = transaction_key
@@ -71,7 +71,8 @@ module PubSubModelSync
         return if model.ps_skip_sync?(action)
 
         publisher = model.class.ps_publisher(action)
-        raise(MissingPublisher, "No publisher found for: \"#{[action, model]}\" action") unless publisher
+        error_msg = "No publisher found for: \"#{[model.class.name, action]}\""
+        raise(MissingPublisher, error_msg) unless publisher
 
         payload = publisher.payload(model, action, custom_data: custom_data, custom_headers: custom_headers)
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_sync syncs
@@ -106,8 +107,8 @@ module PubSubModelSync
 
       def ensure_publish(payload)
         payload.headers[:ordering_key] = @transaction_key if @transaction_key.present?
-        forced_order_key = payload.headers[:forced_ordering_key]
-        payload.headers[:ordering_key] = forced_order_key if forced_order_key
+        forced_ordering_key = payload.headers[:forced_ordering_key]
+        payload.headers[:ordering_key] = forced_ordering_key if forced_ordering_key
         cancelled = config.on_before_publish.call(payload) == :cancel
         log("Publish cancelled by config.on_before_publish: #{payload}") if config.debug && cancelled
         !cancelled

@@ -20,7 +20,7 @@ RSpec.describe PubSubModelSync::Publisher do
 
     it 'supports for custom class name' do
       as_klass = 'CustomClass'
-      inst = described_class.new([:name], klass_name, action, as_klass)
+      inst = described_class.new([:name], klass_name, action, as_klass: as_klass)
       payload = inst.payload(model, action)
       expect(payload.attributes).to match(hash_including(klass: as_klass))
     end

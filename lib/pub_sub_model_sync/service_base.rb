@@ -25,7 +25,8 @@ module PubSubModelSync
     def encode_payload(payload)
       data = payload.to_h
       not_important_keys = %i[ordering_key topic_name forced_ordering_key]
-      data[:headers].except!(*not_important_keys) unless config.debug # (reduce payload size)
+      reduce_payload_size = !config.debug
+      data[:headers].except!(*not_important_keys) if reduce_payload_size
       data.to_json
     end
 
