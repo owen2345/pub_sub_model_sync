@@ -98,6 +98,9 @@ And then execute: $ bundle install
 - Check the service status with:
   ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
 
+## **Notifications Diagram**
+![Diagram](/docs/diagram.png?raw=true)
+
 ## **Examples**
 ```ruby
 # App 1 (Publisher)
