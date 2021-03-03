@@ -78,11 +78,12 @@ module PubSubModelSync
 
     # @return [Subscriber]
     def subscribe_to_topics
-      topics.map do |_k, topic|
-        subscription = topic.subscription(config.subscription_key) ||
-                       topic.subscribe(config.subscription_key, SUBSCRIPTION_SETTINGS)
+      topics.map do |key, topic|
+        subs_name = "#{config.subscription_key}_#{key}"
+        subscription = topic.subscription(subs_name) || topic.subscribe(subs_name, SUBSCRIPTION_SETTINGS)
         subscriber = subscription.listen(LISTEN_SETTINGS, &method(:process_message))
         subscriber.start
+        log("Subscribed to topic: #{topic.name} as: #{subs_name}")
         subscriber
       end
     end
