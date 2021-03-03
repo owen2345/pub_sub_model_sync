@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  test:
+    build: .
+    command: sh -c 'bundle exec rspec'
+    volumes:
+      - .:/myapp
+      - bundler_gems:/usr/local/bundle/
+
+volumes:
+  bundler_gems:
