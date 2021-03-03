@@ -52,10 +52,13 @@ module PubSubModelSync
         publish(payload)
       end
 
-      # Similar to .publish_data except that includes model info as the payload header
-      #   (Preferred way if publishing model info)
-      # @param model (ActiveRecord): Model object where to retrieve headers info from
+      # Publishes custom model action
+      # @param model (ActiveRecord): Model object owner of the data
+      # @param data (Hash): Data to be delivered
+      # @param action (:symbol): action name
       # @param as_klass (String, optional): Class name (default model class name)
+      # @param headers (Hash, optional): header settings (More in Payload.headers)
+      # @return Payload
       def publish_model_data(model, data, action, as_klass: nil, headers: {})
         headers = PubSubModelSync::Publisher.headers_for(model, action).merge(headers)
         publish_data(as_klass || model.class.name, data, action, headers: headers)

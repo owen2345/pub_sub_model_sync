@@ -9,21 +9,24 @@ module PubSubModelSync
 
     # permit to apply custom actions before applying sync
     # @return (nil|:cancel): nil to continue sync OR :cancel to skip sync
-    def ps_before_save_sync(_payload); end
+    def ps_before_save_sync(_action, _payload); end
 
     module ClassMethods
       def ps_subscribe(attrs, actions: nil, from_klass: name, id: :id)
-        settings = { id: id, from_klass: from_klass }
+        settings = { id: id, from_klass: from_klass, mode: :model }
         actions ||= %i[create update destroy]
         actions.each do |action|
           add_ps_subscriber(action, attrs, settings)
         end
       end
 
+      def ps_subscribe_custom(action, from_klass: name, id: :id, from_action: nil)
+        settings = { id: id, mode: :custom_model, from_klass: from_klass, from_action: from_action }
+        add_ps_subscriber(action, nil, settings)
+      end
+
       def ps_class_subscribe(action, from_action: nil, from_klass: nil)
-        settings = { direct_mode: true }
-        settings[:from_action] = from_action if from_action
-        settings[:from_klass] = from_klass if from_klass
+        settings = { mode: :klass, from_action: from_action, from_klass: from_klass }
         add_ps_subscriber(action, nil, settings)
       end
 

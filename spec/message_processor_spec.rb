@@ -5,7 +5,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   let(:payload) { PubSubModelSync::Payload.new({}, { klass: 'SampleUser', action: :create }) }
   let(:inst) { described_class.new(payload) }
   let!(:subscriber) do
-    subs_klass.new(payload.klass, payload.action, settings: { direct_mode: true })
+    subs_klass.new(payload.klass, payload.action, settings: { mode: :klass })
   end
   before { allow(subscriber).to receive(:dup).and_return(subscriber) }
 

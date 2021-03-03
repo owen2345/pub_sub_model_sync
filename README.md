@@ -109,11 +109,16 @@ end
 # App 2 (Subscriber)
 class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name])
-  ps_class_subscribe(:greeting)
+  ps_subscribe(%i[name]) # crud notifications
+  ps_subscribe_custom(:say_welcome) # custom instance notification
+  ps_class_subscribe(:greeting) # class notification
 
   def self.greeting(data)
     puts 'Class message called'
+  end
+  
+  def say_welcome(data)
+    UserMailer.deliver(id, data)
   end
 end
 
@@ -148,10 +153,15 @@ class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
   ps_subscribe(%i[name], actions: %i[update], from_klass: 'Client', id: %i[client_id email])
   ps_class_subscribe(:greeting, from_action: :custom_greeting, from_klass: 'CustomUser')
+  ps_subscribe_custom(:send_welcome, from_klass: 'CustomUser', id: :id, from_action: :say_welcome)
   alias_attribute :full_name, :name
 
   def self.greeting(data)
     puts 'Class message called through custom_greeting'
+  end
+  
+  def send_welcome(data)
+    UserMailer.deliver(id, data)
   end
 
   # def self.ps_find_model(data)
@@ -171,24 +181,39 @@ end
     ps_class_subscribe(action_name, from_action: nil, from_klass: nil)
   end
   ```
-  * `from_action`: (Optional) Source method name
-  * `from_klass`: (Optional) Source class name
+  When Class receives the corresponding notification, `action` method will be called on the Class. Like: `User.action(data)`
+  * `action_name`: (String|Sym/Optional) Action name
+  * `from_klass`: (String/Optional) Source class name (Default `model.class.name`)
+  * `from_action`: (Sym/Optional) Source method name. Default `action`
 
-- Configure CRUD subscriptions (CRUD)
+- Configure CRUD subscriptions
   ```ruby
   class MyModel < ActiveRecord::Base
     ps_subscribe(attrs, from_klass: nil, actions: nil, id: nil)
   end
   ```
+  When model receives the corresponding notification, `action` method will be called on the model. Like: `model.destroy`
   * `attrs`: (Array/Required) Array of all attributes to be synced
-  * `from_klass`: (String/Optional) Source class name (Instead of the model class name, will use this value)
+  * `from_klass`: (String/Optional) Source class name (Default `model.class.name`)
   * `actions`: (Array/Optional, default: create/update/destroy) permit to customize action names
+  * `id`: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
+
+- Configure custom model subscriptions
+  ```ruby
+  class MyModel < ActiveRecord::Base
+    ps_subscribe_custom(action, from_klass: name, id: :id, from_action: nil)
+  end
+  ```
+  When model receives the corresponding notification, `action` method will be called on the model. Like: `model.action(data)`
+  * `action`: (String/Required) Action name
+  * `from_klass`: (String/Optional) Source class name (Default `model.class.name`)
+  * `from_action`: (Sym/Optional) Source method name. Default `action`
   * `id`: (Sym|Array/Optional, default: id) Attr identifier(s) to find the corresponding model
 
 - Perform custom actions before saving sync of the model (`:cancel` can be returned to skip sync)
   ```ruby
   class MyModel < ActiveRecord::Base
-    def ps_before_save_sync(payload)
+    def ps_before_save_sync(action, payload)
       # puts payload.data[:id]
     end
   end
@@ -219,8 +244,8 @@ end
 
 ### **Publishers**
 
-#### **Registering Publishing Callbacks**
-- Register CRUD notifications that will trigger publishing events
+#### **Registering Publishers **
+- Register CRUD publishers that will trigger configured notifications
   ```ruby
   class MyModel < ActiveRecord::Base
     ps_publish([:id, 'created_at:published_at', :full_name], actions: [:update], as_klass: nil, headers: { ordering_key: 'custom-key', topic_name: 'my-custom-topic' })
@@ -250,22 +275,24 @@ end
   * `custom_data`: custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E. data generator will be ignored
   * `custom_headers`: (Hash, optional) override default headers. Refer `payload.headers`
   
-- Custom notifications
-  * Custom notification
-    ```ruby PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )```
-      Publishes any data on demand.
-      - `klass`: (String) Class name to be used
-      - `data`: (Hash) Data to be delivered
-      - `action`: (Sym) Action name
-      - `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
-    
-  * Custom model notification
-    ```ruby PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)```
-      Similar to .publish_data except that includes model info as the payload header (Preferred way if publishing model data)
-      - `model`: (ActiveRecord) model owner of the data
-      - `as_klass`: (String, optional) if not provided, `model.class.name` will be used instead
+- Class notifications
+```ruby PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )```
+  Publishes any data to be listened at a class level.
+  - `klass`: (String) Class name to be used
+  - `data`: (Hash) Data to be delivered
+  - `action`: (Sym) Action name
+  - `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
+
+- Model custom action notifications
+```ruby PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)```
+  Publishes model custom action to be listened at an instance level.
+  - `model`: (ActiveRecord) model owner of the data
+  - `data`: (Hash) Data to be delivered
+  - `action`: (Sym) Action name
+  - `as_klass`: (String, optional) if not provided, `model.class.name` will be used instead
+  - `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
   
-  * Manually publish or republish a notification
+- Manually publish or republish a notification
     ```ruby
     payload = PubSubModelSync::Payload.new(data, attributes, headers)
     payload.publish!

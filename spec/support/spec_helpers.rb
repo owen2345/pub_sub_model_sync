@@ -15,6 +15,13 @@ module SpecHelpers
     klass.send(callback, &block)
     klass.send(method, model_attrs)
   end
+
+  def mock_ps_subscribe_custom(action, from_klass: 'SubscriberUser', id: :id, from_action: nil, &block)
+    settings = { id: id, mode: :custom_model, from_klass: from_klass, from_action: from_action }
+    subscriber = SubscriberUser.send(:add_ps_subscriber, action, nil, settings)
+    block.call(SubscriberUser)
+    PubSubModelSync::Config.subscribers = PubSubModelSync::Config.subscribers - [subscriber]
+  end
 end
 
 RSpec.configure do |config|

@@ -84,6 +84,26 @@ RSpec.describe SubscriberUser do
       end
     end
 
+    describe 'when listening custom model actions' do
+      let(:data) { { name: 'Test user', id: 1 } }
+      it 'receives the call in the corresponding method' do
+        action = :send_welcome
+        mock_ps_subscribe_custom(action) do |klass|
+          expect_any_instance_of(klass).to receive(action).with(data)
+          PubSubModelSync::Payload.new(data, { klass: klass.name, action: action }).process!
+        end
+      end
+
+      it 'supports for custom action name' do
+        source_action = :send_welcome
+        action = :deliver_welcome
+        mock_ps_subscribe_custom(action, from_action: source_action) do |klass|
+          expect_any_instance_of(klass).to receive(action).with(data)
+          PubSubModelSync::Payload.new(data, { klass: klass.name, action: source_action }).process!
+        end
+      end
+    end
+
     describe 'class subscriptions' do
       let(:model_klass) { SubscriberUser }
       let(:data) { { msg: 'Hello' } }
