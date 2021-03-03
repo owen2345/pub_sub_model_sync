@@ -26,6 +26,10 @@ module PubSubModelSync
     end
 
     class MockTopic
+      def name
+        'name'
+      end
+
       def subscription(*_args)
         @subscription ||= MockSubscription.new
       end
