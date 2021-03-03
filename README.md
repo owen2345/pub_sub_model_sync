@@ -126,8 +126,8 @@ end
 User.create(name: 'test user', email: 'sample@gmail.com') # Review your App 2 to see the created user (only name will be saved)
 User.new(name: 'test user').ps_perform_sync(:create) # similar to above to perform sync on demand
 
-PubSubModelSync::MessagePublisher.publish_model_data(my_user, { msg: 'Hello' }, :greeting, { as_klass: 'RegisteredUser' }) # custom data publishing (preferred way: includes model info in the headers)
-PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting) # custom data publishing
+PubSubModelSync::MessagePublisher.publish_model_data(my_user, { id:10, msg: 'Hello' }, :say_welcome, { as_klass: 'RegisteredUser' }) # custom model action notification
+PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting) # custom data notification
 ```
 
 ## **Advanced Example**
@@ -136,7 +136,7 @@ PubSubModelSync::MessagePublisher.publish_data(User, { msg: 'Hello' }, :greeting
 class User < ActiveRecord::Base
   self.table_name = 'publisher_users'
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[id:client_id name:full_name email], actions: %i[update], as_klass: 'Client', headers: { topic: ['topic1', 'topic N'] })
+  ps_publish(%i[id:client_id name:full_name email], actions: %i[update], as_klass: 'Client', headers: { topic_name: ['topic1', 'topic N'] })
 
   def ps_skip_callback?(_action)
     false # here logic with action to skip push message
@@ -264,7 +264,9 @@ end
 
 #### **Publishing notifications**
 - CRUD notifications
-  ```ruby MyModel.create!(...) ```    
+  ```ruby 
+    MyModel.create!(...) 
+  ```    
   "Create" notification will be delivered with the configured attributes as the payload data
 
 - Manual CRUD notifications
@@ -276,7 +278,9 @@ end
   * `custom_headers`: (Hash, optional) override default headers. Refer `payload.headers`
   
 - Class notifications
-```ruby PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )```
+  ```ruby 
+    PubSubModelSync::MessagePublisher.publish_data((klass, data, action, headers: )
+  ```
   Publishes any data to be listened at a class level.
   - `klass`: (String) Class name to be used
   - `data`: (Hash) Data to be delivered
@@ -284,7 +288,9 @@ end
   - `headers`: (Hash, optional) Notification settings (Refer Payload.headers)
 
 - Model custom action notifications
-```ruby PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)```
+  ```ruby 
+    PubSubModelSync::MessagePublisher.publish_model_data(model, data, action, as_klass:, headers:)
+  ```
   Publishes model custom action to be listened at an instance level.
   - `model`: (ActiveRecord) model owner of the data
   - `data`: (Hash) Data to be delivered
