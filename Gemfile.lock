@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (0.5.10)
+    pub_sub_model_sync (0.6.0)
       rails
 
 GEM
@@ -243,6 +243,7 @@ DEPENDENCIES
   database_cleaner-active_record
   google-cloud-pubsub (> 2.0)
   pub_sub_model_sync!
+  rails (~> 6)
   rake
   rspec
   rubocop (~> 1.6.0)
