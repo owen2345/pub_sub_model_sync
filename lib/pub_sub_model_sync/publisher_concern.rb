@@ -45,6 +45,14 @@ module PubSubModelSync
         end
       end
 
+      # Klass level notification
+      # @deprecated this method was deprecated in favor of:
+      #   PubSubModelSync::MessagePublisher.publish_data(...)
+      def ps_class_publish(data, action:, as_klass: nil, headers: {})
+        klass = PubSubModelSync::MessagePublisher
+        klass.publish_data((as_klass || name).to_s, data, action.to_sym, headers: headers)
+      end
+
       # Publisher info for specific action
       def ps_publisher(action = :create)
         PubSubModelSync::Config.publishers.find do |publisher|
