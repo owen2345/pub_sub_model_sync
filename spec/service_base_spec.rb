@@ -3,8 +3,25 @@
 RSpec.describe PubSubModelSync::ServiceBase do
   let(:inst) { described_class.new }
   let(:payload_attrs) { { klass: 'Tester', action: :test } }
-  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
+  let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs, { app_key: 'unknown_app' }) }
   let(:config) { PubSubModelSync::Config }
+  before { allow(Process).to receive(:exit!) }
+
+  describe 'when publishing message' do
+    before { payload.headers[:forced_ordering_key] = 'mandatory_key' }
+
+    it 'reduces payload size when not debug mode' do
+      allow(inst.config).to receive(:debug).and_return(false)
+      res = inst.send(:encode_payload, payload)
+      expect(res).not_to include('forced_ordering_key')
+    end
+
+    it 'does not reduce payload size when debug mode' do
+      allow(inst.config).to receive(:debug).and_return(true)
+      res = inst.send(:encode_payload, payload)
+      expect(res).to include('forced_ordering_key')
+    end
+  end
 
   describe 'when processing message' do
     before { allow(config).to receive(:log) }
@@ -31,7 +48,7 @@ RSpec.describe PubSubModelSync::ServiceBase do
       describe 'when failed' do
         it 'retries for 1 time when any error' do
           stub_process_with(times: 1) { raise('any error') }
-          expect(inst).to receive(:parse_payload).twice
+          expect(inst).to receive(:decode_payload).twice
           inst.send(:process_message, payload.to_json)
         end
 
@@ -44,7 +61,7 @@ RSpec.describe PubSubModelSync::ServiceBase do
         describe 'when DB error' do
           it 'retries for 1 time' do
             stub_process_with(times: 1) { raise('lost connection') }
-            expect(inst).to receive(:parse_payload).twice
+            expect(inst).to receive(:decode_payload).twice
             inst.send(:process_message, payload.to_json)
           end
 

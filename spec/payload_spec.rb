@@ -18,10 +18,6 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h.key?(:headers)).to be_truthy
   end
 
-  it 'includes a unique ID' do
-    expect(inst.to_h[:headers][:uuid].present?).to be_truthy
-  end
-
   it 'includes a key' do
     expect(inst.headers[:key].present?).to be_truthy
   end

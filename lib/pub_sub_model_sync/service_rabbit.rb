@@ -7,18 +7,26 @@ end
 
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
-    attr_accessor :config, :service, :channel, :queue, :topic
+    QUEUE_SETTINGS = { durable: true, auto_delete: false }.freeze
+    LISTEN_SETTINGS = { manual_ack: true }.freeze
+    PUBLISH_SETTINGS = {}.freeze
+
+    # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
+    # @!attribute channels (Array): [Channel1]
+    # @!attribute exchanges (Hash<key: Exchange>): {topic_name: Exchange1}
+    attr_accessor :service, :topic_names, :channels, :exchanges
 
     def initialize
-      @config = PubSubModelSync::Config
       @service = Bunny.new(*config.bunny_connection)
+      @topic_names = Array(config.topic_name || 'model_sync')
+      @channels = []
+      @exchanges = {}
     end
 
     def listen_messages
       log('Listener starting...')
-      subscribe_to_queue
+      subscribe_to_queues { |queue| queue.subscribe(LISTEN_SETTINGS, &method(:process_message)) }
       log('Listener started')
-      queue.subscribe(subscribe_settings, &method(:process_message))
       loop { sleep 5 }
     rescue PubSubModelSync::Runner::ShutDown
       log('Listener stopped')
@@ -40,54 +48,53 @@ module PubSubModelSync
 
     def stop
       log('Listener stopping...')
-      channel&.close
+      channels.each(&:close)
       service.close
     end
 
     private
 
-    def message_settings
+    def message_settings(payload)
       {
-        routing_key: queue.name,
+        routing_key: payload.headers[:ordering_key],
         type: SERVICE_KEY,
         persistent: true
       }.merge(PUBLISH_SETTINGS)
     end
 
-    def queue_settings
-      { durable: true, auto_delete: false }
-    end
-
-    def subscribe_settings
-      { manual_ack: false }.merge(LISTEN_SETTINGS)
-    end
-
     def process_message(_delivery_info, meta_info, payload)
-      return unless meta_info[:type] == SERVICE_KEY
-
-      super(payload)
+      super(payload) if meta_info[:type] == SERVICE_KEY
     end
 
-    def subscribe_to_queue
-      service.start
-      @channel = service.create_channel
-      @queue = channel.queue(config.subscription_key, queue_settings)
-      subscribe_to_exchange
+    def subscribe_to_queues(&block)
+      @channels = []
+      topic_names.each do |topic_name|
+        subscribe_to_exchange(topic_name) do |channel, exchange|
+          queue = channel.queue(config.subscription_key, QUEUE_SETTINGS)
+          queue.bind(exchange)
+          @channels << channel
+          block.call(queue)
+        end
+      end
     end
 
-    def subscribe_to_exchange
-      @topic = channel.fanout(config.topic_name)
-      queue.bind(topic, routing_key: queue.name)
+    def subscribe_to_exchange(topic_name, &block)
+      topic_name = topic_name.to_s
+      exchanges[topic_name] ||= begin
+        service.start
+        channel = service.create_channel
+        channel.fanout(topic_name)
+      end
+      block.call(channel, exchanges[topic_name])
     end
 
     def deliver_data(payload)
-      subscribe_to_queue
-      topic.publish(payload.to_json, message_settings)
-
-      # Ugly fix: "IO timeout when reading 7 bytes"
-      # https://stackoverflow.com/questions/39039129/rabbitmq-timeouterror-io-timeout-when-reading-7-bytes
-      channel.close
-      service.close
+      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics.each do |topic_name|
+        subscribe_to_exchange(topic_name) do |_channel, exchange|
+          exchange.publish(encode_payload(payload), message_settings(payload))
+        end
+      end
     end
   end
 end

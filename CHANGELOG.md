@@ -1,5 +1,18 @@
 # Change Log
 
+# 0.6.0 (March 03, 2021)
+- feat: add support to include custom payload headers
+- feat: add pubsub transactions to process all payloads inside in the same order they were published
+- feat: when a model is created/updated/destroyed, process all related payloads in a single transaction
+- feat: add method to save processed payload (:ps_processed_payload) when saving sync
+- feat: add "ordering_key" support to process all payloads with the same key in the same order
+- feat: start multiple workers to process async kafka messages when starting service listeners
+- feat: make async publisher by reusing exchange connection (rabbit)
+- feat: add support for forced_ordering_key to always be used as the ordering_key if defined
+- feat: add feature to publish a message to a custom and/or multiple topics 
+- feat: add model custom action subscriber and publisher
+- feat: add docker compose settings
+
 # 0.5.10 (February 13, 2021)
 - feat: remove duplicated callback :ps_before_save_sync (same result can be achieved with :ps_before_save_sync)
 - feat: improve message starter to retry when failed or exit system when persists

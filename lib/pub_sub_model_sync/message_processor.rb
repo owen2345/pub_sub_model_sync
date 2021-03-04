@@ -28,9 +28,11 @@ module PubSubModelSync
     private
 
     def run_subscriber(subscriber)
+      subscriber = subscriber.dup
       return unless processable?(subscriber)
 
-      retry_error(ActiveRecord::ConnectionTimeoutError, qty: 2) do
+      errors = [ActiveRecord::ConnectionTimeoutError, 'deadlock detected', 'could not serialize access']
+      retry_error(errors, qty: 2) do
         subscriber.process!(payload)
         res = config.on_success_processing.call(payload, { subscriber: subscriber })
         log "processed message with: #{payload.inspect}" if res != :skip_log

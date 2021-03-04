@@ -15,14 +15,26 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
     mock_service_message
   end
   let(:inst) { described_class.new }
-  before { allow(inst).to receive(:sleep) }
+  let(:topic) { inst.topics.values.first }
+  before do
+    allow(inst).to receive(:sleep)
+    allow(Process).to receive(:exit!)
+  end
 
   describe 'initializer' do
     it 'connects to pub/sub service' do
       expect(inst.service).not_to be_nil
     end
+
     it 'connects to topic' do
-      expect(inst.topic).not_to be_nil
+      expect(topic).not_to be_nil
+    end
+
+    it 'connects to multiple topics if provided' do
+      names = ['topic 1', 'topic2']
+      allow(described_class.config).to receive(:topic_name).and_return(names)
+      inst = described_class.new
+      expect(inst.topics.values.count).to eq names.count
     end
 
     it 'enables message ordering' do
@@ -34,15 +46,15 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
 
   describe '.listen_messages' do
     it 'subscribes to topic' do
-      expect(inst.topic).to receive(:subscription)
+      expect(topic).to receive(:subscription)
       inst.listen_messages
     end
     it 'listens for new messages' do
-      expect(inst.topic.subscription).to receive(:listen).and_call_original
+      expect(topic.subscription).to receive(:listen).and_call_original
       inst.listen_messages
     end
     it 'starts subscriber' do
-      subscriber = inst.topic.subscription.listen
+      subscriber = topic.subscription.listen
       expect(subscriber).to receive(:start)
       inst.listen_messages
     end
@@ -89,22 +101,38 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
   end
 
   describe '.publish' do
-    it 'delivery message' do
-      expect(inst.topic).to receive(:publish_async).with(payload.to_json, anything)
+    it 'deliveries message' do
+      expect(topic).to receive(:publish_async).with(payload.to_json, anything)
       inst.publish(payload)
     end
 
-    it 'publishes ordered messages' do
-      expected_hash = hash_including(ordering_key: anything)
-      expect(inst.topic).to receive(:publish_async).with(anything, expected_hash)
+    it 'uses defined ordering_key as the :ordering_key' do
+      expected_hash = hash_including(ordering_key: payload.headers[:ordering_key])
+      expect(topic).to receive(:publish_async).with(anything, expected_hash)
+      inst.publish(payload)
+    end
+
+    it 'uses custom topic if defined' do
+      topic_name = 'custom_topic_name'
+      payload.headers[:topic_name] = topic_name
+      expect(inst.service).to receive(:topic).with(topic_name)
+      inst.publish(payload)
+    end
+
+    it 'publishes to all topics when defined' do
+      topic_names = %w[topic1 topic2]
+      payload.headers[:topic_name] = topic_names
+      topic_names.each do |topic_name|
+        expect(inst.service).to receive(:topic).with(topic_name)
+      end
       inst.publish(payload)
     end
   end
 
   describe '.stop' do
     before { inst.listen_messages }
-    it 'stop current subscription' do
-      expect(inst.subscriber).to receive(:stop!)
+    it 'stops all subscribers' do
+      expect(inst.subscribers.first).to receive(:stop!)
       inst.stop
     end
   end

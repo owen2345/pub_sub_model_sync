@@ -28,14 +28,27 @@ module PubSubModelSync
       def subscribe(*_args)
         true
       end
+
+      def mark_message_as_processed(*_args)
+        true
+      end
     end
 
     def producer(*_args)
       MockProducer.new
     end
+    alias async_producer producer
 
     def consumer(*_args)
       MockConsumer.new
+    end
+
+    def topics
+      []
+    end
+
+    def create_topic(_name)
+      true
     end
 
     def close

@@ -5,24 +5,25 @@ module PubSubModelSync
     attr_accessor :klass, :action, :attrs, :settings, :identifiers
     attr_reader :payload
 
-    # @param settings: (Hash) { id: :id, direct_mode: false,
+    # @param settings: (Hash) { id: :id, mode: :model|:klass|:custom_model,
     #                           from_klass: klass, from_action: action }
     def initialize(klass, action, attrs: nil, settings: {})
-      def_settings = { id: :id, direct_mode: false,
-                       from_klass: klass, from_action: action }
+      @settings = { id: settings[:id] || :id,
+                    mode: settings[:mode] || :klass,
+                    from_klass: settings[:from_klass] || klass,
+                    from_action: settings[:from_action] || action }
       @klass = klass
       @action = action
       @attrs = attrs
-      @settings = def_settings.merge(settings)
-      @identifiers = Array(settings[:id]).map(&:to_sym)
+      @identifiers = Array(@settings[:id]).map(&:to_sym)
     end
 
     def process!(payload)
       @payload = payload
-      if settings[:direct_mode]
-        run_class_message
-      else
-        run_model_message
+      case settings[:mode]
+      when :klass then run_class_message
+      when :custom_model then run_model_message(crud_action: false)
+      else run_model_message
       end
     end
 
@@ -34,9 +35,10 @@ module PubSubModelSync
     end
 
     # support for: create, update, destroy
-    def run_model_message
+    def run_model_message(crud_action: true)
       model = find_model
       model.ps_processed_payload = payload
+      return model.send(action, payload.data) if ensure_sync(model) && !crud_action
 
       if action == :destroy
         model.destroy! if ensure_sync(model)
@@ -48,7 +50,7 @@ module PubSubModelSync
 
     def ensure_sync(model)
       config = PubSubModelSync::Config
-      cancelled = model.ps_before_save_sync(payload) == :cancel
+      cancelled = model.ps_before_save_sync(action, payload) == :cancel
       config.log("Cancelled sync with ps_before_save_sync: #{[payload]}") if cancelled && config.debug
       !cancelled
     end

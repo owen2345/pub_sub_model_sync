@@ -2,32 +2,43 @@
 
 module PubSubModelSync
   class Publisher
-    attr_accessor :attrs, :actions, :klass, :as_klass
+    attr_accessor :attrs, :actions, :klass, :as_klass, :headers
 
-    def initialize(attrs, klass, actions = nil, as_klass = nil)
+    # @param headers (Hash): refer Payload.headers
+    def initialize(attrs, klass, actions = nil, as_klass: nil, headers: {})
       @attrs = attrs
       @klass = klass
       @actions = actions || %i[create update destroy]
       @as_klass = as_klass || klass
+      @headers = headers
     end
 
     # Builds the payload with model information defined for :action (:create|:update|:destroy)
-    def payload(model, action)
-      headers = { key: [model.class.name, action, model.id].join('/') }
-      PubSubModelSync::Payload.new(payload_data(model), payload_attrs(model, action), headers)
+    # @param custom_headers (Hash, default {}): refer Payload.headers
+    def payload(model, action, custom_data: nil, custom_headers: {})
+      payload_headers = self.class.headers_for(model, action)
+                            .merge(headers)
+                            .merge(custom_headers)
+      data = custom_data || payload_data(model)
+      PubSubModelSync::Payload.new(data, payload_attrs(model, action), payload_headers)
+    end
+
+    def self.headers_for(model, action)
+      key = [model.class.name, action, model.id].join('/')
+      { ordering_key: ordering_key_for(model), key: key }
+    end
+
+    def self.ordering_key_for(model)
+      [model.class.name, model.id || SecureRandom.uuid].join('/')
     end
 
     private
 
     def payload_data(model)
-      source_props = @attrs.map { |prop| prop.to_s.split(':').first }
-      data = model.as_json(only: source_props, methods: source_props)
-      aliased_props = @attrs.select { |prop| prop.to_s.include?(':') }
-      aliased_props.each do |prop|
+      @attrs.map do |prop|
         source, target = prop.to_s.split(':')
-        data[target] = data.delete(source)
-      end
-      data.symbolize_keys
+        [target || source, model.send(source.to_sym)]
+      end.to_h.symbolize_keys
     end
 
     def payload_attrs(model, action)

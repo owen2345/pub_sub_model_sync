@@ -7,14 +7,20 @@ end
 
 module PubSubModelSync
   class ServiceKafka < ServiceBase
+    QTY_WORKERS = 10
+    LISTEN_SETTINGS = {}.freeze
+    PUBLISH_SETTINGS = {}.freeze
+    PRODUCER_SETTINGS = { delivery_threshold: 200, delivery_interval: 30 }.freeze
     cattr_accessor :producer
-    attr_accessor :config, :service, :consumer
+
+    # @!attribute topic_names (Array): ['topic 1', 'topic 2']
+    attr_accessor :service, :consumer, :topic_names
 
     def initialize
-      @config = PubSubModelSync::Config
       settings = config.kafka_connection
       settings[1][:client_id] ||= config.subscription_key
       @service = Kafka.new(*settings)
+      @topic_names = ensure_topics(Array(config.topic_name || 'model_sync'))
     end
 
     def listen_messages
@@ -28,12 +34,10 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      settings = {
-        topic: config.topic_name,
-        headers: { SERVICE_KEY => true }
-      }.merge(PUBLISH_SETTINGS)
-      producer.produce(payload.to_json, settings)
-      producer.deliver_messages
+      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics.each do |topic_name|
+        producer.produce(encode_payload(payload), message_settings(payload, topic_name))
+      end
     end
 
     def stop
@@ -43,22 +47,41 @@ module PubSubModelSync
 
     private
 
+    def message_settings(payload, topic_name)
+      {
+        topic: ensure_topics(topic_name),
+        partition_key: payload.headers[:ordering_key],
+        headers: { SERVICE_KEY => true }
+      }.merge(PUBLISH_SETTINGS)
+    end
+
     def start_consumer
       @consumer = service.consumer(group_id: config.subscription_key)
-      consumer.subscribe(config.topic_name)
+      topic_names.each { |topic_name| consumer.subscribe(topic_name) }
     end
 
     def producer
       return self.class.producer if self.class.producer
 
       at_exit { self.class.producer.shutdown }
-      self.class.producer = service.producer
+      self.class.producer = service.async_producer(PRODUCER_SETTINGS)
     end
 
     def process_message(message)
-      return unless message.headers[SERVICE_KEY]
+      super(message.value) if message.headers[SERVICE_KEY]
+    end
 
-      super(message.value)
+    # Check topic existence, create if missing topic
+    # @param names (Array<String>|String)
+    # @return (Array|String) return @param names
+    def ensure_topics(names)
+      missing_topics = Array(names) - (@known_topics || service.topics)
+      missing_topics.each do |name|
+        service.create_topic(name)
+      end
+      @known_topics ||= [] # cache service.topics to reduce verification time
+      @known_topics = (@known_topics + Array(names)).uniq
+      names
     end
   end
 end

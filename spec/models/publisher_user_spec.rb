@@ -7,29 +7,10 @@ RSpec.describe PublisherUser do
     expect(info).not_to be_nil
   end
 
-  describe 'class messages' do
-    describe '.ps_class_publish' do
-      let(:action) { :greeting }
-      let(:data) { { msg: 'Hello' } }
-      it 'default values' do
-        args = [described_class.name, data, action]
-        expect_publish_data(args)
-        described_class.ps_class_publish(data, action: action)
-      end
-      it 'custom class name' do
-        as_klass = 'User'
-        args = [as_klass, data, action]
-        expect_publish_data(args)
-        described_class
-          .ps_class_publish(data, action: action, as_klass: as_klass)
-      end
-    end
-  end
-
   describe 'callbacks' do
     it '.create' do
       model = described_class.new(name: 'name')
-      args = [be_a(model.class), :create, anything]
+      args = [be_a(model.class), :create]
       expect_publish_model(args)
       model.save!
     end
@@ -37,7 +18,7 @@ RSpec.describe PublisherUser do
     it '.update' do
       model = described_class.create(name: 'name')
       model.name = 'Changed'
-      args = [model, :update, anything]
+      args = [model, :update]
       expect_publish_model(args)
       model.save!
     end
@@ -46,14 +27,14 @@ RSpec.describe PublisherUser do
     #   including in virtual attrs or use cache
     xit '.update: not published if no changes' do
       model = described_class.create(name: 'name')
-      args = [model, :update, anything]
+      args = [model, :update]
       expect_no_publish_model(args)
       model.save!
     end
 
     it '.destroy' do
       model = described_class.create(name: 'name')
-      args = [model, :destroy, anything]
+      args = [model, :destroy]
       expect_publish_model(args)
       model.destroy!
     end
@@ -77,7 +58,7 @@ RSpec.describe PublisherUser do
       it 'publishes update event' do
         model = PublisherUser2.create(name: 'name')
         model.name = 'changed name'
-        args = [anything, :update, anything]
+        args = [anything, :update]
         expect_publish_model(args)
         model.save!
       end
@@ -101,6 +82,34 @@ RSpec.describe PublisherUser do
         allow(PubSubModelSync::Config.disabled_callback_publisher).to receive(:call) { false }
         expect(publisher_klass).to receive(:publish_model)
         PublisherUser.create(name: 'name')
+      end
+    end
+
+    describe 'when grouping all sub syncs', truncate: true do
+      it 'uses the same ordering_key for all syncs' do
+        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
+          PubSubModelSync::MessagePublisher.publish_data('Test', {}, :changed)
+        end
+        key = PubSubModelSync::Publisher.ordering_key_for(model)
+        expect_publish_with_headers({ ordering_key: key }, times: 2) do
+          model.update!(name: 'changed')
+        end
+      end
+
+      it 'restores parent ordering_key when finished' do
+        parent_key = 'parent_key'
+        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!)
+        publisher_klass.transaction(parent_key) do
+          model.update!(name: 'changed')
+          expect(publisher_klass.transaction_key).to eq parent_key
+        end
+      end
+
+      it 'restores transaction_key when failed' do
+        mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
+          raise 'failed saving'
+        end
+        expect(publisher_klass.transaction_key).to be_nil
       end
     end
   end
@@ -129,23 +138,21 @@ RSpec.describe PublisherUser do
 
       it 'performs manual update sync' do
         action = :update
-        args = [model, action, anything]
+        args = [model, action, be_a(Hash)]
         expect_publish_model(args)
         model.ps_perform_sync(action)
       end
 
-      it 'performs with custom settings' do
-        args = [model, anything, have_attributes(attrs: attrs)]
-        expect_publish_model(args)
-        model.ps_perform_sync(:create, attrs: attrs)
+      it 'performs with custom data' do
+        custom_data = { title: 'custom title' }
+        expect_publish(have_attributes(data: custom_data))
+        model.ps_perform_sync(:create, custom_data: custom_data)
       end
 
-      it 'performs with custom publisher' do
-        klass = PubSubModelSync::MessagePublisher
-        publisher = PubSubModelSync::Publisher.new(attrs, model.class.name)
-        exp_args = [anything, anything, publisher]
-        expect(klass).to receive(:publish_model).with(*exp_args)
-        model.ps_perform_sync(:create, attrs: attrs, publisher: publisher)
+      it 'includes custom headers' do
+        custom_headers = { key: 'custom title' }
+        expect_publish(have_attributes(headers: include(custom_headers)))
+        model.ps_perform_sync(:create, custom_headers: custom_headers)
       end
     end
   end

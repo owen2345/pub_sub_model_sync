@@ -7,7 +7,7 @@ RSpec.describe PubSubModelSync::Subscriber do
   describe 'class message' do
     let(:action) { :action_name }
     let(:model_klass) { SubscriberUser }
-    let(:settings) { { direct_mode: true } }
+    let(:settings) { { mode: :klass } }
     let(:inst) do
       described_class.new(model_klass.name, action, settings: settings)
     end
@@ -20,10 +20,36 @@ RSpec.describe PubSubModelSync::Subscriber do
     end
   end
 
-  describe 'model message' do
+  describe 'model custom action message' do
+    let(:action) { :send_welcome }
+    let(:model_klass) { SubscriberUser }
+    let(:settings) { { mode: :custom_model } }
+    before do
+      allow_any_instance_of(model_klass).to receive(action)
+      payload.attributes[:action] = action
+    end
+
+    it 'calls custom method with the provided data' do
+      expect_any_instance_of(model_klass).to receive(action).with(payload.data)
+      described_class.new(model_klass.name, action, settings: settings).process!(payload)
+    end
+
+    it 'finds the model with the configured identifier' do
+      settings[:id] = :email
+      expect(model_klass).to receive(:where).with(email: message[:email]).and_call_original
+      described_class.new(model_klass.name, action, settings: settings).process!(payload)
+    end
+
+    it 'calls :ps_before_save_sync callback before saving sync' do
+      expect_any_instance_of(model_klass).to receive(:ps_before_save_sync).with(action, payload)
+      described_class.new(model_klass.name, action, settings: settings).process!(payload)
+    end
+  end
+
+  describe 'model crud message' do
     let(:action) { :create }
     let(:model_klass) { SubscriberUser }
-    let(:settings) { { direct_mode: false } }
+    let(:settings) { { mode: :model } }
     let(:attrs) { %i[name email] }
     let(:inst) do
       described_class.new(model_klass.name, action, attrs: attrs,

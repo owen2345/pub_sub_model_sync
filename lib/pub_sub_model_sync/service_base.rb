@@ -4,8 +4,6 @@ require 'pub_sub_model_sync/payload'
 module PubSubModelSync
   class ServiceBase < PubSubModelSync::Base
     SERVICE_KEY = 'service_model_sync'
-    PUBLISH_SETTINGS = {}.freeze
-    LISTEN_SETTINGS = {}.freeze
 
     def listen_messages
       raise 'method :listen_messages must be defined in service'
@@ -22,10 +20,20 @@ module PubSubModelSync
 
     private
 
+    # @param payload (Payload)
+    # @return (String): Json Format
+    def encode_payload(payload)
+      data = payload.to_h
+      not_important_keys = %i[ordering_key topic_name forced_ordering_key]
+      reduce_payload_size = !config.debug
+      data[:headers].except!(*not_important_keys) if reduce_payload_size
+      data.to_json
+    end
+
     # @param (String: Payload in json format)
     def process_message(payload_info)
       retries ||= 0
-      payload = parse_payload(payload_info)
+      payload = decode_payload(payload_info)
       return payload.process unless same_app_message?(payload)
 
       log("Skipping message from same origin: #{[payload]}") if config.debug
@@ -45,7 +53,8 @@ module PubSubModelSync
       retries == 1
     end
 
-    def parse_payload(payload_info)
+    # @return Payload
+    def decode_payload(payload_info)
       info = JSON.parse(payload_info).deep_symbolize_keys
       payload = ::PubSubModelSync::Payload.new(info[:data], info[:attributes], info[:headers])
       log("Received message: #{[payload]}") if config.debug

@@ -4,6 +4,7 @@ module PubSubModelSync
   module PublisherConcern
     def self.included(base)
       base.extend(ClassMethods)
+      base.send(:ps_init_transaction_callbacks)
     end
 
     # Before initializing sync service (callbacks: after create/update/destroy)
@@ -17,39 +18,39 @@ module PubSubModelSync
     end
 
     # before delivering data (return :cancel to cancel sync)
-    def ps_before_sync(_action, _data); end
+    def ps_before_sync(_action, _payload); end
 
     # after delivering data
-    def ps_after_sync(_action, _data); end
+    def ps_after_sync(_action, _payload); end
 
     # To perform sync on demand
-    # @param attrs (Array, optional): custom attrs to be used
-    # @param as_klass (Array, optional): custom klass name to be used
-    # @param publisher (Publisher, optional): custom publisher object
-    def ps_perform_sync(action = :create, attrs: nil, as_klass: nil,
-                        publisher: nil)
-      publisher ||= self.class.ps_publisher(action).dup
-      publisher.attrs = attrs if attrs
-      publisher.as_klass = as_klass if as_klass
-      PubSubModelSync::MessagePublisher.publish_model(self, action, publisher)
+    # @param action (Sym): CRUD action name
+    # @param custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E.
+    #   data generator will be ignored
+    # @param custom_headers (Hash, optional): refer Payload.headers
+    def ps_perform_sync(action = :create, custom_data: nil, custom_headers: {})
+      p_klass = PubSubModelSync::MessagePublisher
+      p_klass.publish_model(self, action, custom_data: custom_data, custom_headers: custom_headers)
     end
 
     module ClassMethods
       # Permit to configure to publish crud actions (:create, :update, :destroy)
-      def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil)
+      # @param headers (Hash, optional): Refer Payload.headers
+      def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil, headers: {})
         klass = PubSubModelSync::Publisher
-        publisher = klass.new(attrs, name, actions, as_klass)
+        publisher = klass.new(attrs, name, actions, as_klass: as_klass, headers: headers)
         PubSubModelSync::Config.publishers << publisher
         actions.each do |action|
-          ps_register_callback(action.to_sym, publisher)
+          ps_register_callback(action.to_sym)
         end
       end
 
-      # On demand class level publisher
-      def ps_class_publish(data, action:, as_klass: nil)
-        as_klass = (as_klass || name).to_s
+      # Klass level notification
+      # @deprecated this method was deprecated in favor of:
+      #   PubSubModelSync::MessagePublisher.publish_data(...)
+      def ps_class_publish(data, action:, as_klass: nil, headers: {})
         klass = PubSubModelSync::MessagePublisher
-        klass.publish_data(as_klass, data, action.to_sym)
+        klass.publish_data((as_klass || name).to_s, data, action.to_sym, headers: headers)
       end
 
       # Publisher info for specific action
@@ -61,12 +62,28 @@ module PubSubModelSync
 
       private
 
-      def ps_register_callback(action, publisher)
+      # TODO: skip all enqueued notifications after_rollback (when failed)
+      # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
+      def ps_init_transaction_callbacks
+        start_transaction = lambda do
+          key = PubSubModelSync::Publisher.ordering_key_for(self)
+          @ps_old_transaction_key = PubSubModelSync::MessagePublisher.init_transaction(key)
+        end
+        end_transaction = -> { PubSubModelSync::MessagePublisher.end_transaction(@ps_old_transaction_key) }
+        after_create start_transaction, prepend: true # wait for ID
+        before_update start_transaction, prepend: true
+        before_destroy start_transaction, prepend: true
+        after_commit end_transaction
+        after_rollback end_transaction
+      end
+
+      # Configure specific callback and execute publisher when called callback
+      def ps_register_callback(action)
         after_commit(on: action) do |model|
           disabled = PubSubModelSync::Config.disabled_callback_publisher.call(model, action)
           if !disabled && !model.ps_skip_callback?(action)
             klass = PubSubModelSync::MessagePublisher
-            klass.publish_model(model, action.to_sym, publisher)
+            klass.publish_model(model, action.to_sym)
           end
         end
       end

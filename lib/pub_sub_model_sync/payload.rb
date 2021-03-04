@@ -7,7 +7,18 @@ module PubSubModelSync
 
     # @param data (Hash: { any value }):
     # @param attributes (Hash: { klass*: string, action*: :sym }):
-    # @param headers (Hash: { key?: string, ...any_key?: anything }):
+    # @param headers (Hash):
+    #   key (String): identifier of the payload, default:
+    #        klass/action: when class message
+    #        klass/action/model.id: when model message
+    #   ordering_key (String): messages with the same key are processed in the same order they
+    #     were delivered, default:
+    #        klass: when class message
+    #        klass/id: when model message
+    #   topic_name (String|Array<String>): Specific topic name to be used when delivering the
+    #     message (default first topic)
+    #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,
+    #     even withing transactions. Default nil.
     def initialize(data, attributes, headers = {})
       @data = data
       @attributes = attributes
@@ -22,7 +33,7 @@ module PubSubModelSync
     end
 
     def klass
-      attributes[:klass]
+      attributes[:klass].to_s
     end
 
     def action
@@ -67,9 +78,10 @@ module PubSubModelSync
     private
 
     def build_headers
-      headers[:uuid] ||= SecureRandom.uuid
       headers[:app_key] ||= PubSubModelSync::Config.subscription_key
-      headers[:key] ||= [klass.to_s, action].join('/')
+      headers[:key] ||= [klass, action].join('/')
+      headers[:ordering_key] ||= klass
+      headers[:uuid] ||= SecureRandom.uuid
     end
 
     def validate!
