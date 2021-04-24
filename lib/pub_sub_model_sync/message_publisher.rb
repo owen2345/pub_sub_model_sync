@@ -16,7 +16,8 @@ module PubSubModelSync
       #   be processed in the correct order, despite of the multiple threads. This thanks to the fact
       #   that Pub/Sub services will always send messages with the same `ordering_key` into the same
       #   worker/thread.
-      # @param key (String): This key will be used as the ordering_key for all payload
+      # @!macro transaction_key: (String|Hash<use_first: true>)
+      # @param key (@transaction_key) This key will be used as the ordering_key for all payloads
       #     inside this transaction.
       def transaction(key, &block)
         parent_key = init_transaction(key)
@@ -28,13 +29,15 @@ module PubSubModelSync
       end
 
       # Starts a new transaction
-      # @return (String) returns parent transaction key
+      # @param key (@transaction_key)
+      # @return (String|Hash) returns parent transaction key
       def init_transaction(key)
         parent_key = transaction_key
         self.transaction_key = transaction_key.presence || key
         parent_key
       end
 
+      # @param parent_key (@transaction_key)
       # Restores to the last transaction key
       def end_transaction(parent_key)
         self.transaction_key = parent_key
@@ -52,34 +55,16 @@ module PubSubModelSync
         publish(payload)
       end
 
-      # Publishes custom model action
-      # @param model (ActiveRecord): Model object owner of the data
-      # @param data (Hash): Data to be delivered
-      # @param action (:symbol): action name
-      # @param as_klass (String, optional): Class name (default model class name)
-      # @param headers (Hash, optional): header settings (More in Payload.headers)
-      # @return Payload
-      def publish_model_data(model, data, action, as_klass: nil, headers: {})
-        headers = PubSubModelSync::Publisher.headers_for(model, action).merge(headers)
-        publish_data(as_klass || model.class.name, data, action, headers: headers)
-      end
-
-      # Publishes model info to pubsub
-      # @param model (ActiveRecord model)
-      # @param action (Sym): Action name
-      # @param custom_data (Hash, optional): If present custom_data will be used as the payload data.
-      # @param custom_headers (Hash): Refer Payload.headers
-      # @return Payload
-      def publish_model(model, action, custom_data: nil, custom_headers: {})
+      # @param model (ActiveRecord::Base)
+      # @see PublishConcern::ps_publish_event
+      def publish_model(model, action, data: {}, mapping: [], headers: {})
         return if model.ps_skip_sync?(action)
 
-        publisher = model.class.ps_publisher(action)
-        error_msg = "No publisher found for: \"#{[model.class.name, action]}\""
-        raise(MissingPublisher, error_msg) unless publisher
+        publisher = PubSubModelSync::Publisher.new(model, action, data: data, mapping: mapping, headers: headers)
+        payload = publisher.payload
 
-        payload = publisher.payload(model, action, custom_data: custom_data, custom_headers: custom_headers)
-        transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_sync syncs
-          publish(payload) { model.ps_after_sync(action, payload) } if ensure_model_publish(model, action, payload)
+        transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_publish syncs
+          publish(payload) { model.ps_after_publish(action, payload) } if ensure_model_publish(model, action, payload)
         end
       end
 
@@ -109,7 +94,7 @@ module PubSubModelSync
       private
 
       def ensure_publish(payload)
-        payload.headers[:ordering_key] = @transaction_key if @transaction_key.present?
+        calc_ordering_key(payload)
         forced_ordering_key = payload.headers[:forced_ordering_key]
         payload.headers[:ordering_key] = forced_ordering_key if forced_ordering_key
         cancelled = config.on_before_publish.call(payload) == :cancel
@@ -117,10 +102,22 @@ module PubSubModelSync
         !cancelled
       end
 
+      # TODO: to be reviewed
+      def calc_ordering_key(payload)
+        return unless @transaction_key.present?
+
+        key = @transaction_key
+        if @transaction_key.is_a?(Hash)
+          @transaction_key[:id] ||= payload.headers[:ordering_key] if @transaction_key[:use_first]
+          key = @transaction_key[:id]
+        end
+        payload.headers[:ordering_key] = key
+      end
+
       def ensure_model_publish(model, action, payload)
-        res_before = model.ps_before_sync(action, payload)
+        res_before = model.ps_before_publish(action, payload)
         cancelled = res_before == :cancel
-        log("Publish cancelled by model.ps_before_sync: #{payload}") if config.debug && cancelled
+        log("Publish cancelled by model.ps_before_publish: #{payload}") if config.debug && cancelled
         !cancelled
       end
 

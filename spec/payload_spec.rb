@@ -10,8 +10,8 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h[:data]).to eq(data)
   end
 
-  it 'includes :attributes in hash format' do
-    expect(inst.to_h[:attributes]).to eq(attrs)
+  it 'includes :settings in hash format' do
+    expect(inst.to_h[:settings]).to eq(attrs)
   end
 
   it 'includes :headers in hash format' do
@@ -29,7 +29,7 @@ RSpec.describe PubSubModelSync::Payload do
   end
 
   it 'rebuilds from payload data' do
-    payload_data = { data: {}, attributes: { klass: 'Tester', action: :test }, headers: {} }
+    payload_data = { data: {}, settings: { klass: 'Tester', action: :test }, headers: {} }
     res = described_class.from_payload_data(payload_data)
     expect(res).to be_kind_of(described_class)
   end
@@ -55,7 +55,7 @@ RSpec.describe PubSubModelSync::Payload do
   describe 'when failed process / publish' do
     describe 'when processing' do
       before do
-        klass = PubSubModelSync::Subscriber
+        klass = PubSubModelSync::MessageProcessor
         allow_any_instance_of(klass).to receive(:process!).and_raise('Invalid data')
       end
 

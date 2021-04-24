@@ -55,8 +55,7 @@ module PubSubModelSync
 
     # @return Payload
     def decode_payload(payload_info)
-      info = JSON.parse(payload_info).deep_symbolize_keys
-      payload = ::PubSubModelSync::Payload.new(info[:data], info[:attributes], info[:headers])
+      payload = ::PubSubModelSync::Payload.from_payload_data(JSON.parse(payload_info))
       log("Received message: #{[payload]}") if config.debug
       payload
     end

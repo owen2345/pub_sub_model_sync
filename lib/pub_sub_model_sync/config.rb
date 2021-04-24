@@ -3,7 +3,6 @@
 module PubSubModelSync
   class Config
     cattr_accessor(:subscribers) { [] }
-    cattr_accessor(:publishers) { [] }
     cattr_accessor(:service_name) { :google }
 
     # customizable callbacks
@@ -16,7 +15,6 @@ module PubSubModelSync
     cattr_accessor(:on_before_publish) { ->(_payload) {} } # return :cancel to skip
     cattr_accessor(:on_after_publish) { ->(_payload) {} }
     cattr_accessor(:on_error_publish) { ->(_exception, _info) {} }
-    cattr_accessor(:disabled_callback_publisher) { ->(_model, _action) { false } }
 
     # google service
     cattr_accessor :project, :credentials, :topic_name, :subscription_name

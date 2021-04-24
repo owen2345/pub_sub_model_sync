@@ -1,60 +1,84 @@
 # frozen_string_literal: true
 
 RSpec.describe PubSubModelSync::Publisher do
-  let(:model) { PublisherUser2.new(id: 1, name: 'name', email: 'email', age: 10) }
-  let(:klass_name) { model.class.name }
+  let(:model) { PublisherUser.new(id: 1, name: 'name', email: 'email', age: 10) }
   let(:action) { :update }
+  let(:klass_name) { model.class.name }
 
-  describe 'settings' do
-    it 'includes action and klass' do
-      inst = described_class.new([:name], klass_name, action)
-      payload = inst.payload(model, action)
-      expect(payload.attributes).to include({ klass: klass_name, action: action })
-    end
-
-    it 'includes custom key' do
-      inst = described_class.new([:name], klass_name, action)
-      payload = inst.payload(model, action)
-      expect(payload.headers[:key]).to include("#{action}/#{model.id}")
+  describe 'when building payload info' do
+    it 'settings: includes action and klass' do
+      payload = payload_for(action)
+      expect(payload.settings).to include({ klass: klass_name, action: action })
     end
 
     it 'supports for custom class name' do
       as_klass = 'CustomClass'
-      inst = described_class.new([:name], klass_name, action, as_klass: as_klass)
-      payload = inst.payload(model, action)
-      expect(payload.attributes).to match(hash_including(klass: as_klass))
+      payload = payload_for(action, headers: { as_klass: as_klass })
+      expect(payload.settings).to include({ klass: as_klass, action: action })
     end
   end
 
-  describe 'data' do
-    it 'filters only accepted attributes' do
-      attrs = [:name]
-      inst = described_class.new(attrs, klass_name, action)
-      expected_data = attrs.map { |attr| [attr, model.send(attr)] }.to_h
-      payload = inst.payload(model, action)
-      expect(payload.data).to eq expected_data
+  describe 'when building headers' do
+    let(:header_info) { { ordering_key: 'custom_key' } }
+
+    it 'calls model method when provided Symbol value' do
+      allow(model).to receive(:build_headers) { header_info }
+      expect(model).to receive(:build_headers).with(action)
+      payload = payload_for(action, headers: :build_headers)
+      expect(payload.headers).to include(header_info)
     end
 
-    it 'supports for aliased attributes' do
-      attrs = %i[name:full_name email]
-      inst = described_class.new(attrs, klass_name, action)
-      expected_data = { full_name: model.name, email: model.email }
-      payload = inst.payload(model, action)
-      expect(payload.data).to eq expected_data
+    it 'calls block when provided block value' do
+      block = lambda { |_model, _action| {} }
+      expect(block).to receive(:call).with(model, action).and_return(header_info)
+      payload = payload_for(action, headers: block)
+      expect(payload.headers).to include(header_info)
     end
 
-    it 'includes custom headers when provided' do
-      custom_headers = { key: 'custom key' }
-      inst = described_class.new([], klass_name, action)
-      payload = inst.payload(model, action, custom_headers: custom_headers)
-      expect(payload).to have_attributes(headers: include(custom_headers))
+    it 'uses provided data when passed a Hash' do
+      data = header_info
+      payload = payload_for(action, headers: data)
+      expect(payload.headers).to include(data)
+    end
+  end
+
+  describe 'when building data' do
+    describe 'when parsing mapping' do
+      it 'filters only defined attributes' do
+        payload = payload_for(action, mapping: %w[id name])
+        expect(payload.data).to eq({ id: model.id, name: model.name })
+      end
+
+      it 'supports for aliased attributes' do
+        payload = payload_for(action, mapping: %w[id:uuid name:full_name])
+        expect(payload.data).to eq({ uuid: model.id, full_name: model.name })
+      end
     end
 
-    it 'uses custom_data as the payload data when defined' do
-      custom_data = { id: 100 }
-      inst = described_class.new([], klass_name, action)
-      payload = inst.payload(model, action, custom_data: custom_data)
-      expect(payload).to have_attributes(data: custom_data)
+    describe 'when parsing data' do
+      it 'calls model method when provided Symbol value' do
+        allow(model).to receive(:build_data) { {} }
+        expect(model).to receive(:build_data).with(action)
+        payload_for(action, data: :build_data)
+      end
+
+      it 'calls block when provided block value' do
+        block = lambda { |_model, _action| {} }
+        expect(block).to receive(:call).with(model, action).and_return({})
+        payload_for(action, data: block)
+      end
+
+      it 'uses provided data when passed a Hash' do
+        data = { name: 'sample name' }
+        payload = payload_for(action, data: data)
+        expect(payload.data).to eq(data)
+      end
     end
+  end
+
+  private
+
+  def payload_for(*args)
+    PubSubModelSync::Publisher.new(model, *args).payload
   end
 end

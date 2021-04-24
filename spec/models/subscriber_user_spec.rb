@@ -3,7 +3,7 @@
 RSpec.describe SubscriberUser do
   let(:message_processor) { PubSubModelSync::MessageProcessor }
   it 'crud publisher settings' do
-    subscriber = SubscriberUser2.ps_subscriber(:update)
+    subscriber = SubscriberUser.ps_subscriber(:update)
     expect(subscriber).not_to be_nil
   end
 
@@ -67,7 +67,7 @@ RSpec.describe SubscriberUser do
     end
 
     describe 'custom crud subscriptions' do
-      let(:model_klass) { SubscriberUser2 }
+      let(:model_klass) { SubscriberUser }
       let(:model) { model_klass.create(name: 'orig_name', email: 'orig_email') }
       let(:data) { { name: 'Test user', id: model.id } }
       it 'do not call non accepted actions (excluded destroy)' do
@@ -76,7 +76,7 @@ RSpec.describe SubscriberUser do
         expect_any_instance_of(model_klass).not_to receive(:destroy!)
       end
 
-      it 'Listen to custom class name (SubscriberUser2 from Class User)' do
+      it 'Listen to custom class name' do
         sender = message_processor.new(data, 'User', :update)
         sender.process
         model.reload

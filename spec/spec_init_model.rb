@@ -34,10 +34,8 @@ prepare_database!
 
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_publish(%i[id name email])
-  def custom_id
-    99
-  end
+  # after_save_commit { ps_publish_event(:save, mapping: %i[id name email]) }
+  # after_destroy_commit { ps_publish_event(:destroy, data: %i[id], mapping: []) }
 end
 
 class SubscriberUser < ActiveRecord::Base
@@ -58,30 +56,4 @@ class SubscriberUser < ActiveRecord::Base
     self.class.send(:remove_method, method_name)
   end
   # ****** end testing usage
-end
-
-# custom crud listeners
-class PublisherUser2 < ActiveRecord::Base
-  self.table_name = 'publisher_users'
-  include PubSubModelSync::PublisherConcern
-  ps_publish(%i[id name custom_name], actions: %i[update], as_klass: 'User')
-
-  def custom_id
-    99
-  end
-
-  def custom_name
-    'custom_name'
-  end
-
-  def ps_skip_callback?(_action)
-    false
-  end
-end
-
-class SubscriberUser2 < ActiveRecord::Base
-  self.table_name = 'subscriber_users'
-  include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name], actions: %i[update], from_klass: 'User', id: :id)
-  attr_accessor :custom_name
 end

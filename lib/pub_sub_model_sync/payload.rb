@@ -3,10 +3,10 @@
 module PubSubModelSync
   class Payload
     class MissingInfo < StandardError; end
-    attr_reader :data, :attributes, :headers
+    attr_reader :data, :settings, :headers
 
     # @param data (Hash: { any value }):
-    # @param attributes (Hash: { klass*: string, action*: :sym }):
+    # @param settings (Hash: { klass*: string, action*: :sym }):
     # @param headers (Hash):
     #   key (String): identifier of the payload, default:
     #        klass/action: when class message
@@ -19,9 +19,9 @@ module PubSubModelSync
     #     message (default first topic)
     #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,
     #     even withing transactions. Default nil.
-    def initialize(data, attributes, headers = {})
+    def initialize(data, settings, headers = {})
       @data = data
-      @attributes = attributes
+      @settings = settings
       @headers = headers
       build_headers
       validate!
@@ -29,15 +29,15 @@ module PubSubModelSync
 
     # @return Hash: payload data
     def to_h
-      { data: data, attributes: attributes, headers: headers }
+      { data: data, settings: settings, headers: headers }
     end
 
     def klass
-      attributes[:klass].to_s
+      settings[:klass].to_s
     end
 
     def action
-      attributes[:action]
+      settings[:action]
     end
 
     # Process payload data
@@ -69,10 +69,10 @@ module PubSubModelSync
     end
 
     # convert payload data into Payload
-    # @param data [Hash]: payload data (:data, :attributes, :headers)
+    # @param data [Hash]: payload data (:data, :settings, :headers)
     def self.from_payload_data(data)
       data = data.deep_symbolize_keys
-      new(data[:data], data[:attributes], data[:headers])
+      new(data[:data], data[:settings], data[:headers])
     end
 
     private
@@ -85,7 +85,7 @@ module PubSubModelSync
     end
 
     def validate!
-      raise MissingInfo if !attributes[:klass] || !attributes[:action]
+      raise MissingInfo if !settings[:klass] || !settings[:action]
     end
   end
 end

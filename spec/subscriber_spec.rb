@@ -26,7 +26,7 @@ RSpec.describe PubSubModelSync::Subscriber do
     let(:settings) { { mode: :custom_model } }
     before do
       allow_any_instance_of(model_klass).to receive(action)
-      payload.attributes[:action] = action
+      payload.settings[:action] = action
     end
 
     it 'calls custom method with the provided data' do

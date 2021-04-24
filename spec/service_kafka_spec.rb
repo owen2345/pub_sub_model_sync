@@ -69,7 +69,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
   describe '.publish' do
     it 'formats message' do
       settings = hash_including(:topic, :headers)
-      data_regex = /"data":{(.*)"attributes":{/
+      data_regex = /"data":{(.*)"settings":{/
       expect(producer).to receive(:produce).with(match(data_regex), settings)
       inst.publish(payload)
     end
