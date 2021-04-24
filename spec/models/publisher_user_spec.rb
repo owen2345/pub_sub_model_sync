@@ -7,21 +7,21 @@ RSpec.describe PublisherUser do
     it '.save' do
       expect_publish_model([be_a(described_class), :save, any_args])
       mock_publisher_callback(:after_save_commit, { name: 'name' }, method = :create!) do
-        ps_publish_event(:save, mapping: %i[id name email])
+        ps_publish(:save, mapping: %i[id name email])
       end
     end
 
     it '.create' do
       expect_publish_model([be_a(described_class), :create, any_args])
       mock_publisher_callback(:after_create_commit, { name: 'name' }, method = :create!) do
-        ps_publish_event(:create, mapping: %i[id name email])
+        ps_publish(:create, mapping: %i[id name email])
       end
     end
 
     it '.update' do
       expect_publish_model([be_a(PublisherUser), :update, any_args])
       model = mock_publisher_callback(:after_update_commit, { name: 'name' }, method = :create!) do
-        ps_publish_event(:update, mapping: %i[id name email])
+        ps_publish(:update, mapping: %i[id name email])
       end
       model.update!(name: 'changed name')
     end
@@ -29,7 +29,7 @@ RSpec.describe PublisherUser do
     it '.destroy' do
       expect_publish_model([be_a(PublisherUser), :destroy, any_args])
       model = mock_publisher_callback(:after_destroy_commit, { name: 'name' }, method = :create!) do
-        ps_publish_event(:destroy, mapping: %i[id])
+        ps_publish(:destroy, mapping: %i[id])
       end
       model.destroy!
     end
@@ -37,13 +37,13 @@ RSpec.describe PublisherUser do
     it 'custom event' do
       expect_publish_model([be_a(PublisherUser), :custom, any_args])
       model = described_class.create!(name: 'sample')
-      model.ps_publish_event(:custom, mapping: %i[id name])
+      model.ps_publish(:custom, mapping: %i[id name])
     end
 
     describe 'when grouping all sub syncs', truncate: true do
       it 'uses the same ordering_key for all syncs' do
         model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
-          ps_publish_event(:update, mapping: %i[id])
+          ps_publish(:update, mapping: %i[id])
         end
         allow(model).to receive(:ps_before_publish) do
           PubSubModelSync::MessagePublisher.publish_data('Test', {}, :changed)
@@ -57,7 +57,7 @@ RSpec.describe PublisherUser do
       it 'restores parent ordering_key when finished' do
         parent_key = 'parent_key'
         model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
-          ps_publish_event(:update, mapping: %i[id])
+          ps_publish(:update, mapping: %i[id])
         end
         publisher_klass.transaction(parent_key) do
           model.update!(name: 'changed')

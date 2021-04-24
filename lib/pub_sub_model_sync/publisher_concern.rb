@@ -32,7 +32,7 @@ module PubSubModelSync
     #   Hash: Data that will be merged with default header values
     #   Symbol: Method name that will be called to retrieve header values (must return a hash, receives :action name)
     #   Proc: Block to be called to retrieve header values
-    def ps_publish_event(action, data: {}, mapping: [], headers: {})
+    def ps_publish(action, data: {}, mapping: [], headers: {})
       p_klass = PubSubModelSync::MessagePublisher
       p_klass.publish_model(self, action, data: data, mapping: mapping, headers: headers)
     end

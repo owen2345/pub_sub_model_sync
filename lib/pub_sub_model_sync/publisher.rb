@@ -5,7 +5,7 @@ module PubSubModelSync
     attr_accessor :model, :action, :data, :mapping, :headers, :as_klass
 
     # @param model (ActiveRecord model)
-    # @see PublishConcern::ps_publish_event
+    # @see PublishConcern::ps_publish
     def initialize(model, action, data: {}, mapping: [], headers: {})
       @model = model
       @action = action

@@ -56,7 +56,7 @@ module PubSubModelSync
       end
 
       # @param model (ActiveRecord::Base)
-      # @see PublishConcern::ps_publish_event
+      # @see PublishConcern::ps_publish
       def publish_model(model, action, data: {}, mapping: [], headers: {})
         return if model.ps_skip_sync?(action)
 

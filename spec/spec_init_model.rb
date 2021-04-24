@@ -34,8 +34,8 @@ prepare_database!
 
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  # after_save_commit { ps_publish_event(:save, mapping: %i[id name email]) }
-  # after_destroy_commit { ps_publish_event(:destroy, data: %i[id], mapping: []) }
+  # after_save_commit { ps_publish(:save, mapping: %i[id name email]) }
+  # after_destroy_commit { ps_publish(:destroy, data: %i[id], mapping: []) }
 end
 
 class SubscriberUser < ActiveRecord::Base
