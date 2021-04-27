@@ -1,18 +1,19 @@
 # frozen_string_literal: true
 
 module PubSubModelSync
-  class Publisher
+  class Publisher < PubSubModelSync::Base
     attr_accessor :model, :action, :data, :mapping, :headers, :as_klass
 
-    # @param model (ActiveRecord model)
-    # @see PublishConcern::ps_publish
-    def initialize(model, action, data: {}, mapping: [], headers: {})
+    # @param model (ActiveRecord::Base)
+    # @param action (@see PublishConcern::ps_publish)
+    # @param settings (@see PublishConcern::ps_publish): { data:, mapping:, headers:, as_klass: }
+    def initialize(model, action, settings = {})
       @model = model
       @action = action
-      @data = data
-      @mapping = mapping
-      @as_klass = (headers.is_a?(Hash) && headers.delete(:as_klass)) || model.class.name
-      @headers = headers
+      @data = settings[:data] || {}
+      @mapping = settings[:mapping] || []
+      @headers = settings[:headers] || {}
+      @as_klass = settings[:as_klass] || model.class.name
     end
 
     # @return (Payload)
@@ -37,7 +38,7 @@ module PubSubModelSync
 
     def parse_value(value)
       res = value
-      res = model.send(value, action) if value.is_a?(Symbol)
+      res = model.send(value, action) if value.is_a?(Symbol) # method name
       res = value.call(model, action) if value.is_a?(Proc)
       res
     end

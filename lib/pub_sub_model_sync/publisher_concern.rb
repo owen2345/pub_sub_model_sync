@@ -23,7 +23,8 @@ module PubSubModelSync
 
     # To perform sync on demand
     # @param action (Sym|String) Sample: create|update|save|destroy|<any_other_key>
-    # @param mapping? (Array<String>) If present will generate data using the mapping and added to the payload
+    # @param mapping? (Array<String>) If present will generate data using the mapping and added to the payload.
+    #   Sample: ["id", "full_name:name"]
     # @param data? (Hash|Symbol|Proc)
     #   Hash: Data to be added to the payload
     #   Symbol: Method name to be called to retrieve payload data (must return a hash value, receives :action name)
@@ -32,9 +33,10 @@ module PubSubModelSync
     #   Hash: Data that will be merged with default header values
     #   Symbol: Method name that will be called to retrieve header values (must return a hash, receives :action name)
     #   Proc: Block to be called to retrieve header values
-    def ps_publish(action, data: {}, mapping: [], headers: {})
+    # @param as_klass? (String): Output class name used instead of current class name
+    def ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: name)
       p_klass = PubSubModelSync::MessagePublisher
-      p_klass.publish_model(self, action, data: data, mapping: mapping, headers: headers)
+      p_klass.publish_model(self, action, data: data, mapping: mapping, headers: headers, as_klass: as_klass)
     end
 
     module ClassMethods

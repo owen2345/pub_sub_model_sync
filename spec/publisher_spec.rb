@@ -13,7 +13,7 @@ RSpec.describe PubSubModelSync::Publisher do
 
     it 'supports for custom class name' do
       as_klass = 'CustomClass'
-      payload = payload_for(action, headers: { as_klass: as_klass })
+      payload = payload_for(action, as_klass: as_klass)
       expect(payload.settings).to include({ klass: as_klass, action: action })
     end
   end

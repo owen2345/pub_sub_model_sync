@@ -56,11 +56,12 @@ module PubSubModelSync
       end
 
       # @param model (ActiveRecord::Base)
-      # @see PublishConcern::ps_publish
-      def publish_model(model, action, data: {}, mapping: [], headers: {})
+      # @param action (Symbol: @see PublishConcern::ps_publish)
+      # @param settings (Hash: @see Publisher.new.settings)
+      def publish_model(model, action, settings = {})
         return if model.ps_skip_sync?(action)
 
-        publisher = PubSubModelSync::Publisher.new(model, action, data: data, mapping: mapping, headers: headers)
+        publisher = PubSubModelSync::Publisher.new(model, action, settings)
         payload = publisher.payload
 
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_publish syncs
