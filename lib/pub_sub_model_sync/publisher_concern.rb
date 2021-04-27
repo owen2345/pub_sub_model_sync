@@ -4,7 +4,7 @@ module PubSubModelSync
   module PublisherConcern
     def self.included(base)
       base.extend(ClassMethods)
-      base.send(:ps_init_transaction_callbacks)
+      base.send(:ps_init_transaction_callbacks) if base.is_a?(ActiveRecord::Base)
     end
 
     # before preparing data to sync
