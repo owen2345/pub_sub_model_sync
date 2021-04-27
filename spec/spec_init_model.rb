@@ -34,20 +34,12 @@ prepare_database!
 
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  # after_save_commit { ps_publish(:save, mapping: %i[id name email]) }
-  # after_destroy_commit { ps_publish(:destroy, data: %i[id], mapping: []) }
 end
 
 class SubscriberUser < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(%i[name])
-  ps_class_subscribe(:greeting)
-  ps_class_subscribe(:greeting, from_action: :greeting2)
-  ps_class_subscribe(:greeting, from_action: :greeting3, from_klass: 'User')
 
-  def self.greeting(args)
-    puts args
-  end
+  def self.hello(*_args); end
 
   # ****** testing usage
   def self.create_class_method(method_name, &block)
