@@ -76,8 +76,8 @@ module PubSubModelSync
       def publish!(payload, &block)
         return unless ensure_publish(payload)
 
-        log("Publishing message: #{[payload]}")
         connector.publish(payload)
+        log("Published message: #{[payload]}")
         config.on_after_publish.call(payload)
         block&.call
         payload
@@ -103,7 +103,6 @@ module PubSubModelSync
         !cancelled
       end
 
-      # TODO: to be reviewed
       def calc_ordering_key(payload)
         return unless @transaction_key.present?
 

@@ -56,8 +56,12 @@ module PubSubModelSync
     end
 
     def start_consumer
-      @consumer = service.consumer(group_id: config.subscription_key)
-      topic_names.each { |topic_name| consumer.subscribe(topic_name) }
+      subscription_key = config.subscription_key
+      @consumer = service.consumer(group_id: subscription_key)
+      topic_names.each do |topic_name|
+        log("Subscribed to topic: #{topic_name} as #{subscription_key}")
+        consumer.subscribe(topic_name)
+      end
     end
 
     def producer

@@ -73,6 +73,7 @@ module PubSubModelSync
           queue = channel.queue(config.subscription_key, QUEUE_SETTINGS)
           queue.bind(exchange)
           @channels << channel
+          log("Subscribed to topic: #{topic_name} as #{queue.name}")
           block.call(queue)
         end
       end
