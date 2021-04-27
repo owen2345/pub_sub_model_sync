@@ -5,7 +5,10 @@ RSpec.describe PubSubModelSync::ServiceBase do
   let(:payload_attrs) { { klass: 'Tester', action: :test } }
   let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs, { app_key: 'unknown_app' }) }
   let(:config) { PubSubModelSync::Config }
-  before { allow(Process).to receive(:exit!) }
+  before do
+    allow(Process).to receive(:exit!)
+    allow(inst).to receive(:sleep)
+  end
 
   describe 'when publishing message' do
     before { payload.headers[:forced_ordering_key] = 'mandatory_key' }
@@ -46,30 +49,16 @@ RSpec.describe PubSubModelSync::ServiceBase do
       end
 
       describe 'when failed' do
-        it 'retries for 1 time when any error' do
-          stub_process_with(times: 1) { raise('any error') }
-          expect(inst).to receive(:decode_payload).twice
+        it 'retries for 5 times when any error' do
+          stub_process_with(times: 100) { raise('any error') }
+          expect(inst).to receive(:decode_payload).exactly(5 + 1).times
           inst.send(:process_message, payload.to_json)
         end
 
         it 'exits the system when problem persists' do
-          stub_process_with(times: 3) { raise('any error') }
+          stub_process_with(times: 100) { raise('any error') }
           expect(Process).to receive(:exit!)
           inst.send(:process_message, payload.to_json)
-        end
-
-        describe 'when DB error' do
-          it 'retries for 1 time' do
-            stub_process_with(times: 1) { raise('lost connection') }
-            expect(inst).to receive(:decode_payload).twice
-            inst.send(:process_message, payload.to_json)
-          end
-
-          it 'exits the system if the problem persists' do
-            stub_process_with(times: 3) { raise('lost connection') }
-            expect(Process).to receive(:exit!)
-            inst.send(:process_message, payload.to_json)
-          end
         end
       end
     end

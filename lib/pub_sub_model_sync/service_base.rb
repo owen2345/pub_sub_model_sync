@@ -43,14 +43,15 @@ module PubSubModelSync
 
     def can_retry_process_message?(error, payload, retries)
       error_payload = [payload, error.message, error.backtrace]
-      if retries == 1
-        log("Error while starting to process message (retrying...): #{error_payload}", :error)
+      if retries <= 5
+        sleep(retries)
+        log("Error while starting to process a message (retrying #{retries} retries...): #{error_payload}", :error)
         rescue_database_connection if lost_db_connection_err?(error)
+        true
       else
-        log("Retried 1 time and error persists, exiting...: #{error_payload}", :error)
+        log("Retried 5 times and error persists, exiting...: #{error_payload}", :error)
         Process.exit!(true)
       end
-      retries == 1
     end
 
     # @return Payload

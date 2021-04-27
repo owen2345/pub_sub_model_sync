@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class Base
-    delegate :config, :log, to: self
+    delegate :config, :log, :debug?, to: self
 
     class << self
       def config
@@ -11,6 +11,10 @@ module PubSubModelSync
 
       def log(message, kind = :info)
         config.log message, kind
+      end
+
+      def debug?
+        config.debug
       end
     end
 

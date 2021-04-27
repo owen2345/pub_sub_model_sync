@@ -37,7 +37,7 @@ module PubSubModelSync
     end
 
     def action
-      settings[:action]
+      settings[:action].to_sym
     end
 
     # Process payload data
