@@ -32,12 +32,6 @@ module PubSubModelSync
         add_ps_subscriber(action, nil, settings)
       end
 
-      def ps_subscriber(action = :create)
-        PubSubModelSync::Config.subscribers.find do |subscriber|
-          subscriber.klass == name && subscriber.action == action
-        end
-      end
-
       private
 
       # @param settings (Hash): refer to PubSubModelSync::Subscriber.settings

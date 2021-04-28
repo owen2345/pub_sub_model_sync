@@ -6,7 +6,7 @@ module PubSubModelSync
     attr_reader :data, :settings, :headers
 
     # @param data (Hash: { any value }):
-    # @param settings (Hash: { klass*: string, action*: :sym }):
+    # @param settings (Hash: { klass*: string, action*: :sym, mode?: :klass|:model }):
     # @param headers (Hash):
     #   key (String): identifier of the payload, default:
     #        klass/action: when class message
