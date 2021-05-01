@@ -33,7 +33,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
     it 'subscribes with custom klass' do
       custom_klass = 'CustomClass'
-      payload.settings[:klass] = custom_klass
+      payload.info[:klass] = custom_klass
       stub_with_subscriber(action, settings: { from_klass: custom_klass }) do |subscriber|
         expect(inst).to receive(:run_subscriber).with(subscriber)
         inst.process
@@ -94,7 +94,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   end
 
   it 'does not process if no subscriber found: different klass' do
-    payload.settings[:klass] = 'UnknownClass'
+    payload.info[:klass] = 'UnknownClass'
     stub_with_subscriber(action) do |subscriber|
       expect(inst).not_to receive(:run_subscriber).with(subscriber)
       inst.process
@@ -102,7 +102,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   end
 
   it 'does not process if no subscriber found: different action' do
-    payload.settings[:action] = :unknown_action
+    payload.info[:action] = :unknown_action
     stub_with_subscriber(action) do |subscriber|
       expect(inst).not_to receive(:run_subscriber).with(subscriber)
       inst.process

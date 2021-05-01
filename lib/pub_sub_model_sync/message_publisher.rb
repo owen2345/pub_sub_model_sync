@@ -43,11 +43,8 @@ module PubSubModelSync
         self.transaction_key = parent_key
       end
 
-      # Publishes any value to pubsub
-      # @param klass (String): Class name
-      # @param data (Hash): Data to be delivered
-      # @param action (:symbol): action name
-      # @param headers (Hash, optional): header settings (More in Payload.headers)
+      # Publishes a class level notification via pubsub
+      # @refer PublisherConcern.ps_class_publish
       # @return Payload
       def publish_data(klass, data, action, headers: {})
         attrs = { klass: klass.to_s, action: action.to_sym }
@@ -59,7 +56,7 @@ module PubSubModelSync
       # @param action (Symbol: @see PublishConcern::ps_publish)
       # @param settings (Hash: @see Publisher.new.settings)
       def publish_model(model, action, settings = {})
-        return if model.ps_skip_sync?(action)
+        return if model.ps_skip_publish?(action)
 
         publisher = PubSubModelSync::Publisher.new(model, action, settings)
         payload = publisher.payload

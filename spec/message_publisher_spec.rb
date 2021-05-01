@@ -42,7 +42,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
     end
 
     describe 'callbacks' do
-      describe '#ps_before_sync' do
+      describe '#ps_before_publish' do
         it 'calls callback method before publishing model' do
           expect(model).to receive(:ps_before_publish).with(action, anything)
           inst.publish_model(model, action)
@@ -56,21 +56,21 @@ RSpec.describe PubSubModelSync::MessagePublisher do
         end
       end
 
-      describe '#ps_skip_sync?' do
+      describe '#ps_skip_publish?' do
         it 'calls callback method before publishing' do
-          expect(model).to receive(:ps_skip_sync?).with(action)
+          expect(model).to receive(:ps_skip_publish?).with(action)
           inst.publish_model(model, action)
         end
 
         it 'skips publishing when callback method returns :cancel' do
-          allow(model).to receive(:ps_skip_sync?).and_return(true)
+          allow(model).to receive(:ps_skip_publish?).and_return(true)
           expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_before_sync)
+          expect(model).not_to receive(:ps_before_publish)
           inst.publish_model(model, action)
         end
       end
 
-      describe '#ps_after_sync' do
+      describe '#ps_after_publish' do
         it 'calls callback method after publishing' do
           expect(model).to receive(:ps_after_publish).with(action, any_args)
           inst.publish_model(model, action)
@@ -101,7 +101,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
       end
     end
 
-    it 'uses the same ordering_key when publishing from :ps_before_sync callback' do
+    it 'uses the same ordering_key when publishing from :ps_before_publish callback' do
       key = 'model-key'
       allow(model).to receive(:ps_before_publish) do
         inst.publish_data(publisher_klass, {}, action)

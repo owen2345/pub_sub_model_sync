@@ -4,8 +4,8 @@ module PubSubModelSync
   module SubscriberConcern
     def self.included(base)
       base.extend(ClassMethods)
-      base.send(:attr_accessor, :ps_processed_payload)
-      base.send(:cattr_accessor, :ps_processed_payload)
+      base.send(:attr_accessor, :ps_processing_payload)
+      base.send(:cattr_accessor, :ps_processing_payload)
     end
 
     module ClassMethods

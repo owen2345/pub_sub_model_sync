@@ -25,14 +25,14 @@ module PubSubModelSync
 
     def run_class_message
       model_class = subscriber.klass.constantize
-      model_class.ps_processed_payload = payload # TODO: review for parallel notifications
+      model_class.ps_processing_payload = payload # TODO: review for parallel notifications
       call_action(model_class, payload.data) if ensure_sync(model_class)
     end
 
     # support for: create, update, destroy
     def run_model_message
       @model = find_model
-      model.ps_processed_payload = payload
+      model.ps_processing_payload = payload
       return unless ensure_sync(model)
 
       populate_model

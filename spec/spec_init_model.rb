@@ -28,12 +28,24 @@ def migrate!
     table.column :email, :string
     table.column :age, :integer
   end
+
+  ActiveRecord::Base.connection.create_table :posts do |table|
+    table.column :publisher_user_id, :integer
+    table.column :title, :string
+  end
 end
 
 prepare_database!
 
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
+  has_many :posts, dependent: :destroy
+end
+
+class Post < ActiveRecord::Base
+  belongs_to :publisher_user
+  include PubSubModelSync::PublisherConcern
+  after_save_commit { ps_publish(:save, mapping: %i[id title]) }
 end
 
 class SubscriberUser < ActiveRecord::Base

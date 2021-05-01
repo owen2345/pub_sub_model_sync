@@ -2,7 +2,7 @@
 
 RSpec.describe PubSubModelSync::Payload do
   let(:data) { { val: 'sample' } }
-  let(:attrs) { { klass: 'User', action: :update } }
+  let(:attrs) { { klass: 'User', action: :update, mode: :model } }
   let(:inst) { described_class.new(data, attrs) }
   let(:config) { PubSubModelSync::Config }
 
@@ -10,8 +10,8 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h[:data]).to eq(data)
   end
 
-  it 'includes :settings in hash format' do
-    expect(inst.to_h[:settings]).to eq(attrs)
+  it 'includes :info in hash format' do
+    expect(inst.to_h[:info]).to eq(attrs)
   end
 
   it 'includes :headers in hash format' do
@@ -29,7 +29,7 @@ RSpec.describe PubSubModelSync::Payload do
   end
 
   it 'rebuilds from payload data' do
-    payload_data = { data: {}, settings: { klass: 'Tester', action: :test }, headers: {} }
+    payload_data = { data: {}, info: { klass: 'Tester', action: :test }, headers: {} }
     res = described_class.from_payload_data(payload_data)
     expect(res).to be_kind_of(described_class)
   end

@@ -8,13 +8,13 @@ RSpec.describe PubSubModelSync::Publisher do
   describe 'when building payload info' do
     it 'settings: includes action and klass' do
       payload = payload_for(action)
-      expect(payload.settings).to include({ klass: klass_name, action: action })
+      expect(payload.info).to include({ klass: klass_name, action: action })
     end
 
     it 'supports for custom class name' do
       as_klass = 'CustomClass'
       payload = payload_for(action, as_klass: as_klass)
-      expect(payload.settings).to include({ klass: as_klass, action: action })
+      expect(payload.info).to include({ klass: as_klass, action: action })
     end
   end
 

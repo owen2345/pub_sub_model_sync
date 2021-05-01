@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-RSpec.describe PublisherUser do
+RSpec.describe PublisherUser, truncate: true do
   let(:publisher_klass) { PubSubModelSync::MessagePublisher }
+  let(:connector) { PubSubModelSync::MessagePublisher.connector }
 
   describe 'callbacks' do
     it '.save' do
@@ -75,7 +76,30 @@ RSpec.describe PublisherUser do
     end
   end
 
+  describe 'when ensuring notifications order' do
+    it 'publishes parent notifications before children notifications' do
+      publish_calls = []
+      allow(connector).to receive(:publish) do |payload|
+        publish_calls << payload.info.merge(payload.headers.slice(:ordering_key))
+      end
+      user = create_user_with_posts(qty_posts: 4)
+      puts "@@@@@@@@@@#{publish_calls.inspect}"
+      expect(publish_calls[0]).to eq({ klass: 'PublisherUser', action: :save, ordering_key: "PublisherUser/#{user.id}" })
+      expect(publish_calls[1]).to eq({ klass: 'Post', action: :save, ordering_key: "PublisherUser/#{user.id}" })
+      expect(publish_calls[2]).to eq({ klass: 'Post', action: :save, ordering_key: "PublisherUser/#{user.id}" })
+    end
+  end
+
   private
+
+  # @return (PublisherUser)
+  def create_user_with_posts(qty_posts: 2)
+    user = mock_publisher_callback(:after_save_commit, { name: 'name'}, method = :new) do
+      ps_publish(:save, mapping: %i[id name email])
+    end
+    qty_posts.times.each { |index| user.posts << Post.new(title: "post #{index}") }
+    user.save! && user
+  end
 
   def expect_publish_model(args)
     expect(publisher_klass).to receive(:publish_model).with(*args)

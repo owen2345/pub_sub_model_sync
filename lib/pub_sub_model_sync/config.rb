@@ -17,16 +17,18 @@ module PubSubModelSync
     cattr_accessor(:on_error_publish) { ->(_exception, _info) {} }
 
     # google service
-    cattr_accessor :project, :credentials, :topic_name, :subscription_name
+    cattr_accessor :project, :credentials, :topic_name, :subscription_name, :default_topic_name
 
     # rabbitmq service
-    cattr_accessor :bunny_connection, :topic_name, :subscription_name
+    cattr_accessor :bunny_connection, :topic_name, :subscription_name, :default_topic_name
 
     # kafka service
-    cattr_accessor :kafka_connection, :topic_name, :subscription_name
+    cattr_accessor :kafka_connection, :topic_name, :subscription_name, :default_topic_name
 
     def self.log(msg, kind = :info)
       msg = "PS_MSYNC ==> #{msg}"
+      puts msg
+      return
       if logger == :raise_error
         kind == :error ? raise(msg) : puts(msg)
       else
@@ -37,6 +39,14 @@ module PubSubModelSync
     def self.subscription_key
       subscription_name ||
         (Rails.application.class.parent_name rescue '') # rubocop:disable Style/RescueModifier
+    end
+
+    class << self
+      alias default_topic_name_old default_topic_name
+
+      def default_topic_name
+        default_topic_name_old || Array(topic_name).first
+      end
     end
   end
 end

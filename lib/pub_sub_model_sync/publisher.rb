@@ -18,7 +18,7 @@ module PubSubModelSync
 
     # @return (Payload)
     def payload
-      values = parse_value(data)
+      values = compute_value(data)
       values = mapping_data.merge(values)
       PubSubModelSync::Payload.new(values, settings_data, headers_data)
     end
@@ -33,10 +33,10 @@ module PubSubModelSync
       klass_name = model.class.name
       key = [klass_name, action, model.id || SecureRandom.uuid].join('/')
       def_data = { ordering_key: self.class.ordering_key_for(model), key: key }
-      def_data.merge(parse_value(headers))
+      def_data.merge(compute_value(headers))
     end
 
-    def parse_value(value)
+    def compute_value(value)
       res = value
       res = model.send(value, action) if value.is_a?(Symbol) # method name
       res = value.call(model, action) if value.is_a?(Proc)

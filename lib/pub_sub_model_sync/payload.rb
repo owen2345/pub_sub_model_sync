@@ -3,10 +3,10 @@
 module PubSubModelSync
   class Payload
     class MissingInfo < StandardError; end
-    attr_reader :data, :settings, :headers
+    attr_reader :data, :info, :headers
 
     # @param data (Hash: { any value }):
-    # @param settings (Hash: { klass*: string, action*: :sym, mode?: :klass|:model }):
+    # @param info (Hash: { klass*: string, action*: :sym, mode?: :klass|:model }):
     # @param headers (Hash):
     #   key (String): identifier of the payload, default:
     #        klass/action: when class message
@@ -19,9 +19,9 @@ module PubSubModelSync
     #     message (default first topic)
     #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,
     #     even withing transactions. Default nil.
-    def initialize(data, settings, headers = {})
+    def initialize(data, info, headers = {})
       @data = data
-      @settings = settings
+      @info = { mode: :model }.merge(info)
       @headers = headers
       build_headers
       validate!
@@ -29,15 +29,15 @@ module PubSubModelSync
 
     # @return Hash: payload data
     def to_h
-      { data: data, settings: settings, headers: headers }
+      { data: data, info: info, headers: headers }
     end
 
     def klass
-      settings[:klass].to_s
+      info[:klass].to_s
     end
 
     def action
-      settings[:action].to_sym
+      info[:action].to_sym
     end
 
     # Process payload data
@@ -69,10 +69,10 @@ module PubSubModelSync
     end
 
     # convert payload data into Payload
-    # @param data [Hash]: payload data (:data, :settings, :headers)
+    # @param data [Hash]: payload data (:data, :info, :headers)
     def self.from_payload_data(data)
       data = data.deep_symbolize_keys
-      new(data[:data], data[:settings], data[:headers])
+      new(data[:data], data[:info], data[:headers])
     end
 
     private
@@ -85,7 +85,7 @@ module PubSubModelSync
     end
 
     def validate!
-      raise MissingInfo if !settings[:klass] || !settings[:action]
+      raise MissingInfo if !info[:klass] || !info[:action]
     end
   end
 end

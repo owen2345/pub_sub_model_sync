@@ -34,7 +34,7 @@ module PubSubModelSync
     end
 
     def publish(payload)
-      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics = Array(payload.headers[:topic_name] || config.default_topic_name)
       message_topics.each do |topic_name|
         producer.produce(encode_payload(payload), message_settings(payload, topic_name))
       end

@@ -52,7 +52,7 @@ module PubSubModelSync
       log("Error processing message: #{info}", :error) if res != :skip_log
     end
 
-    # TODO: include payload.settings[:mode] when filtering
+    # TODO: include payload.info[:mode] when filtering
     def filter_subscribers
       config.subscribers.select do |subscriber|
         subscriber.from_klass == payload.klass && subscriber.action == payload.action
