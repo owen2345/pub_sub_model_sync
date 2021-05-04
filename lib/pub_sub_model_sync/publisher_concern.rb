@@ -2,9 +2,11 @@
 
 module PubSubModelSync
   module PublisherConcern
-    def self.included(base)
-      base.extend(ClassMethods)
-      base.send(:ps_init_transaction_callbacks) if base.superclass == ActiveRecord::Base
+    extend ActiveSupport::Concern
+
+    included do
+      extend ClassMethods
+      ps_init_transaction_callbacks if self <= ActiveRecord::Base
     end
 
     # before preparing data to sync
@@ -53,23 +55,17 @@ module PubSubModelSync
 
       private
 
-      # TODO: skip all enqueued notifications after_rollback (when failed)
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
       def ps_init_transaction_callbacks
         start_transaction = lambda do
-          key = PubSubModelSync::Publisher.ordering_key_for(self)
-          puts "!!!!!!!!!!start transactionsss: #{key}"
-          @ps_parent_transaction_key = PubSubModelSync::MessagePublisher.init_transaction(key)
+          key = id ? PubSubModelSync::Publisher.ordering_key_for(self) : nil
+          @ps_transaction = PubSubModelSync::MessagePublisher.init_transaction(key)
         end
-        end_transaction = -> {
-          PubSubModelSync::MessagePublisher.end_transaction(@ps_parent_transaction_key)
-          puts "@@@@@@@@@finhsing transaction: #{@ps_parent_transaction_key}"
-        }
         after_create start_transaction, prepend: true # wait for ID
         before_update start_transaction, prepend: true
         before_destroy start_transaction, prepend: true
-        after_commit end_transaction
-        after_rollback end_transaction
+        after_commit { @ps_transaction.deliver_all }
+        after_rollback(prepend: true) { @ps_transaction.rollback }
       end
     end
   end

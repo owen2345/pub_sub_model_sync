@@ -4,7 +4,7 @@ module PubSubModelSync
   class MessagePublisher < PubSubModelSync::Base
     class << self
       class MissingPublisher < StandardError; end
-      attr_accessor :transaction_key
+      attr_accessor :current_transaction
 
       def connector
         @connector ||= PubSubModelSync::Connector.new
@@ -16,31 +16,30 @@ module PubSubModelSync
       #   be processed in the correct order, despite of the multiple threads. This thanks to the fact
       #   that Pub/Sub services will always send messages with the same `ordering_key` into the same
       #   worker/thread.
-      # @!macro transaction_key: (String|Hash<use_first: true>)
-      # @param key (@transaction_key) This key will be used as the ordering_key for all payloads
-      #     inside this transaction.
-      def transaction(key, &block)
-        parent_key = init_transaction(key)
-        begin
-          block.call
-        ensure
-          end_transaction(parent_key)
-        end
+      # @see Transaction.new(...)
+      # @param block (Yield) block to be executed
+      def transaction(key, settings = {}, &block)
+        t = init_transaction(key, settings)
+        block.call
+        t.deliver_all
+      rescue
+        t.rollback
+        raise
+      ensure
+        t.reset_publisher
       end
 
       # Starts a new transaction
       # @param key (@transaction_key)
-      # @return (String|Hash) returns parent transaction key
-      def init_transaction(key)
-        parent_key = transaction_key
-        self.transaction_key = transaction_key.presence || key
-        parent_key
-      end
-
-      # @param parent_key (@transaction_key)
-      # Restores to the last transaction key
-      def end_transaction(parent_key)
-        self.transaction_key = parent_key
+      # @return (Transaction)
+      def init_transaction(key, settings = {})
+        new_transaction = PubSubModelSync::Transaction.new(key, settings)
+        if current_transaction
+          current_transaction.add_transaction(new_transaction)
+        else
+          self.current_transaction = new_transaction
+        end
+        new_transaction
       end
 
       # Publishes a class level notification via pubsub
@@ -71,13 +70,18 @@ module PubSubModelSync
       # @return Payload
       # Raises error if exist
       def publish!(payload, &block)
+        payload.headers[:ordering_key] = ordering_key_for(payload)
         return unless ensure_publish(payload)
 
+        current_transaction ? current_transaction.add_payload(payload) : connector_publish(payload)
+        block&.call
+        payload
+      end
+
+      def connector_publish(payload)
         connector.publish(payload)
         log("Published message: #{[payload]}")
         config.on_after_publish.call(payload)
-        block&.call
-        payload
       end
 
       # Similar to :publish! method
@@ -92,23 +96,14 @@ module PubSubModelSync
       private
 
       def ensure_publish(payload)
-        calc_ordering_key(payload)
-        forced_ordering_key = payload.headers[:forced_ordering_key]
-        payload.headers[:ordering_key] = forced_ordering_key if forced_ordering_key
         cancelled = config.on_before_publish.call(payload) == :cancel
         log("Publish cancelled by config.on_before_publish: #{payload}") if config.debug && cancelled
         !cancelled
       end
 
-      def calc_ordering_key(payload)
-        return unless @transaction_key.present?
-
-        key = @transaction_key
-        if @transaction_key.is_a?(Hash)
-          @transaction_key[:id] ||= payload.headers[:ordering_key] if @transaction_key[:use_first]
-          key = @transaction_key[:id]
-        end
-        payload.headers[:ordering_key] = key
+      def ordering_key_for(payload)
+        current_transaction.key ||= payload.headers[:ordering_key]
+        payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
       end
 
       def ensure_model_publish(model, action, payload)
