@@ -53,6 +53,16 @@ module PubSubModelSync
         klass.publish_data((as_klass || name).to_s, data, action.to_sym, headers: headers)
       end
 
+      # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
+      def ps_crud_publish(crud_actions, &block)
+        crud_actions = Array(crud_actions)
+        crud_actions.each do |action|
+          after_create_commit { instance_exec(action, &block) } if action == :create
+          after_update_commit { instance_exec(action, &block) } if action == :update
+          after_destroy { instance_exec(action, &block) } if action == :destroy
+        end
+      end
+
       private
 
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order

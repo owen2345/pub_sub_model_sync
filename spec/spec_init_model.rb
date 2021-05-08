@@ -40,12 +40,15 @@ prepare_database!
 class PublisherUser < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
   has_many :posts, dependent: :destroy
+  accepts_nested_attributes_for :posts
 end
 
 class Post < ActiveRecord::Base
   belongs_to :publisher_user
   include PubSubModelSync::PublisherConcern
-  after_save_commit { ps_publish(:save, mapping: %i[id title]) }
+  ps_crud_publish %i[create update destroy] do |action|
+    ps_publish(action, mapping: %i[id title])
+  end
 end
 
 class SubscriberUser < ActiveRecord::Base

@@ -77,28 +77,51 @@ RSpec.describe PublisherUser, truncate: true do
   end
 
   describe 'when ensuring notifications order' do
-    it 'publishes parent notifications before children notifications' do
-      publish_calls = []
-      allow(connector).to receive(:publish) do |payload|
-        publish_calls << payload.info.merge(payload.headers.slice(:ordering_key))
+    let(:user_data) { { name: 'name', posts_attributes: [{ title: 'P1' }, { title: 'P2' }] } }
+    let(:user) do
+      mock_publisher_callback([:ps_crud_publish, %i[create update destroy]], user_data) do |action|
+        ps_publish(action, mapping: %i[id name email])
       end
-      user = create_user_with_posts(qty_posts: 4)
-      puts "@@@@@@@@@@#{publish_calls.inspect}"
-      expect(publish_calls[0]).to eq({ klass: 'PublisherUser', action: :save, ordering_key: "PublisherUser/#{user.id}" })
-      expect(publish_calls[1]).to eq({ klass: 'Post', action: :save, ordering_key: "PublisherUser/#{user.id}" })
-      expect(publish_calls[2]).to eq({ klass: 'Post', action: :save, ordering_key: "PublisherUser/#{user.id}" })
+    end
+    let(:key) { "PublisherUser/#{user.id}" }
+
+    it 'publishes correct ordering when created' do
+      calls = capture_notifications { user.save! }
+      expect(calls[0]).to include({ klass: 'PublisherUser', action: :create, ordering_key: key, id: user.id })
+      expect(calls[1]).to include({ klass: 'Post', action: :create, ordering_key: key, id: user.posts.first.id })
+      expect(calls[2]).to include({ klass: 'Post', action: :create, ordering_key: key, id: user.posts.second.id })
+    end
+
+    it 'publishes correct ordering when updated' do
+      user.save!
+      changed_data = { name: 'Changed', posts_attributes: [{ id: user.posts.first.id, title: 'P1 changed' },
+                                                           { id: user.posts.second.id, title: 'P2 changed' }] }
+      calls = capture_notifications { user.update!(changed_data) }
+      expect(calls[0]).to include({ klass: 'PublisherUser', action: :update, ordering_key: key, id: user.id })
+      expect(calls[1]).to include({ klass: 'Post', action: :update, ordering_key: key, id: user.posts.first.id })
+      expect(calls[2]).to include({ klass: 'Post', action: :update, ordering_key: key, id: user.posts.second.id })
+    end
+
+    it 'publishes correct ordering when destroyed' do
+      user.save!
+      posts_ids = user.posts.pluck(:id)
+      calls = capture_notifications { user.destroy! }
+      expect(calls[0]).to include({ klass: 'Post', action: :destroy, ordering_key: key, id: posts_ids.first })
+      expect(calls[1]).to include({ klass: 'Post', action: :destroy, ordering_key: key, id: posts_ids.second })
+      expect(calls[2]).to include({ klass: 'PublisherUser', action: :destroy, ordering_key: key, id: user.id })
     end
   end
 
   private
 
   # @return (PublisherUser)
-  def create_user_with_posts(qty_posts: 2)
-    user = mock_publisher_callback(:after_save_commit, { name: 'name'}, method = :new) do
-      ps_publish(:save, mapping: %i[id name email])
+  def capture_notifications(&block)
+    calls = []
+    allow(connector).to receive(:publish) do |payload|
+      calls << payload.info.merge(payload.headers.slice(:ordering_key)).merge(id: payload.data[:id])
     end
-    qty_posts.times.each { |index| user.posts << Post.new(title: "post #{index}") }
-    user.save! && user
+    block.call
+    calls
   end
 
   def expect_publish_model(args)
