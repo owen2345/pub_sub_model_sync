@@ -29,7 +29,7 @@ RSpec.describe PubSubModelSync::Publisher do
     end
 
     it 'calls block when provided block value' do
-      block = lambda { |_model, _action| {} }
+      block = ->(_model, _action) {}
       expect(block).to receive(:call).with(model, action).and_return(header_info)
       payload = payload_for(action, headers: block)
       expect(payload.headers).to include(header_info)
@@ -63,7 +63,7 @@ RSpec.describe PubSubModelSync::Publisher do
       end
 
       it 'calls block when provided block value' do
-        block = lambda { |_model, _action| {} }
+        block = ->(_model, _action) {}
         expect(block).to receive(:call).with(model, action).and_return({})
         payload_for(action, data: block)
       end

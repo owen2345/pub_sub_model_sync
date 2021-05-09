@@ -16,7 +16,7 @@ def prepare_database!
   migrate!
 end
 
-def migrate!
+def migrate! # rubocop:disable Metrics/MethodLength:
   ActiveRecord::Base.connection.create_table :publisher_users do |table|
     table.column :name, :string
     table.column :email, :string

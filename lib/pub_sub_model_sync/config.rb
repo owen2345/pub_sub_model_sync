@@ -28,8 +28,6 @@ module PubSubModelSync
 
     def self.log(msg, kind = :info)
       msg = "PS_MSYNC ==> #{msg}"
-      puts msg
-      return
       if logger == :raise_error
         kind == :error ? raise(msg) : puts(msg)
       else

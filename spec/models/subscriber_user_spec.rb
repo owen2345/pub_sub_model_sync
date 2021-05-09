@@ -7,7 +7,7 @@ RSpec.describe SubscriberUser do
 
   it 'syncs only defined attributes when notification is processed' do
     action = :update
-    add_subscription(action, mapping = %i[name email]) do
+    add_subscription(action, %i[name email]) do
       stub_subscriber(:find_model, model)
       send_notification(action, data)
       expect(model.reload.name).to eq(data[:name])

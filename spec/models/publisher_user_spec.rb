@@ -7,14 +7,14 @@ RSpec.describe PublisherUser, truncate: true do
   describe 'callbacks' do
     it '.create' do
       expect_publish_model([be_a(described_class), :create, any_args])
-      mock_publisher_callback(:after_create_commit, { name: 'name' }, method = :create!) do
+      mock_publisher_callback(:after_create_commit, { name: 'name' }, :create!) do
         ps_publish(:create, mapping: %i[id name email])
       end
     end
 
     it '.update' do
       expect_publish_model([be_a(PublisherUser), :update, any_args])
-      model = mock_publisher_callback(:after_update_commit, { name: 'name' }, method = :create!) do
+      model = mock_publisher_callback(:after_update_commit, { name: 'name' }, :create!) do
         ps_publish(:update, mapping: %i[id name email])
       end
       model.update!(name: 'changed name')
@@ -22,7 +22,7 @@ RSpec.describe PublisherUser, truncate: true do
 
     it '.destroy' do
       expect_publish_model([be_a(PublisherUser), :destroy, any_args])
-      model = mock_publisher_callback(:after_destroy_commit, { name: 'name' }, method = :create!) do
+      model = mock_publisher_callback(:after_destroy_commit, { name: 'name' }, :create!) do
         ps_publish(:destroy, mapping: %i[id])
       end
       model.destroy!
