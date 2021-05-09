@@ -26,22 +26,23 @@ module PubSubModelSync
         parent.deliver_all
       end
       payloads.each(&method(:deliver_payload)) if children.empty?
-      reset_publisher
+      clean_publisher
     end
 
     def add_transaction(transaction)
       transaction.parent = self
       children << transaction
+      transaction
     end
 
     def rollback
       log("rollback #{children.count} notifications", :warn) if children.any? && debug?
       self.children = []
       parent&.rollback
-      reset_publisher
+      clean_publisher
     end
 
-    def reset_publisher
+    def clean_publisher
       PUBLISHER_KLASS.current_transaction = nil if !parent && children.empty?
     end
 

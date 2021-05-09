@@ -17,6 +17,7 @@ module PubSubModelSync
       #   that Pub/Sub services will always send messages with the same `ordering_key` into the same
       #   worker/thread.
       # @see Transaction.new(...)
+      # @param key (String|Nil)
       # @param block (Yield) block to be executed
       def transaction(key, settings = {}, &block)
         t = init_transaction(key, settings)
@@ -26,7 +27,7 @@ module PubSubModelSync
         t.rollback
         raise
       ensure
-        t.reset_publisher
+        t.clean_publisher
       end
 
       # Starts a new transaction
@@ -102,7 +103,7 @@ module PubSubModelSync
       end
 
       def ordering_key_for(payload)
-        current_transaction.key ||= payload.headers[:ordering_key]
+        current_transaction&.key ||= payload.headers[:ordering_key]
         payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
       end
 

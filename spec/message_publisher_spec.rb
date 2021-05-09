@@ -111,10 +111,10 @@ RSpec.describe PubSubModelSync::MessagePublisher do
       end
     end
 
-    it 'uses first payload\'s ordering_key if transaction key is :use_first' do
+    it 'uses first payload\'s ordering_key if transaction key is empty' do
       key = 'trans_key'
       expect_publish_with_headers({ ordering_key: key }, times: 2) do
-        described_class.transaction({ use_first: true }) do
+        described_class.transaction(nil) do
           inst.publish_data('Sample', {}, :sample_action, headers: { ordering_key: key })
           inst.publish_data('Sample', {}, :sample2, headers: { ordering_key: 'any' })
         end

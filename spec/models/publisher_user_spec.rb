@@ -5,13 +5,6 @@ RSpec.describe PublisherUser, truncate: true do
   let(:connector) { PubSubModelSync::MessagePublisher.connector }
 
   describe 'callbacks' do
-    it '.save' do
-      expect_publish_model([be_a(described_class), :save, any_args])
-      mock_publisher_callback(:after_save_commit, { name: 'name' }, method = :create!) do
-        ps_publish(:save, mapping: %i[id name email])
-      end
-    end
-
     it '.create' do
       expect_publish_model([be_a(described_class), :create, any_args])
       mock_publisher_callback(:after_create_commit, { name: 'name' }, method = :create!) do
@@ -39,40 +32,6 @@ RSpec.describe PublisherUser, truncate: true do
       expect_publish_model([be_a(PublisherUser), :custom, any_args])
       model = described_class.create!(name: 'sample')
       model.ps_publish(:custom, mapping: %i[id name])
-    end
-
-    describe 'when grouping all sub syncs', truncate: true do
-      it 'uses the same ordering_key for all syncs' do
-        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
-          ps_publish(:update, mapping: %i[id])
-        end
-        allow(model).to receive(:ps_before_publish) do
-          PubSubModelSync::MessagePublisher.publish_data('Test', {}, :changed)
-        end
-        key = PubSubModelSync::Publisher.ordering_key_for(model)
-        expect_publish_with_headers({ ordering_key: key }, times: 2) do
-          model.update!(name: 'changed')
-        end
-      end
-
-      it 'restores parent ordering_key when finished' do
-        parent_key = 'parent_key'
-        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
-          ps_publish(:update, mapping: %i[id])
-        end
-        publisher_klass.transaction(parent_key) do
-          model.update!(name: 'changed')
-          expect(publisher_klass.transaction_key).to eq parent_key
-        end
-      end
-
-      it 'restores transaction_key when failed' do
-        model = mock_publisher_callback(:after_update, { name: 'sample' }, :create!) do
-          errors.add(:base, 'error updating')
-        end
-        model.update(name: 'changed')
-        expect(publisher_klass.transaction_key).to be_nil
-      end
     end
   end
 
