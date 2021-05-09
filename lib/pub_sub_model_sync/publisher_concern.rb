@@ -58,9 +58,10 @@ module PubSubModelSync
       def ps_on_crud_event(crud_actions, method_name = nil, &block)
         crud_actions = Array(crud_actions)
         call_action = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
+        commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
         crud_actions.each do |action|
-          before_commit(on: :create) { instance_exec(action, &call_action) } if action == :create
-          before_commit(on: :update) { instance_exec(action, &call_action) } if action == :update
+          send(commit_name, on: :create) { instance_exec(action, &call_action) } if action == :create
+          send(commit_name, on: :update) { instance_exec(action, &call_action) } if action == :update
           after_destroy { instance_exec(action, &call_action) } if action == :destroy
         end
       end
