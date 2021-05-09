@@ -46,9 +46,7 @@ end
 class Post < ActiveRecord::Base
   belongs_to :publisher_user
   include PubSubModelSync::PublisherConcern
-  ps_crud_publish %i[create update destroy] do |action|
-    ps_publish(action, mapping: %i[id title])
-  end
+  ps_on_crud_event(%i[create update destroy]) { |action| ps_publish(action, mapping: %i[id title]) }
 end
 
 class SubscriberUser < ActiveRecord::Base

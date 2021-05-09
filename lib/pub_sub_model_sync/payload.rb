@@ -40,6 +40,10 @@ module PubSubModelSync
       info[:action].to_sym
     end
 
+    def mode
+      info[:mode].to_sym
+    end
+
     # Process payload data
     #   (If error will raise exception and wont call on_error_processing callback)
     def process!

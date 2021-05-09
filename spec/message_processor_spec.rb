@@ -8,7 +8,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
   let(:s_processor) { double('SProcessor', call: true) }
 
   before do
-    allow(PubSubModelSync::SubscriberProcessor).to receive(:new).and_return(s_processor)
+    allow(PubSubModelSync::RunSubscriber).to receive(:new).and_return(s_processor)
   end
 
   it 'supports for deprecated initializer' do
@@ -26,7 +26,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
     it 'calls subscriber processor' do
       stub_with_subscriber(action) do |subscriber|
-        expect(PubSubModelSync::SubscriberProcessor).to receive(:new).with(subscriber, payload)
+        expect(PubSubModelSync::RunSubscriber).to receive(:new).with(subscriber, payload)
         inst.process
       end
     end

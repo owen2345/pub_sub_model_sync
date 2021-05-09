@@ -38,7 +38,7 @@ RSpec.describe PublisherUser, truncate: true do
   describe 'when ensuring notifications order' do
     let(:user_data) { { name: 'name', posts_attributes: [{ title: 'P1' }, { title: 'P2' }] } }
     let(:user) do
-      mock_publisher_callback([:ps_crud_publish, %i[create update destroy]], user_data) do |action|
+      mock_publisher_callback([:ps_on_crud_event, %i[create update destroy]], user_data) do |action|
         ps_publish(action, mapping: %i[id name email])
       end
     end

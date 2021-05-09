@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PubSubModelSync
-  class SubscriberProcessor < Base
+  class RunSubscriber < Base
     attr_accessor :subscriber, :payload, :model
 
     delegate :settings, to: :subscriber

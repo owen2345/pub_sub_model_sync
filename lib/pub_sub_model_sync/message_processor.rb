@@ -28,7 +28,7 @@ module PubSubModelSync
     private
 
     def run_subscriber(subscriber)
-      processor = PubSubModelSync::SubscriberProcessor.new(subscriber, payload)
+      processor = PubSubModelSync::RunSubscriber.new(subscriber, payload)
       return unless processable?(subscriber)
 
       errors = [ActiveRecord::ConnectionTimeoutError, 'deadlock detected', 'could not serialize access']
@@ -52,10 +52,9 @@ module PubSubModelSync
       log("Error processing message: #{info}", :error) if res != :skip_log
     end
 
-    # TODO: include payload.info[:mode] when filtering
     def filter_subscribers
       config.subscribers.select do |subscriber|
-        subscriber.from_klass == payload.klass && subscriber.action == payload.action
+        subscriber.from_klass == payload.klass && subscriber.action == payload.action && payload.mode == subscriber.mode
       end
     end
   end

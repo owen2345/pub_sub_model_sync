@@ -47,8 +47,8 @@ module PubSubModelSync
       # @refer PublisherConcern.ps_class_publish
       # @return Payload
       def publish_data(klass, data, action, headers: {})
-        attrs = { klass: klass.to_s, action: action.to_sym }
-        payload = PubSubModelSync::Payload.new(data, attrs.merge(mode: :klass), headers)
+        attrs = { klass: klass.to_s, action: action.to_sym, mode: :klass }
+        payload = PubSubModelSync::Payload.new(data, attrs, headers)
         publish(payload)
       end
 

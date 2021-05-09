@@ -19,7 +19,7 @@ RSpec.describe SubscriberUser do
   private
 
   def stub_subscriber(method_name, result)
-    allow_any_instance_of(PubSubModelSync::SubscriberProcessor).to receive(method_name).and_return(result)
+    allow_any_instance_of(PubSubModelSync::RunSubscriber).to receive(method_name).and_return(result)
   end
 
   def send_notification(action, data)

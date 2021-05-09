@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PubSubModelSync::SubscriberProcessor do
+RSpec.describe PubSubModelSync::RunSubscriber do
   let(:model_klass) { SubscriberUser }
   let(:message) { { name: 'sample name', email: 'sample email', age: '10' } }
 

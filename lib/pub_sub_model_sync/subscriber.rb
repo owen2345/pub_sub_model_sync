@@ -2,7 +2,7 @@
 
 module PubSubModelSync
   class Subscriber < PubSubModelSync::Base
-    attr_accessor :klass, :action, :mapping, :settings, :from_klass
+    attr_accessor :klass, :action, :mapping, :settings, :from_klass, :mode
     attr_reader :payload, :model
 
     # @param klass (String) class name
@@ -10,12 +10,13 @@ module PubSubModelSync
     # @param mapping (Array<String>) @refer SubscriberConcern.ps_subscribe
     # @param settings (Hash): @refer SubscriberConcern.ps_subscribe
     def initialize(klass, action, mapping: [], settings: {})
-      def_settings = { from_klass: klass, to_action: action, id: :id, if: nil, unless: nil, mode: :klass }
+      def_settings = { from_klass: klass, to_action: action, id: :id, if: nil, unless: nil, mode: :model }
       @klass = klass
       @mapping = mapping
       @settings = def_settings.merge(settings)
       @action = action.to_sym
       @from_klass = @settings[:from_klass].to_s
+      @mode = @settings[:mode].to_sym
     end
   end
 end

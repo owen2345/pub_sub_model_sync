@@ -54,12 +54,14 @@ module PubSubModelSync
       end
 
       # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
-      def ps_crud_publish(crud_actions, &block)
+      # @param method_name (Symbol, optional) method to be called
+      def ps_on_crud_event(crud_actions, method_name = nil, &block)
         crud_actions = Array(crud_actions)
+        call_action = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
         crud_actions.each do |action|
-          after_create_commit { instance_exec(action, &block) } if action == :create
-          after_update_commit { instance_exec(action, &block) } if action == :update
-          after_destroy { instance_exec(action, &block) } if action == :destroy
+          before_commit(on: :create) { instance_exec(action, &call_action) } if action == :create
+          before_commit(on: :update) { instance_exec(action, &call_action) } if action == :update
+          after_destroy { instance_exec(action, &call_action) } if action == :destroy
         end
       end
 

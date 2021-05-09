@@ -20,16 +20,15 @@ module PubSubModelSync
       #   if (Symbol|Proc|Array<Symbol>) Method or block called as the conformation before calling the callback
       #   unless (Symbol|Proc|Array<Symbol>) Method or block called as the negation before calling the callback
       def ps_subscribe(actions, mapping = [], settings = {})
-        def_settings = { mode: :model }
         Array(actions).each do |action|
-          add_ps_subscriber(action, mapping, def_settings.merge(settings))
+          add_ps_subscriber(action, mapping, settings)
         end
       end
 
       # @param action (Symbol) Notification.action name
       # @param settings (Hash) @refer ps_subscribe.settings except(:id)
       def ps_class_subscribe(action, settings = {})
-        add_ps_subscriber(action, nil, settings)
+        add_ps_subscriber(action, nil, settings.merge(mode: :klass))
       end
 
       private
