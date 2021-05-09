@@ -1,7 +1,5 @@
 # **PubSubModelSync**
-Automatically sync Model data and make calls between Rails applications using Google PubSub, RabbitMQ, or Apache Kafka Pub/Sub services.
-
-Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_man) is now unmaintained.
+This gem permits tp sync model data between Rails applications taking into account data consistency and send/receive any custom notifications via PubSub service (Google PubSub, RabbitMQ, or Apache Kafka) 
 
 - [**PubSubModelSync**](#pubsubmodelsync)
   - [**Features**](#features)
@@ -30,14 +28,12 @@ Note: This gem is based on [MultipleMan](https://github.com/influitive/multiple_
   - [**Code of Conduct**](#code-of-conduct)
 
 ## **Features**
-- Sync CRUD operations between Rails apps. So, all changes made on App1, will be reflected on App2, App3.
+- Sync model data between Rails apps: All changes made on App1, will be reflected on App2, App3, etc.
     Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
 - Ability to make class level communication
-    Example: If User from App1 wants to generate_email, this can be listened on App2, App3, ... to make corresponding actions
-- Change pub/sub service at any time
-- Support for transactions: Permits to group all payloads with the same ordering_key and be processed in the same order they are published by the subscribers. 
-  Grouping by ordering_key allows us to enable multiple workers in our Pub/Sub service(s), and still guarantee that related payloads will be processed in the correct order, despite of the multiple threads. 
-  This thanks to the fact that Pub/Sub services will always send messages with the same `ordering_key` into the same worker/thread.
+    Example: If App1 wants to send emails to multiple users, this can be listened on App2, to delivery corresponding emails
+- Change pub/sub service at any time: Switch between rabbitmq, kafka, google pubsub  
+- Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered.
 - Ability to send notifications to a specific topic or multiple topics
 
 ## **Installation**
