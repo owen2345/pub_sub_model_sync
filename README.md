@@ -528,3 +528,7 @@ The gem is available as open source under the terms of the [MIT License](https:/
 ## **Code of Conduct**
 
 Everyone interacting in the PubSubModelSync project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/pub_sub_model_sync/blob/master/CODE_OF_CONDUCT.md).
+
+## **Running tests**
+- `docker-compose run test`
+- `docker-compose run test bash -c "rubocop"`
