@@ -36,8 +36,9 @@ module PubSubModelSync
     end
 
     def self.subscription_key
-      subscription_name ||
-        (Rails.application.class.parent_name rescue '') # rubocop:disable Style/RescueModifier
+      klass = Rails.application.class
+      app_name = klass.respond_to?(:module_parent_name) ? klass.module_parent_name : klass.parent_name
+      subscription_name || app_name
     end
 
     class << self
