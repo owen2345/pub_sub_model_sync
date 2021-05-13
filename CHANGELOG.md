@@ -1,10 +1,26 @@
 # Change Log
 
+# 1.0.beta (May 13, 2021)
+- Refactor: Subscribers param renamed `from_action` into `to_action` and added support for block or lambda 
+- Feat: Improved `ps_subscribe` to accept new arguments and support for property mappings
+- Refactor: Refactored `ps_publish` to be called manually (removes notification assumptions) and accept for new arguments
+- Feat: Added `ps_on_crud_event` to listen CRUD events to send notifications in the expected order
+- Feat: Added `config.default_topic_name` to define default topic name whe publishing (by default `config.topic_name`)
+- Refactor: Refactored PubSub Transactions to support rollbacks (any exception inside transactions can automatically cancel all pending notifications: configurable through `config.transactions_use_buffer`)
+- Feat: Improved CRUD transactions to deliver inner notifications in the expected order to keep data consistency
+- System refactor: Added subscriber runner
+- Fix: Class notifications can only be listened by class subscriptions
+- Refactor: Removed `publish_model_data` to have a unique model publisher `ps_publish`
+- Refactor: Renamed `ps_before_sync` into `ps_before_publish`, `ps_skip_sync` into `ps_skip_publish`, `ps_after_sync` into `ps_after_publish`
+- Refactor: Renamed `payload.attributes` into `payload.info`
+- Feat: Support for plain Ruby Objects (Non ActiveRecord models)
+- Fix: Retry errors for 5 times before exiting notifications listener 
+
 # 0.6.0 (March 03, 2021)
 - feat: add support to include custom payload headers
 - feat: add pubsub transactions to process all payloads inside in the same order they were published
 - feat: when a model is created/updated/destroyed, process all related payloads in a single transaction
-- feat: add method to save processed payload (:ps_processed_payload) when saving sync
+- feat: add method to save processed payload (:ps_processing_payload) when saving sync
 - feat: add "ordering_key" support to process all payloads with the same key in the same order
 - feat: start multiple workers to process async kafka messages when starting service listeners
 - feat: make async publisher by reusing exchange connection (rabbit)
@@ -17,7 +33,7 @@
 - feat: remove duplicated callback :ps_before_save_sync (same result can be achieved with :ps_before_save_sync)
 - feat: improve message starter to retry when failed or exit system when persists
 - feat: fix and retry when database connection error (PG::UnableToSend)
-- feat: add method to save processed payload (:ps_processed_payload) when saving sync
+- feat: add method to save processed payload (:ps_processing_payload) when saving sync
 - chore: improved readme (Thanks @CharlieIGG)
 
 # 0.5.9.1 (February 10, 2021)

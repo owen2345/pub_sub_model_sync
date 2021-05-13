@@ -1,5 +1,6 @@
 # **PubSubModelSync**
-This gem permits tp sync model data between Rails applications taking into account data consistency and send/receive any custom notifications via PubSub service (Google PubSub, RabbitMQ, or Apache Kafka) 
+This gem permits to sync automatically model data, send custom notifications between multiple Rails applications by publishing notifications via pubsub (Google PubSub, RabbitMQ, or Apache Kafka). Out of the scope this gem includes transactions to keep Data consistency by processing notifications in the order they were delivered. 
+These notifications use JSON format to easily be decoded by subscribers (Rails applications and even other languages) 
 
 - [**PubSubModelSync**](#pubsubmodelsync)
   - [**Features**](#features)
@@ -28,13 +29,13 @@ This gem permits tp sync model data between Rails applications taking into accou
   - [**Code of Conduct**](#code-of-conduct)
 
 ## **Features**
-- Sync model data between Rails apps: All changes made on App1, will be reflected on App2, App3, etc.
-    Example: If User is created on App1, this user will be created on App2 too with the accepted attributes.
-- Ability to make class level communication
-    Example: If App1 wants to send emails to multiple users, this can be listened on App2, to delivery corresponding emails
+- Sync model data between Rails apps: All changes made on App1, will be immediately reflected on App2, App3, etc.
+    Example: If User is created on App1, this user will be created on App2, App3 too with the accepted attributes.
+- Ability to send class level communications
+    Example: If App1 wants to send emails to multiple users, this can be listened on App2, to deliver corresponding emails
 - Change pub/sub service at any time: Switch between rabbitmq, kafka, google pubsub  
 - Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered.
-- Ability to send notifications to a specific topic or multiple topics
+- Ability to send notifications to a specific topic (single application) or multiple topics (multiple applications)
 
 ## **Installation**
 Add this line to your application's Gemfile:
@@ -230,11 +231,11 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 
 #### **Publishing notifications**
 
-- `ps_on_crud_event(crud_actions, method_name = nil, &block)` Listens for crud events and calls block or defined method to process event callback
+- `ps_on_crud_event(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
   - `crud_actions` (Symbol|Array<Symbol>) Crud event(s) to be observed (Allowed: `:create, :update, :destroy`)
   - `method_name` (Symbol, optional) method to be called to process action callback
-  - `block` Block to be called to process action callback
-  **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications ordering, sample:
+  - `block` (Proc, optional) Block to be called to process action callback
+  **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications order, sample:
     ```ruby
       user = User.create(name: 'asasas', posts_attributes: [{ title: 't1' }, { title: 't2' }])
     ```

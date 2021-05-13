@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (0.6.0)
+    pub_sub_model_sync (1.0.beta)
       rails
 
 GEM
@@ -127,7 +127,7 @@ GEM
     i18n (1.8.2)
       concurrent-ruby (~> 1.0)
     jwt (2.2.2)
-    loofah (2.8.0)
+    loofah (2.9.1)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
@@ -136,20 +136,22 @@ GEM
       mimemagic (~> 0.3.2)
     memoist (0.16.2)
     method_source (1.0.0)
-    mimemagic (0.3.5)
-    mini_mime (1.0.2)
-    mini_portile2 (2.4.0)
+    mimemagic (0.3.10)
+      nokogiri (~> 1)
+      rake
+    mini_mime (1.1.0)
     minitest (5.14.0)
     multi_json (1.15.0)
     multipart-post (2.1.1)
-    nio4r (2.5.4)
-    nokogiri (1.10.10)
-      mini_portile2 (~> 2.4.0)
+    nio4r (2.5.7)
+    nokogiri (1.11.3-x86_64-darwin)
+      racc (~> 1.4)
     os (1.1.1)
     parallel (1.20.1)
     parser (2.7.2.0)
       ast (~> 2.4.1)
     public_suffix (4.0.6)
+    racc (1.5.2)
     rack (2.2.3)
     rack-test (1.1.0)
       rack (>= 1.0, < 3)
@@ -224,7 +226,7 @@ GEM
       activesupport (>= 4.0)
       sprockets (>= 3.0.0)
     sqlite3 (1.4.2)
-    thor (1.0.1)
+    thor (1.1.0)
     thread_safe (0.3.6)
     tzinfo (1.2.7)
       thread_safe (~> 0.1)
@@ -243,7 +245,6 @@ DEPENDENCIES
   database_cleaner-active_record
   google-cloud-pubsub (> 2.0)
   pub_sub_model_sync!
-  rails (~> 6)
   rake
   rspec
   rubocop (~> 1.6.0)
