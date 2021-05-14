@@ -58,11 +58,16 @@ module PubSubModelSync
       def ps_on_crud_event(crud_actions, method_name = nil, &block)
         crud_actions = Array(crud_actions)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
-        commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
         crud_actions.each do |action|
-          send(commit_name, on: :create) { instance_exec(action, &callback) } if action == :create
-          send(commit_name, on: :update) { instance_exec(action, &callback) } if action == :update
-          after_destroy { instance_exec(action, &callback) } if action == :destroy
+          if action == :destroy
+            after_destroy { instance_exec(action, &callback) }
+          else
+            if Rails::VERSION::MAJOR == 4 # rails 4 compatibility
+              define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
+            else
+              before_commit(on: action) { instance_exec(action, &callback) }
+            end
+          end
         end
       end
 
