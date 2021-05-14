@@ -55,21 +55,27 @@ module PubSubModelSync
 
       # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
       # @param method_name (Symbol, optional) method to be called
-      def ps_on_crud_event(crud_actions, method_name = nil, &block) # rubocop:disable Metrics/MethodLength
+      def ps_on_crud_event(crud_actions, method_name = nil, &block)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
-        commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
         Array(crud_actions).each do |action|
           if action == :destroy
             after_destroy { instance_exec(action, &callback) }
-          elsif PubSubModelSync::Config.enable_rails4_before_commit # rails 4 compatibility
-            define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
           else
-            send(commit_name, on: action) { instance_exec(action, &callback) }
+            ps_crud_define_commit_action(action, callback)
           end
         end
       end
 
       private
+
+      def ps_crud_define_commit_action(action, callback)
+        commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
+        if PubSubModelSync::Config.enable_rails4_before_commit # rails 4 compatibility
+          define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
+        else
+          send(commit_name, on: action) { instance_exec(action, &callback) }
+        end
+      end
 
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
       def ps_init_transaction_callbacks

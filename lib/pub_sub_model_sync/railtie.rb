@@ -2,6 +2,7 @@
 
 require 'pub_sub_model_sync'
 require 'rails'
+require 'active_record'
 require 'pub_sub_model_sync/config'
 module PubSubModelSync
   class Railtie < ::Rails::Railtie
@@ -12,9 +13,7 @@ module PubSubModelSync
     end
 
     configure do
-      if PubSubModelSync::Config.enable_rails4_before_commit && defined?(ActiveRecord)
-        require 'pub_sub_model_sync/initializers/before_commit'
-      end
+      require 'pub_sub_model_sync/initializers/before_commit' if PubSubModelSync::Config.enable_rails4_before_commit
     end
   end
 end
