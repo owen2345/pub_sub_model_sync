@@ -364,9 +364,9 @@ Any notification before delivering is transformed as a Payload for a better port
     **Note**: When any error is raised when saving user or posts, the transaction is cancelled and thus all notifications wont be delivered (customizable by `PubSubModelSync::Config.transactions_use_buffer`).    
   
   - Manual transactions   
-    `PubSubModelSync::MessagePublisher::transaction(key, use_buffer: , &block)`
+    `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
     - `key` (String|nil) Key used as the ordering key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
-    - `use_buffer:` (Boolean, default: `PubSubModelSync::Config.transactions_use_buffer`)     
+    - `max_buffer:` (Boolean, default: `PubSubModelSync::Config.transactions_max_buffer`)     
         If true: will save all notifications and deliver all them when transaction has successfully finished. If transaction has failed, then all saved notifications will be discarded (not delivered).    
         If false: will deliver all notifications immediately (no way to rollback notifications if transaction has failed)  
     Sample:
@@ -479,7 +479,9 @@ config.debug = true
     (Proc) => called after publishing a message
 - ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```
     (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
-- ```.transactions_use_buffer = true``` (true*|false) Default value for `use_buffer` in transactions.
+- ```.transactions_max_buffer = 100``` (Integer) Once this quantity of notifications is reached, then all notifications will immediately be delivered.    
+    Note: There is no way to rollback delivered notifications if current transaction fails
+- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` which will not rollback sql transactions if fails.
 
 ## **TODO**
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)

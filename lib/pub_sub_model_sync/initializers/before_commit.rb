@@ -1,7 +1,9 @@
+# frozen_string_literal: true
 
 # Rails 4 backward compatibility (Add "simple" ps_before_*_commit callbacks)
 ActiveRecord::ConnectionAdapters::RealTransaction.class_eval do
-  alias commit_with_before_commit commit
+  alias_method :commit_with_before_commit, :commit
+
   def commit
     call_before_commit_records if Rails::VERSION::MAJOR == 4
     commit_with_before_commit

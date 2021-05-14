@@ -3,58 +3,65 @@
 module PubSubModelSync
   class Transaction < Base
     PUBLISHER_KLASS = PubSubModelSync::MessagePublisher
-    attr_accessor :key, :payloads, :use_buffer, :parent, :children, :finished
+    attr_accessor :key, :payloads, :max_buffer, :root, :children, :finished
 
     # @param key (String|nil) Transaction key, if empty will use the ordering_key from first payload
-    # @param use_buffer (Boolean, default: true) If false, payloads are delivered immediately
-    #   (no way to cancel/rollback if transaction failed)
-    def initialize(key, use_buffer: config.transactions_use_buffer)
+    # @param max_buffer (Integer) Once this quantity of notifications is reached, then all notifications
+    #   will immediately be delivered.
+    #   Note: There is no way to rollback delivered notifications if current transaction fails
+    def initialize(key, max_buffer: config.transactions_max_buffer)
       @key = key
-      @use_buffer = use_buffer
+      @max_buffer = max_buffer
       @children = []
       @payloads = []
     end
 
     # @param payload (Payload)
     def add_payload(payload)
-      use_buffer ? payloads << payload : deliver_payload(payload)
+      payloads << payload
+      deliver_payloads if payloads.count >= max_buffer
     end
 
-    def finish
+    def finish # rubocop:disable Metrics/AbcSize
+      if root
+        root.children = root.children.reject { |t| t == self }
+        root.deliver_all if root.finished && root.children.empty?
+      end
       self.finished = true
-      parent.children = parent.children.reject { |t| t == self } if parent
-      parent.deliver_all if parent&.finished && parent.children.empty?
-      deliver_all
+      deliver_all if children.empty?
     end
 
     def add_transaction(transaction)
-      transaction.parent = self
+      transaction.root = self
       children << transaction
       transaction
     end
 
     def rollback
-      log("rollback #{children.count} notifications", :warn) if children.any? && debug?
+      log("rollback #{payloads.count} notifications", :warn) if children.any? && debug?
       self.children = []
-      parent&.rollback
+      root&.rollback
       clean_publisher
     end
 
     def clean_publisher
-      PUBLISHER_KLASS.current_transaction = nil if !parent && children.empty?
+      PUBLISHER_KLASS.current_transaction = nil if !root && children.empty?
     end
 
     def deliver_all
-      payloads.each(&method(:deliver_payload)) if children.empty?
+      deliver_payloads
       clean_publisher
     end
 
     private
 
-    def deliver_payload(payload)
-      PUBLISHER_KLASS.connector_publish(payload)
-    rescue => e
-      PUBLISHER_KLASS.send(:notify_error, e, payload)
+    def deliver_payloads
+      payloads.each do |payload|
+        PUBLISHER_KLASS.connector_publish(payload)
+      rescue => e
+        PUBLISHER_KLASS.send(:notify_error, e, payload)
+      end
+      self.payloads = []
     end
   end
 end

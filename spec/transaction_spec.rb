@@ -2,64 +2,84 @@
 
 RSpec.describe PubSubModelSync::Transaction do
   let(:key) { 'some_key' }
-  let(:parent_t) { described_class.new(key) }
-  let(:child_t) { parent_t.add_transaction(described_class.new('child_key')) }
+  let(:root_t) { described_class.new(key) }
   let(:payload) { PubSubModelSync::Payload.new({}, { klass: 'Sample', action: :test }) }
   let(:publisher) { described_class::PUBLISHER_KLASS }
 
   it 'updates children when adding a sub transaction' do
-    expect(parent_t.children).to include(child_t)
+    child_t = add_transaction
+    expect(root_t.children).to include(child_t)
   end
 
-  describe 'when delivering notifications' do
-    it 'updates parent\'s children' do
-      child_t.deliver_all
-      expect(parent_t.children).to be_empty
+  describe 'when adding payloads' do
+    it 'auto deliveries notifications when reached max_buffer' do
+      root_t = described_class.new(key, max_buffer: 2)
+      expect(root_t).to receive(:deliver_payloads)
+      root_t.add_payload(payload)
+      root_t.add_payload(payload)
+    end
+  end
+
+  describe 'when finishing transaction' do
+    it 'does not deliver notifications if there are pending sub transactions' do
+      add_transaction
+      expect(root_t).not_to receive(:deliver_payloads)
+      root_t.finish
     end
 
-    it 'deliveries all parent\'s notification if exist' do
-      expect(parent_t).to receive(:deliver_all)
-      child_t.deliver_all
+    it 'cleans up current transaction' do
+      expect(publisher).to receive(:current_transaction=).with(nil)
+      root_t.finish
     end
 
-    describe 'when there are no pending transactions' do
-      it 'deliveries all enqueued notifications' do
-        parent_t.add_payload(payload)
-        expect(parent_t).to receive(:deliver_payload).with(payload)
-        child_t.deliver_all
-      end
-
-      it 'cleans up current transaction' do
-        expect(publisher).to receive(:current_transaction=).with(nil)
-        child_t.deliver_all
-      end
+    it 'marks as finished' do
+      root_t.finish
+      expect(root_t.finished).to be_truthy
     end
 
-    describe 'when there are pending transactions' do
-      before { parent_t.add_transaction(described_class.new('pending_child')) }
-
-      it 'does not clean up current transaction' do
-        expect(publisher).not_to receive(:current_transaction=)
-        child_t.deliver_all
+    describe 'when finishing sub transaction' do
+      it 'updates parent\'s children' do
+        child_t = add_transaction
+        child_t.finish
+        expect(root_t.children).to be_empty
       end
 
-      it 'does not deliver enqueued notifications' do
-        parent_t.add_payload(payload)
-        expect(parent_t).not_to receive(:deliver_payload)
-        child_t.deliver_all
+      it 'does not deliver root\'s notifications if root not finished yet' do
+        child_t = add_transaction
+        expect(root_t).not_to receive(:deliver_payloads)
+        child_t.finish
+      end
+
+      it 'deliveries root\'s notifications if root already finished' do
+        child_t = add_transaction
+        _finished_before_child = root_t.finish
+        expect(root_t).to receive(:deliver_payloads)
+        child_t.finish
       end
     end
   end
 
   describe 'when rolling back' do
     it 'clears all transactions' do
-      expect(parent_t).to receive(:rollback)
+      child_t = add_transaction
+      expect(root_t).to receive(:rollback)
       child_t.rollback
     end
 
     it 'cleans up current transaction' do
       expect(publisher).to receive(:current_transaction=).with(nil)
-      child_t.rollback
+      root_t.rollback
     end
+
+    it 'clears root\'s notifications' do
+      root_t.rollback
+      expect(root_t.payloads).to eq([])
+    end
+  end
+
+  private
+
+  def add_transaction
+    root_t.add_transaction(described_class.new(nil))
   end
 end
