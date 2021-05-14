@@ -57,9 +57,11 @@ module PubSubModelSync
 
     def deliver_payloads
       payloads.each do |payload|
-        PUBLISHER_KLASS.connector_publish(payload)
-      rescue => e
-        PUBLISHER_KLASS.send(:notify_error, e, payload)
+        begin # rubocop:disable Style/RedundantBegin (ruby 2.4 support)
+          PUBLISHER_KLASS.connector_publish(payload)
+        rescue => e
+          PUBLISHER_KLASS.send(:notify_error, e, payload)
+        end
       end
       self.payloads = []
     end
