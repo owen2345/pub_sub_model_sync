@@ -8,7 +8,7 @@ end
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
     QUEUE_SETTINGS = { durable: true, auto_delete: false }.freeze
-    LISTEN_SETTINGS = { manual_ack: true }.freeze
+    LISTEN_SETTINGS = { manual_ack: false }.freeze
     PUBLISH_SETTINGS = {}.freeze
 
     # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
