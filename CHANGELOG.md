@@ -14,7 +14,8 @@
 - Refactor: Renamed `ps_before_sync` into `ps_before_publish`, `ps_skip_sync` into `ps_skip_publish`, `ps_after_sync` into `ps_after_publish`
 - Refactor: Renamed `payload.attributes` into `payload.info`
 - Feat: Support for plain Ruby Objects (Non ActiveRecord models)
-- Fix: Retry errors for 5 times before exiting notifications listener 
+- Fix: Retry errors for 5 times before exiting notifications listener
+- Feat: Added transactions max_buffer 
 
 # 0.6.0 (March 03, 2021)
 - feat: add support to include custom payload headers
