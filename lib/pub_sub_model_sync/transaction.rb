@@ -3,7 +3,7 @@
 module PubSubModelSync
   class Transaction < Base
     PUBLISHER_KLASS = PubSubModelSync::MessagePublisher
-    attr_accessor :key, :payloads, :use_buffer, :parent, :children
+    attr_accessor :key, :payloads, :use_buffer, :parent, :children, :finished
 
     # @param key (String|nil) Transaction key, if empty will use the ordering_key from first payload
     # @param use_buffer (Boolean, default: true) If false, payloads are delivered immediately
@@ -20,13 +20,11 @@ module PubSubModelSync
       use_buffer ? payloads << payload : deliver_payload(payload)
     end
 
-    def deliver_all
-      if parent
-        parent.children = parent.children.reject { |t| t == self }
-        parent.deliver_all
-      end
-      payloads.each(&method(:deliver_payload)) if children.empty?
-      clean_publisher
+    def finish
+      self.finished = true
+      parent.children = parent.children.reject { |t| t == self } if parent
+      parent.deliver_all if parent&.finished && parent.children.empty?
+      deliver_all
     end
 
     def add_transaction(transaction)
@@ -44,6 +42,11 @@ module PubSubModelSync
 
     def clean_publisher
       PUBLISHER_KLASS.current_transaction = nil if !parent && children.empty?
+    end
+
+    def deliver_all
+      payloads.each(&method(:deliver_payload)) if children.empty?
+      clean_publisher
     end
 
     private

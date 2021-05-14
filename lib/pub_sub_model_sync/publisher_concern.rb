@@ -77,7 +77,7 @@ module PubSubModelSync
         after_create start_transaction, prepend: true # wait for ID
         before_update start_transaction, prepend: true
         before_destroy start_transaction, prepend: true
-        after_commit { @ps_transaction.deliver_all }
+        after_commit { @ps_transaction.finish }
         after_rollback(prepend: true) { @ps_transaction.rollback }
       end
     end

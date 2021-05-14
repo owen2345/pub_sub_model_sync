@@ -22,7 +22,7 @@ module PubSubModelSync
       def transaction(key, settings = {}, &block)
         t = init_transaction(key, settings)
         block.call
-        t.deliver_all
+        t.finish
       rescue
         t.rollback
         raise
