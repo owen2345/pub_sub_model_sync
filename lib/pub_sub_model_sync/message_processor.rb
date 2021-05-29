@@ -20,9 +20,10 @@ module PubSubModelSync
     end
 
     def process
+      retries ||= 0
       process!
     rescue => e
-      notify_error(e)
+      retry_process?(e, retries += 1) ? retry : notify_error(e)
     end
 
     private
@@ -31,12 +32,9 @@ module PubSubModelSync
       processor = PubSubModelSync::RunSubscriber.new(subscriber, payload)
       return unless processable?(subscriber)
 
-      errors = [ActiveRecord::ConnectionTimeoutError, 'deadlock detected', 'could not serialize access']
-      retry_error(errors, qty: 5) do
-        processor.call
-        res = config.on_success_processing.call(payload, { subscriber: subscriber })
-        log "processed message with: #{payload.inspect}" if res != :skip_log
-      end
+      processor.call
+      res = config.on_success_processing.call(payload, { subscriber: subscriber })
+      log "processed message with: #{payload.inspect}" if res != :skip_log
     end
 
     def processable?(subscriber)
@@ -45,11 +43,31 @@ module PubSubModelSync
       !cancel
     end
 
-    # @param error (Error)
+    # @param error (StandardError)
     def notify_error(error)
       info = [payload, error.message, error.backtrace]
       res = config.on_error_processing.call(error, { payload: payload })
       log("Error processing message: #{info}", :error) if res != :skip_log
+    end
+
+    def lost_db_connection?(error)
+      connection_lost_classes = %w[ActiveRecord::ConnectionTimeoutError PG::UnableToSend]
+      connection_lost_classes.include?(error.class.name) || error.message.match?(/lost connection/i)
+    end
+
+    def retry_process?(error, retries) # rubocop:disable Metrics/MethodLength
+      error_payload = [payload, error.message, error.backtrace]
+      return false unless lost_db_connection?(error)
+
+      if retries <= 5
+        sleep(retries)
+        log("Error processing message: (retrying #{retries}/5): #{error_payload}", :error)
+        ActiveRecord::Base.connection.reconnect! rescue nil # rubocop:disable Style/RescueModifier
+        true
+      else
+        log("Retried 5 times and error persists, exiting...: #{error_payload}", :error)
+        Process.exit!(true)
+      end
     end
 
     def filter_subscribers

@@ -9,6 +9,9 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
   before do
     allow(PubSubModelSync::RunSubscriber).to receive(:new).and_return(s_processor)
+    allow(Process).to receive(:exit!)
+    allow(inst).to receive(:sleep)
+    allow(inst).to receive(:log)
   end
 
   it 'supports for deprecated initializer' do
@@ -40,15 +43,6 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       end
     end
 
-    it 'retries many times if error "could not obtain a database connection ..."' do
-      times = 5
-      stub_with_subscriber(action) do
-        allow(s_processor).to receive(:call).and_raise(ActiveRecord::ConnectionTimeoutError)
-        expect(s_processor).to receive(:call).exactly(times + 1).times
-        suppress(Exception) { inst.process }
-      end
-    end
-
     it 'does not process if returns :cancel from :on_before_processing' do
       allow(inst.config.on_before_processing).to receive(:call).and_return(:cancel)
       stub_with_subscriber(action) do
@@ -56,6 +50,43 @@ RSpec.describe PubSubModelSync::MessageProcessor do
         expect(inst).to receive(:log).with(include('process message cancelled'))
         expect(s_processor).not_to receive(:call)
         inst.process
+      end
+    end
+
+    describe 'when failed' do
+      let(:times) { 5 }
+
+      it 'reconnects DB if DB connection lost' do
+        stub_with_subscriber(action) do
+          allow(s_processor).to receive(:call).and_raise('lost connection')
+          expect(ActiveRecord::Base.connection).to receive(:reconnect!).exactly(times).times
+          suppress(Exception) { inst.process }
+        end
+      end
+
+      it 'reconnects DB timeout error' do
+        allow(StandardError).to receive(:name).and_return('ActiveRecord::ConnectionTimeoutError')
+        stub_with_subscriber(action) do
+          allow(s_processor).to receive(:call).and_raise('db timeout')
+          expect(ActiveRecord::Base.connection).to receive(:reconnect!).exactly(times).times
+          suppress(Exception) { inst.process }
+        end
+      end
+
+      it 'exits the system when retried 5 times' do
+        stub_with_subscriber(action) do
+          allow(s_processor).to receive(:call).and_raise('lost connection')
+          expect(Process).to receive(:exit!)
+          suppress(Exception) { inst.process }
+        end
+      end
+
+      it 'notifies error message when failed processing notification' do
+        stub_with_subscriber(action) do
+          allow(s_processor).to receive(:call).and_raise('any error')
+          expect(inst).to receive(:notify_error).once
+          suppress(Exception) { inst.process }
+        end
       end
     end
 

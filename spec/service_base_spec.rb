@@ -47,30 +47,6 @@ RSpec.describe PubSubModelSync::ServiceBase do
           .to receive(:process)
         inst.send(:process_message, payload.to_json)
       end
-
-      describe 'when failed' do
-        it 'retries for 5 times when any error' do
-          stub_process_with(times: 100) { raise('any error') }
-          expect(inst).to receive(:decode_payload).exactly(5 + 1).times
-          inst.send(:process_message, payload.to_json)
-        end
-
-        it 'exits the system when problem persists' do
-          stub_process_with(times: 100) { raise('any error') }
-          expect(Process).to receive(:exit!)
-          inst.send(:process_message, payload.to_json)
-        end
-      end
-    end
-  end
-
-  private
-
-  def stub_process_with(times: 1, &block)
-    counter = 0
-    allow(inst).to receive(:parse_payload).and_call_original
-    allow_any_instance_of(PubSubModelSync::Payload).to receive(:process) do
-      block.call if (counter += 1) <= times
     end
   end
 end
