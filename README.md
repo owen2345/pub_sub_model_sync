@@ -421,6 +421,11 @@ Any notification before delivering is transformed as a Payload for a better port
       user = User.create(name: 'name', email: 'email')
       expect(publisher).to receive(:publish_model).with(user, :create, anything)
     end
+  
+    it 'publishes the correct values' do
+      exp_data = { email: 'email' }
+      expect(publisher).to receive(:publish!).with(have_attributes(data: hash_including(exp_data)))
+    end
 
     it 'publish class message' do
       publisher = PubSubModelSync::MessagePublisher
