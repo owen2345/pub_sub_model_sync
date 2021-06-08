@@ -15,15 +15,15 @@ class User < ApplicationRecord
   accepts_nested_attributes_for :posts
 
   include PubSubModelSync::PublisherConcern
-  ps_on_crud_event(:create) do
+  ps_after_commit(:create) do
     ps_publish(:create, mapping: %i[id name email age])
   end
 
-  ps_on_crud_event(:update) do
+  ps_after_commit(:update) do
     ps_publish(:update, mapping: %i[id name email age])
   end
 
-  ps_on_crud_event(:destroy) do
+  ps_after_commit(:destroy) do
     ps_publish(:destroy, mapping: %i[id])
   end
 end
