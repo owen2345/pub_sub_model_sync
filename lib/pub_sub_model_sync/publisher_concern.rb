@@ -36,6 +36,17 @@ module PubSubModelSync
     end
     delegate :ps_class_publish, to: :class
 
+    # Permits to perform manually the callback for a specific action
+    # @param action (Symbol, default: :create) Only :create|:update|:destroy
+    def ps_perform_publish(action = :create)
+      items = self.class.ps_cache_publish_callbacks.select do |item|
+        item[:actions].include?(action)
+      end
+      raise("No callback found for action :#{action}") if items.empty?
+
+      items.each { |item| instance_exec(action, &item[:callback]) }
+    end
+
     module ClassMethods
       # Publishes a class level notification via pubsub
       # @param data (Hash): Data of the notification
@@ -51,6 +62,7 @@ module PubSubModelSync
       # @param method_name (Symbol, optional) method to be called
       def ps_after_commit(crud_actions, method_name = nil, &block)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
+        ps_cache_publish_callbacks({ actions: Array(crud_actions), callback: callback })
         Array(crud_actions).each do |action|
           if action == :destroy
             after_destroy { instance_exec(action, &callback) }
@@ -58,6 +70,12 @@ module PubSubModelSync
             ps_crud_define_commit_action(action, callback)
           end
         end
+      end
+
+      def ps_cache_publish_callbacks(new_value = nil)
+        @ps_cache_publish_callbacks ||= []
+        @ps_cache_publish_callbacks << new_value if new_value
+        @ps_cache_publish_callbacks
       end
 
       private

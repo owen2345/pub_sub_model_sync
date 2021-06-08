@@ -56,20 +56,6 @@ RSpec.describe PubSubModelSync::MessagePublisher do
         end
       end
 
-      describe '#ps_skip_publish?' do
-        it 'calls callback method before publishing' do
-          expect(model).to receive(:ps_skip_publish?).with(action)
-          inst.publish_model(model, action)
-        end
-
-        it 'skips publishing when callback method returns :cancel' do
-          allow(model).to receive(:ps_skip_publish?).and_return(true)
-          expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_before_publish)
-          inst.publish_model(model, action)
-        end
-      end
-
       describe '#ps_after_publish' do
         it 'calls callback method after publishing' do
           expect(model).to receive(:ps_after_publish).with(action, any_args)

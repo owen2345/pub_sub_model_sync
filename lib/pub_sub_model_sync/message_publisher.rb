@@ -56,8 +56,6 @@ module PubSubModelSync
       # @param action (Symbol: @see PublishConcern::ps_publish)
       # @param settings (Hash: @see Publisher.new.settings)
       def publish_model(model, action, settings = {})
-        return if model.ps_skip_publish?(action)
-
         publisher = PubSubModelSync::Publisher.new(model, action, settings)
         payload = publisher.payload
 

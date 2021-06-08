@@ -243,17 +243,17 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
     ```ruby
       user = User.create(name: 'asasas', posts_attributes: [{ title: 't1' }, { title: 't2' }])
     ```
-    1: User notification     
-    2: First post notification     
-    3: Second post notification
+    Notification 1: User notification     
+    Notification 2: First post notification     
+    Notification 3: Second post notification
            
-  **Note2**: Due to rails callback ordering, this method uses `after_destroy` callback when destroying models to ensure the expected notifications ordering.
+  **Note2**: Due to rails callback ordering, this method uses `after_destroy` callback when destroying models to ensure the expected notifications order.
     ```ruby
       user.destroy
     ```   
-    1: Second post notification     
-    2: First post notification     
-    3: User notification
+    Notification 1: Second post notification     
+    Notification. 2: First post notification     
+    Notification 3: User notification
    
 - `ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: nil)` Delivers an instance notification via pubsub
   - `action` (Sym|String) Action name of the instance notification. Sample: create|update|destroy|<any_other_key>
@@ -270,11 +270,14 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
     - When Proc: Block to be called to retrieve header values (must return a `hash`, receives `:model, :action` as args)
   - `as_klass:` (String, default current class name): Output class name used instead of current class name
   
-- `ps_class_publish` Delivers a  Class notification via pubsub
+- `ps_class_publish(data, action:, as_klass: nil, headers: {})` Delivers a  Class notification via pubsub
   - `data` (Hash): Data of the notification
   - `action` (Symbol): action  name of the notification
   - `as_klass:` (String, default current class name): Class name of the notification
   - `headers:` (Hash, optional): header settings (More in Payload.headers)
+
+- `ps_perform_publish(action = :create)` Permits to perform manually the callback for a specific action
+  - `action` (Symbol, default: :create) Only :create|:update|:destroy
   
 #### **Publisher helpers**
 - Publish a class notification from anywhere
@@ -291,15 +294,6 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
   ```
 
 #### **Publisher callbacks**
-- Prevent delivering a notification (called before building payload)
-  If returns "true", will not publish notification
-    ```ruby
-    class MyModel < ActiveRecord::Base
-      def ps_skip_publish?(action)
-        # logic here
-      end
-    end
-    ```
 
 - Do some actions before publishing notification.
   If returns ":cancel", notification will not be delivered

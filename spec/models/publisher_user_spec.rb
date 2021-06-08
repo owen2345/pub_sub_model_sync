@@ -35,6 +35,26 @@ RSpec.describe PublisherUser, truncate: true do
     end
   end
 
+  describe 'when performing notifications manually' do
+    it 'calls the correct callback' do
+      mock = -> {}
+      model = mock_publisher_callback(%i[ps_after_commit update], {}, :create!) { mock.call }
+      expect(mock).to receive(:call)
+      model.ps_perform_publish(:update)
+    end
+
+    it 'calls the correct method' do
+      model = mock_publisher_callback(%i[ps_after_commit update sync_update], {}, :create!)
+      expect(model).to receive(:sync_update)
+      model.ps_perform_publish(:update)
+    end
+
+    it 'raises error if no action found' do
+      model = mock_publisher_callback(%i[ps_after_commit update], {}, :create!) {}
+      expect { model.ps_perform_publish(:create) }.to raise_error
+    end
+  end
+
   describe 'when ensuring notifications order' do
     let(:user_data) { { name: 'name', posts_attributes: [{ title: 'P1' }, { title: 'P2' }] } }
     let(:user) do
