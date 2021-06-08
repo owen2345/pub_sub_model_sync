@@ -53,12 +53,4 @@ class SubscriberUser < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
 
   def self.hello(*_args); end
-
-  # ****** testing usage
-  def self.create_class_method(method_name, &block)
-    self.class.send(:define_method, method_name) { |*_args| }
-    block&.call
-    self.class.send(:remove_method, method_name)
-  end
-  # ****** end testing usage
 end

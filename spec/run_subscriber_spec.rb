@@ -48,9 +48,10 @@ RSpec.describe PubSubModelSync::RunSubscriber do
       end
 
       it 'calls custom Proc if defined' do
-        proc = -> {}
+        mock = double('Proc', call: true)
+        proc = ->(*args) { mock.call(*args) }
         subscriber.settings[:to_action] = proc
-        expect(proc).to receive(:call).with(payload.data)
+        expect(mock).to receive(:call).with(payload.data)
       end
     end
   end
@@ -115,19 +116,20 @@ RSpec.describe PubSubModelSync::RunSubscriber do
       end
 
       it 'calls defined action' do
-        expect(model).to receive(action).with(no_args)
+        expect(model).to receive(action).with(payload.data)
       end
 
       it 'calls provided custom method' do
         custom_method = :print_full_name
-        expect(model).to receive(custom_method).with(no_args)
+        expect(model).to receive(custom_method).with(payload.data)
         subscriber.settings[:to_action] = custom_method
       end
 
       it 'calls provided Proc as action' do
-        proc_callback = ->(_model) {}
+        mock = double('Proc', call: true)
+        proc_callback = ->(*args) { mock.call(*args) }
         subscriber.settings[:to_action] = proc_callback
-        expect(proc_callback).to receive(:call).with(model)
+        expect(mock).to receive(:call).with(payload.data)
       end
 
       it 'calls :save when action is create' do
@@ -151,14 +153,14 @@ RSpec.describe PubSubModelSync::RunSubscriber do
             if_cond = ->(_model) { condition_result }
             allow(if_cond).to receive(:call).with(model).and_return(condition_result)
             subscriber.settings[:if] = if_cond
-            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(no_args)
+            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(payload.data)
           end
 
           it "ensures if condition: method name (returns #{condition_result})" do
             if_cond = :check_condition
             subscriber.settings[:if] = if_cond
             allow(model).to receive(if_cond).with(no_args).and_return(condition_result)
-            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(no_args)
+            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(payload.data)
           end
 
           it "ensures if condition: method names (returns #{condition_result})" do
@@ -166,21 +168,21 @@ RSpec.describe PubSubModelSync::RunSubscriber do
             subscriber.settings[:if] = if_conds
             allow(model).to receive(:check_condition1).with(no_args).and_return(condition_result)
             allow(model).to receive(:check_condition2).with(no_args).and_return(condition_result)
-            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(no_args)
+            expect(model).to receive(action).exactly(condition_result ? 1 : 0).times.with(payload.data)
           end
 
           it "ensures unless condition: block (returns #{condition_result})" do
             unless_cond = ->(_model) { condition_result }
             subscriber.settings[:unless] = unless_cond
             allow(unless_cond).to receive(:call).with(model).and_return(condition_result)
-            expect(model).to receive(action).exactly(condition_result ? 0 : 1).times.with(no_args)
+            expect(model).to receive(action).exactly(condition_result ? 0 : 1).times.with(payload.data)
           end
 
           it "ensures unless condition: method name (returns #{condition_result})" do
             unless_cond = :check_condition
             subscriber.settings[:unless] = unless_cond
             allow(model).to receive(unless_cond).with(no_args).and_return(condition_result)
-            expect(model).to receive(action).exactly(condition_result ? 0 : 1).times.with(no_args)
+            expect(model).to receive(action).exactly(condition_result ? 0 : 1).times.with(payload.data)
           end
         end
       end

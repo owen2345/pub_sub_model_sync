@@ -15,12 +15,6 @@ module SpecHelpers
     klass.send(*Array(callback), &block)
     klass.send(method, model_attrs)
   end
-
-  def add_subscription(action, mapping = [], settings = {}, &block)
-    subscriber = SubscriberUser.send(:add_ps_subscriber, action, mapping, { mode: :model }.merge(settings))
-    block.call(subscriber)
-    PubSubModelSync::Config.subscribers = PubSubModelSync::Config.subscribers - [subscriber]
-  end
 end
 
 RSpec.configure do |config|

@@ -171,8 +171,8 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
   - `settings` (Hash<:from_klass, :to_action, :id, :if, :unless>)    
     - `from_klass:` (String, default current class): Only notifications with this class name will be processed by this subscription    
     - `to_action:` (Symbol|Proc, default `action`):        
-      When Symbol: Model method to process the notification    
-      When Proc: Block to process the notification    
+      When Symbol: Model method to process the notification, sample: `def my_method(data)...end`    
+      When Proc: Block to process the notification, sample: `{|data| ... }`    
     - `id:` (Symbol|Array<Symbol|String>, default: `:id`) identifier attribute(s) to find the corresponding model instance (Supports for mapping format)    
       Sample: `id: :id` will search for a model like: `model_class.where(id: payload.data[:id])`       
       Sample: `id: [:id, :email:user_email]` will search for a model like: `model_class.where(id: payload.data[:id], user_email: payload.data[:email])`       
@@ -237,8 +237,8 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 
 - `ps_on_crud_event(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
   - `crud_actions` (Symbol|Array<Symbol>) Crud event(s) to be observed (Allowed: `:create, :update, :destroy`)
-  - `method_name` (Symbol, optional) method to be called to process action callback
-  - `block` (Proc, optional) Block to be called to process action callback
+  - `method_name` (Symbol, optional) method to be called to process action callback, sample: `def my_method(action) ... end`
+  - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`
   **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications order, sample:
     ```ruby
       user = User.create(name: 'asasas', posts_attributes: [{ title: 't1' }, { title: 't2' }])

@@ -26,7 +26,7 @@ module PubSubModelSync
     def run_class_message
       model_class = subscriber.klass.constantize
       model_class.ps_processing_payload = payload # TODO: review for parallel notifications
-      call_action(model_class, payload.data) if ensure_sync(model_class)
+      call_action(model_class) if ensure_sync(model_class)
     end
 
     # support for: create, update, destroy
@@ -48,16 +48,17 @@ module PubSubModelSync
       res
     end
 
-    def call_action(object, *args)
-      action_name = settings[:to_action]
-      if action_name.is_a?(Proc)
-        args.prepend(object) unless klass_subscription?
-        action_name.call(*args)
-      else # method name
-        action_name = :save if %i[create update].include?(action_name.to_sym)
-        object.send(action_name, *args)
-      end
+    def call_action(object)
+      callback = settings[:to_action]
+      callback.is_a?(Proc) ? object.instance_exec(payload.data, &callback) : call_action_method(object)
       raise(object.errors) if object.respond_to?(:errors) && object.errors.any?
+    end
+
+    def call_action_method(object)
+      method_name = settings[:to_action]
+      method_name = :save if %i[create update].include?(method_name.to_sym)
+      is_crud_action = %i[save destroy].include?(method_name)
+      is_crud_action ? object.send(method_name) : object.send(method_name, payload.data)
     end
 
     def parse_condition(condition, object)
@@ -77,7 +78,7 @@ module PubSubModelSync
       model_class.where(model_identifiers).first_or_initialize
     end
 
-    # @param mappings (Array<String>) supports aliasing, sample: ["id", "full_name:name"]
+    # @param mappings (Array<String,Symbol>) supports aliasing, sample: ["id", "full_name:name"]
     # @return (Hash) hash with the correct attr names and its values
     def parse_mapping(mappings)
       mappings.map do |prop|
@@ -91,7 +92,7 @@ module PubSubModelSync
 
     # @return (Hash) hash including identifiers and its values
     def model_identifiers
-      @model_identifiers ||= parse_mapping(Array(settings[:id]).map(&:to_s))
+      @model_identifiers ||= parse_mapping(Array(settings[:id]))
     end
 
     def populate_model
