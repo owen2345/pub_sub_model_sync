@@ -107,9 +107,9 @@ And then execute: $ bundle install
 # App 1 (Publisher)
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_on_crud_event(:create) { ps_publish(:create, mapping: %i[id name email]) }
-  ps_on_crud_event(:update) { ps_publish(:update, mapping: %i[id name email]) }
-  ps_on_crud_event(:destroy) { ps_publish(:destroy, mapping: %i[id]) }  
+  ps_after_commit(:create) { ps_publish(:create, mapping: %i[id name email]) }
+  ps_after_commit(:update) { ps_publish(:update, mapping: %i[id name email]) }
+  ps_after_commit(:destroy) { ps_publish(:destroy, mapping: %i[id]) }  
 end
 
 # App 2 (Subscriber)
@@ -129,7 +129,7 @@ my_user.destroy # Publishes `:destroy` notification (App2 destroys the correspon
 # App 1 (Publisher)
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_on_crud_event([:create, :update]) { ps_publish(:save, mapping: %i[id name:full_name email], as_klass: 'App1User', headers: { topic_name: %i[topic1 topic2] }) }
+  ps_after_commit([:create, :update]) { ps_publish(:save, mapping: %i[id name:full_name email], as_klass: 'App1User', headers: { topic_name: %i[topic1 topic2] }) }
 end
 
 # App 2 (Subscriber)
@@ -221,8 +221,8 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 ### **Publishers**
 ```ruby
   class MyModel < ActiveRecord::Base
-    ps_on_crud_event([:create, :update, :destroy], :method_publisher_name) # using method callback
-    ps_on_crud_event([:create, :update, :destroy]) do |action| # using block callback
+    ps_after_commit([:create, :update, :destroy], :method_publisher_name) # using method callback
+    ps_after_commit([:create, :update, :destroy]) do |action| # using block callback
       ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: nil)
       ps_class_publish({}, action: :my_action, as_klass: nil, headers: {})
     end
@@ -235,7 +235,7 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 
 #### **Publishing notifications**
 
-- `ps_on_crud_event(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
+- `ps_after_commit(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
   - `crud_actions` (Symbol|Array<Symbol>) Crud event(s) to be observed (Allowed: `:create, :update, :destroy`)
   - `method_name` (Symbol, optional) method to be called to process action callback, sample: `def my_method(action) ... end`
   - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`
@@ -349,14 +349,14 @@ Any notification before delivering is transformed as a Payload for a better port
   * Crud syncs auto includes transactions which works as the following:
     ```ruby
     class User
-      ps_on_crud_event(:create) { ps_publish(:create, mapping: %i[id name]) }
+      ps_after_commit(:create) { ps_publish(:create, mapping: %i[id name]) }
       has_many :posts
       accepts_nested_attributes_for :posts
     end
     
     class Post
       belongs_to :user
-      ps_on_crud_event(:create) { ps_publish(:create, mapping: %i[id title]) }
+      ps_after_commit(:create) { ps_publish(:create, mapping: %i[id title]) }
     end
     
     User.create!(name: 'test', posts_attributes: [{ title: 'Post 1' }, { title: 'Post 2' }])

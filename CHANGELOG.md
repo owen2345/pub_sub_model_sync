@@ -4,7 +4,7 @@
 - Refactor: Subscribers param renamed `from_action` into `to_action` and added support for block or lambda 
 - Feat: Improved `ps_subscribe` to accept new arguments and support for property mappings
 - Refactor: Refactored `ps_publish` to be called manually (removes notification assumptions) and accept for new arguments
-- Feat: Added `ps_on_crud_event` to listen CRUD events to send notifications in the expected order
+- Feat: Added `ps_after_commit` to listen CRUD events to send notifications in the expected order
 - Feat: Added `config.default_topic_name` to define default topic name whe publishing (by default `config.topic_name`)
 - Refactor: Refactored PubSub Transactions to support rollbacks (any exception inside transactions can automatically cancel all pending notifications: configurable through `config.transactions_use_buffer`)
 - Feat: Improved CRUD transactions to deliver inner notifications in the expected order to keep data consistency

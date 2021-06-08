@@ -19,7 +19,10 @@ module PubSubModelSync
     # @param payload (Payload)
     def add_payload(payload)
       payloads << payload
-      deliver_payloads if payloads.count >= max_buffer
+      return unless payloads.count >= max_buffer
+
+      log("Payloads buffer was filled, delivering current payloads: #{payloads.count}")
+      deliver_payloads
     end
 
     def finish # rubocop:disable Metrics/AbcSize

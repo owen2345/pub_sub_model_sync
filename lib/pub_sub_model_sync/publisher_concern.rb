@@ -9,12 +9,6 @@ module PubSubModelSync
       ps_init_transaction_callbacks if self <= ActiveRecord::Base
     end
 
-    # before preparing data to sync
-    def ps_skip_publish?(_action)
-      false
-    end
-    alias ps_skip_sync? ps_skip_publish? # @deprecated
-
     # before delivering data (return :cancel to cancel sync)
     def ps_before_publish(_action, _payload); end
     alias ps_before_sync ps_before_publish # @deprecated
@@ -55,7 +49,7 @@ module PubSubModelSync
 
       # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
       # @param method_name (Symbol, optional) method to be called
-      def ps_on_crud_event(crud_actions, method_name = nil, &block)
+      def ps_after_commit(crud_actions, method_name = nil, &block)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
         Array(crud_actions).each do |action|
           if action == :destroy
