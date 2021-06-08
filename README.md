@@ -422,7 +422,7 @@ Any notification before delivering is transformed as a Payload for a better port
       data = { name: 'name', id: 999 }
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
       payload.process!
-      expect(User.where(id: data[:id])).to be_any
+      expect(User.find(data[:id])).not_to be_nil
     end
 
     it 'receive class notification' do
@@ -430,26 +430,31 @@ Any notification before delivering is transformed as a Payload for a better port
       action = :greeting
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action, mode: :klass })
       payload.process!
-      expect(User).to receive(action)
+      expect(User).to receive(action).with(data)
     end
 
     # Publisher
     it 'publishes model notification' do
       publisher = PubSubModelSync::MessagePublisher
-      user = User.create(name: 'name', email: 'email')
-      expect(publisher).to receive(:publish_model).with(user, :create, anything)
+      expect(publisher).to receive(:publish_model).with(be_a(User), :create, anything)
+      User.create(name: 'name', email: 'email')
     end
   
     it 'publishes the correct values in the payload' do
-      exp_data = { email: 'email' }
-      expect(publisher).to receive(:publish!).with(have_attributes(data: hash_including(exp_data)))
+      publisher = PubSubModelSync::MessagePublisher
+      exp_data = have_attributes(data: hash_including(email: 'email'), 
+                                 info: hash_including(klass: 'User', action: :create),
+                                 headers: hash_including(topic_name: 'my_topic'))
+      expect(publisher).to receive(:publish!).with(exp_data)
+      User.create(name: 'name', email: 'email')
     end
 
     it 'publishes class notification' do
       publisher = PubSubModelSync::MessagePublisher
       user = User.create(name: 'name', email: 'email')
-      user.ps_class_publish({msg: 'hello'}, action: :greeting)
-      expect(publisher).to receive(:publish_data).with('User', data, :greeting)
+      data = { msg: 'hello' }
+      user.ps_class_publish(data, action: :greeting)
+      expect(publisher).to receive(:publish_data).with('User', data, :greeting, anything)
     end
     ```
 
@@ -484,7 +489,7 @@ config.debug = true
     (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
 - ```.transactions_max_buffer = 100``` (Integer) Once this quantity of notifications is reached, then all notifications will immediately be delivered.    
     Note: There is no way to rollback delivered notifications if current transaction fails
-- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` which will not rollback sql transactions if fails.
+- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` (used in `ps_after_commit(...)`) which will not rollback sql transactions if failed when publishing pubsub notification.
 
 ## **TODO**
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)
