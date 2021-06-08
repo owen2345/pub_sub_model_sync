@@ -1,4 +1,8 @@
 # **PubSubModelSync**
+![Rails badge](https://img.shields.io/badge/Rails-4+-success.png)
+![Ruby badge](https://img.shields.io/badge/Ruby-2.4+-success.png)
+![Production badge](https://img.shields.io/badge/Production-ready-success.png)
+
 This gem permits to sync automatically model data, send custom notifications between multiple Rails applications by publishing notifications via pubsub (Google PubSub, RabbitMQ, or Apache Kafka). Out of the scope this gem includes transactions to keep Data consistency by processing notifications in the order they were delivered. 
 These notifications use JSON format to easily be decoded by subscribers (Rails applications and even other languages) 
 
