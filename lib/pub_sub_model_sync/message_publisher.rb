@@ -48,6 +48,7 @@ module PubSubModelSync
       # @return Payload
       def publish_data(klass, data, action, headers: {})
         attrs = { klass: klass.to_s, action: action.to_sym, mode: :klass }
+        log("Building payload for: #{[klass, action].inspect}") if config.debug
         payload = PubSubModelSync::Payload.new(data, attrs, headers)
         define_transaction_key(payload)
         publish(payload)
@@ -57,6 +58,7 @@ module PubSubModelSync
       # @param action (Symbol: @see PublishConcern::ps_publish)
       # @param settings (Hash: @see PayloadBuilder.settings)
       def publish_model(model, action, settings = {})
+        log("Building payload for: #{[model, action].inspect}") if config.debug
         payload = PubSubModelSync::PayloadBuilder.new(model, action, settings).call
         define_transaction_key(payload)
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_publish syncs
@@ -78,6 +80,7 @@ module PubSubModelSync
       end
 
       def connector_publish(payload)
+        log("Publishing message #{payload.inspect}...") if config.debug
         connector.publish(payload)
         log("Published message: #{[payload]}")
         config.on_after_publish.call(payload)

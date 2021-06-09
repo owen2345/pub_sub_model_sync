@@ -19,6 +19,7 @@ module PubSubModelSync
     # @param payload (Payload)
     def add_payload(payload)
       payloads << payload
+      log("Payload added to current transaction: #{payload.inspect}") if config.debug
       return unless payloads.count >= max_buffer
 
       log("Payloads buffer was filled, delivering current payloads: #{payloads.count}")

@@ -18,7 +18,7 @@ module PubSubModelSync
     def process!
       subscribers = filter_subscribers
       payload_info = { klass: payload.klass, action: payload.action, mode: payload.mode }
-      log "No subscribers found for #{payload_info}" if config.debug && subscribers.empty?
+      log("No subscribers found for #{payload_info}", :warn) if config.debug && subscribers.empty?
       subscribers.each(&method(:run_subscriber))
     end
 
@@ -35,6 +35,7 @@ module PubSubModelSync
       processor = PubSubModelSync::RunSubscriber.new(subscriber, payload)
       return unless processable?(subscriber)
 
+      log("Processing message #{[subscriber, payload]}...") if config.debug
       processor.call
       res = config.on_success_processing.call(payload, { subscriber: subscriber })
       log "processed message with: #{payload.inspect}" if res != :skip_log
