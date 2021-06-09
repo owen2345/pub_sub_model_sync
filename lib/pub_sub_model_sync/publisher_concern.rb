@@ -39,9 +39,7 @@ module PubSubModelSync
     # Permits to perform manually the callback for a specific action
     # @param action (Symbol, default: :create) Only :create|:update|:destroy
     def ps_perform_publish(action = :create)
-      items = self.class.ps_cache_publish_callbacks.select do |item|
-        item[:actions].include?(action)
-      end
+      items = self.class.ps_cache_publish_callbacks.select { |item| item[:actions].include?(action) }
       raise("No callback found for action :#{action}") if items.empty?
 
       items.each { |item| instance_exec(action, &item[:callback]) }
@@ -61,13 +59,14 @@ module PubSubModelSync
       # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
       # @param method_name (Symbol, optional) method to be called
       def ps_after_commit(crud_actions, method_name = nil, &block)
+        actions = Array(crud_actions).map(&:to_sym)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
-        ps_cache_publish_callbacks({ actions: Array(crud_actions), callback: callback })
-        Array(crud_actions).each do |action|
+        ps_cache_publish_callbacks({ actions: actions, callback: callback })
+        actions.each do |action|
           if action == :destroy
             after_destroy { instance_exec(action, &callback) }
           else
-            ps_crud_define_commit_action(action, callback)
+            ps_define_commit_action(action, callback)
           end
         end
       end
@@ -80,11 +79,11 @@ module PubSubModelSync
 
       private
 
-      def ps_crud_define_commit_action(action, callback)
-        commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
+      def ps_define_commit_action(action, callback)
         if PubSubModelSync::Config.enable_rails4_before_commit # rails 4 compatibility
           define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
         else
+          commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
           send(commit_name, on: action) { instance_exec(action, &callback) }
         end
       end
