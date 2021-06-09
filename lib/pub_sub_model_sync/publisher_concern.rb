@@ -92,7 +92,7 @@ module PubSubModelSync
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
       def ps_init_transaction_callbacks
         start_transaction = lambda do
-          key = id ? PubSubModelSync::Publisher.ordering_key_for(self) : nil
+          key = id ? PubSubModelSync::PayloadBuilder.ordering_key_for(self) : nil
           @ps_transaction = PubSubModelSync::MessagePublisher.init_transaction(key)
         end
         after_create start_transaction, prepend: true # wait for ID

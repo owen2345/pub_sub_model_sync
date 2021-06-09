@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module PubSubModelSync
-  class Publisher < PubSubModelSync::Base
+  class PayloadBuilder < PubSubModelSync::Base
     attr_accessor :model, :action, :data, :mapping, :headers, :as_klass
 
     # @param model (ActiveRecord::Base)
@@ -17,7 +17,7 @@ module PubSubModelSync
     end
 
     # @return (Payload)
-    def payload
+    def call
       values = compute_value(data)
       values = mapping_data.merge(values)
       PubSubModelSync::Payload.new(values, settings_data, headers_data)

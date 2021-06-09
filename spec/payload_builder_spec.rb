@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe PubSubModelSync::Publisher do
+RSpec.describe PubSubModelSync::PayloadBuilder do
   let(:model) { PublisherUser.new(id: 1, name: 'name', email: 'email', age: 10) }
   let(:action) { :update }
   let(:klass_name) { model.class.name }
@@ -79,6 +79,6 @@ RSpec.describe PubSubModelSync::Publisher do
   private
 
   def payload_for(*args)
-    PubSubModelSync::Publisher.new(model, *args).payload
+    PubSubModelSync::PayloadBuilder.new(model, *args).call
   end
 end

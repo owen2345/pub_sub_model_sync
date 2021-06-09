@@ -54,11 +54,9 @@ module PubSubModelSync
 
       # @param model (ActiveRecord::Base)
       # @param action (Symbol: @see PublishConcern::ps_publish)
-      # @param settings (Hash: @see Publisher.new.settings)
+      # @param settings (Hash: @see PayloadBuilder.settings)
       def publish_model(model, action, settings = {})
-        publisher = PubSubModelSync::Publisher.new(model, action, settings)
-        payload = publisher.payload
-
+        payload = PubSubModelSync::PayloadBuilder.new(model, action, settings).call
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_publish syncs
           publish(payload) { model.ps_after_publish(action, payload) } if ensure_model_publish(model, action, payload)
         end

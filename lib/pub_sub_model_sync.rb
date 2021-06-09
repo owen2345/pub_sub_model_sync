@@ -15,7 +15,7 @@ require 'pub_sub_model_sync/connector'
 require 'pub_sub_model_sync/message_processor'
 require 'pub_sub_model_sync/run_subscriber'
 
-require 'pub_sub_model_sync/publisher'
+require 'pub_sub_model_sync/payload_builder'
 require 'pub_sub_model_sync/subscriber'
 
 require 'pub_sub_model_sync/service_base'

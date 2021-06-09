@@ -379,7 +379,7 @@ Any notification before delivering is transformed as a Payload for a better port
 
 ## **Testing with RSpec**
 - Config: (spec/rails_helper.rb)
-    ```ruby
+  ```ruby
 
       # when using google service
       require 'pub_sub_model_sync/mock_google_service'
@@ -402,30 +402,29 @@ Any notification before delivering is transformed as a Payload for a better port
         allow(Kafka).to receive(:new).and_return(kafka_mock)
       end
   
-      # 
+      # disable all models sync by default (reduces testing time) 
       config.before(:each) do
-        # **** disable payloads generation, sync callbacks to improve tests speed 
         allow(PubSubModelSync::MessagePublisher).to receive(:publish_data) # disable class level notif
         allow(PubSubModelSync::MessagePublisher).to receive(:publish_model) # disable instance level notif
-        
-        # **** when testing model syncs, it can be re enabled by:
-        # before do
-        #  allow(PubSubModelSync::MessagePublisher).to receive(:publish_data).and_call_original
-        #   allow(PubSubModelSync::MessagePublisher).to receive(:publish_model).and_call_original
-        # end
       end
-    ```
+    
+      # enable all models sync only for tests that includes 'sync: true'
+      config.before(:each, sync: true) do
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish_data).and_call_original
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish_model).and_call_original
+      end
+  ```
 - Examples:
-    ```ruby
+  ```ruby
     # Subscriber
-    it 'receive model notification' do
+    it 'receive model notification', sync: true do
       data = { name: 'name', id: 999 }
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
       payload.process!
       expect(User.find(data[:id])).not_to be_nil
     end
 
-    it 'receive class notification' do
+    it 'receive class notification', sync: true do
       data = { msg: 'hello' }
       action = :greeting
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action, mode: :klass })
@@ -434,13 +433,13 @@ Any notification before delivering is transformed as a Payload for a better port
     end
 
     # Publisher
-    it 'publishes model notification' do
+    it 'publishes model notification', sync: true do
       publisher = PubSubModelSync::MessagePublisher
       expect(publisher).to receive(:publish_model).with(be_a(User), :create, anything)
       User.create(name: 'name', email: 'email')
     end
   
-    it 'publishes the correct values in the payload' do
+    it 'publishes the correct values in the payload', sync: true do
       publisher = PubSubModelSync::MessagePublisher
       exp_data = have_attributes(data: hash_including(email: 'email'), 
                                  info: hash_including(klass: 'User', action: :create),
@@ -449,14 +448,14 @@ Any notification before delivering is transformed as a Payload for a better port
       User.create(name: 'name', email: 'email')
     end
 
-    it 'publishes class notification' do
+    it 'publishes class notification', sync: true do
       publisher = PubSubModelSync::MessagePublisher
       user = User.create(name: 'name', email: 'email')
       data = { msg: 'hello' }
       user.ps_class_publish(data, action: :greeting)
       expect(publisher).to receive(:publish_data).with('User', data, :greeting, anything)
     end
-    ```
+  ```
 
 ## **Extra configurations**
 ```ruby
