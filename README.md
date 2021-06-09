@@ -414,10 +414,56 @@ Any notification before delivering is transformed as a Payload for a better port
         allow(PubSubModelSync::MessagePublisher).to receive(:publish_data).and_call_original
         allow(PubSubModelSync::MessagePublisher).to receive(:publish_model).and_call_original
       end
+      
+      # Only when using database cleaner in old versions of rspec (enables after_commit callback)
+      # config.before(:each, truncate: true) do
+      #   DatabaseCleaner.strategy = :truncation
+      # end
   ```
 - Examples:
+  - **Publisher**
+    ```ruby
+      describe 'When publishing sync', truncate: true, sync: true do
+          it 'publishes user notification when created' do
+            expect_publish_notification(:create, klass: 'User')
+            create(:user)
+          end
+          
+          it 'publishes user notification with all defined data' do
+            user = build(:user)
+            data = PubSubModelSync::PayloadBuilder.parse_mapping_for(user, %i[id name:full_name email])
+            data[:id] = be_a(Integer)
+            expect_publish_notification(:create, klass: 'User', data: data)
+            user.save!
+          end
+          
+          it 'publishes user notification when created' do
+            email = 'Newemail@gmail.com'
+            user = create(:user)
+            expect_publish_notification(:update, klass: 'User', data: { id: user.id, email: email })
+            user.update!(email: email)
+          end
+          
+          it 'publishes user notification when created' do
+            user = create(:user)
+            expect_publish_notification(:destroy, klass: 'User', data: { id: user.id })
+            user.destroy!
+          end
+          
+          private
+      
+          def expect_publish_notification(action, klass: described_class.to_s, data: {}, info: {}, headers: {})
+            publisher = PubSubModelSync::MessagePublisher
+            exp_data = have_attributes(data: hash_including(data),
+                                       info: hash_including(info.merge(klass: klass, action: action)),
+                                       headers: hash_including(headers))
+            allow(publisher).to receive(:publish!).and_call_original
+            expect(publisher).to receive(:publish!).with(exp_data)
+          end
+      end
+    ```   
+  - **Subscriber**    
   ```ruby
-    # Subscriber
     it 'receive model notification', sync: true do
       data = { name: 'name', id: 999 }
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
@@ -431,30 +477,6 @@ Any notification before delivering is transformed as a Payload for a better port
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action, mode: :klass })
       payload.process!
       expect(User).to receive(action).with(data)
-    end
-
-    # Publisher
-    it 'publishes model notification', sync: true do
-      publisher = PubSubModelSync::MessagePublisher
-      expect(publisher).to receive(:publish_model).with(be_a(User), :create, anything)
-      User.create(name: 'name', email: 'email')
-    end
-  
-    it 'publishes the correct values in the payload', sync: true do
-      publisher = PubSubModelSync::MessagePublisher
-      exp_data = have_attributes(data: hash_including(email: 'email'), 
-                                 info: hash_including(klass: 'User', action: :create),
-                                 headers: hash_including(topic_name: 'my_topic'))
-      expect(publisher).to receive(:publish!).with(exp_data)
-      User.create(name: 'name', email: 'email')
-    end
-
-    it 'publishes class notification', sync: true do
-      publisher = PubSubModelSync::MessagePublisher
-      user = User.create(name: 'name', email: 'email')
-      data = { msg: 'hello' }
-      user.ps_class_publish(data, action: :greeting)
-      expect(publisher).to receive(:publish_data).with('User', data, :greeting, anything)
     end
   ```
 
