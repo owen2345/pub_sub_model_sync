@@ -19,12 +19,24 @@ module PubSubModelSync
     # @return (Payload)
     def call
       values = compute_value(data)
-      values = mapping_data.merge(values)
+      values = self.class.parse_mapping_for(model, mapping).merge(values)
       PubSubModelSync::Payload.new(values, settings_data, headers_data)
     end
 
     def self.ordering_key_for(model)
       [model.class.name, model.id || SecureRandom.uuid].join('/')
+    end
+
+    # @param model (ActiveRecord::Base)
+    # @param mapping (@see PublishConcern::ps_publish -> mapping)
+    # @return (Hash) Hash with the corresponding values for each attribute
+    # Sample: parse_mapping_for(my_model, %w[id name:full_name])
+    #         ==> { id: 10, full_name: 'model.name value' }
+    def self.parse_mapping_for(model, mapping)
+      mapping.map do |prop|
+        source, target = prop.to_s.split(':')
+        [target || source, model.send(source.to_sym)]
+      end.to_h.symbolize_keys
     end
 
     private
@@ -45,13 +57,6 @@ module PubSubModelSync
 
     def settings_data
       { klass: as_klass, action: action }
-    end
-
-    def mapping_data
-      mapping.map do |prop|
-        source, target = prop.to_s.split(':')
-        [target || source, model.send(source.to_sym)]
-      end.to_h.symbolize_keys
     end
   end
 end
