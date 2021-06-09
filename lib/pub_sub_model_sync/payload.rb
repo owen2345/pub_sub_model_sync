@@ -6,15 +6,18 @@ module PubSubModelSync
     attr_reader :data, :info, :headers
 
     # @param data (Hash: { any value }):
-    # @param info (Hash: { klass*: string, action*: :sym, mode?: :klass|:model }):
+    # @param info (Hash):
+    #   klass: (String, required) Notification class name
+    #   action: (Symbol, required) Notification action name
+    #   mode: (:model|:klass, default :model): :model for instance and :klass for class notifications
     # @param headers (Hash):
     #   key (String): identifier of the payload, default:
-    #        klass/action: when class message
-    #        klass/action/model.id: when model message
+    #        <klass/action>: when class message
+    #        <klass/action/model.id>: when model message
     #   ordering_key (String): messages with the same key are processed in the same order they
     #     were delivered, default:
-    #        klass: when class message
-    #        klass/id: when model message
+    #        <klass>: when class message
+    #        <klass/id>: when model message
     #   topic_name (String|Array<String>): Specific topic name to be used when delivering the
     #     message (default first topic)
     #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,

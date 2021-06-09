@@ -16,7 +16,10 @@ module PubSubModelSync
     end
 
     def process!
-      filter_subscribers.each(&method(:run_subscriber))
+      subscribers = filter_subscribers
+      payload_info = { klass: payload.klass, action: payload.action, mode: payload.mode }
+      log "No subscribers found for #{payload_info}" if config.debug && subscribers.empty?
+      subscribers.each(&method(:run_subscriber))
     end
 
     def process
@@ -70,6 +73,7 @@ module PubSubModelSync
       end
     end
 
+    # @return (Array<PubSubModelSync::Subscriber>)
     def filter_subscribers
       config.subscribers.select do |subscriber|
         subscriber.from_klass == payload.klass && subscriber.action == payload.action && payload.mode == subscriber.mode
