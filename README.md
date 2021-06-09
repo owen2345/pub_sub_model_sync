@@ -326,7 +326,8 @@ Any notification before delivering is transformed as a Payload for a better port
     - `mode`: (Symbol: `:model`|`:class`) Kind of notification
   * `headers`: (Hash) Notification settings that defines how the notification will be processed or delivered. 
     - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message (Useful for caching techniques).
-    - `ordering_key`: (String, optional): messages with the same value are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when instance message
+    - `ordering_key`: (String, optional): messages with the same value are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when instance message.     
+      Note: Final `ordering_key` is calculated by this way: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`
     - `topic_name`: (String|Array<String>, optional): Specific topic name (can be seen as a channel) to be used when delivering the message (default first topic from config).
     - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
   

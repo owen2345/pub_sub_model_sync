@@ -49,6 +49,7 @@ module PubSubModelSync
       def publish_data(klass, data, action, headers: {})
         attrs = { klass: klass.to_s, action: action.to_sym, mode: :klass }
         payload = PubSubModelSync::Payload.new(data, attrs, headers)
+        define_transaction_key(payload)
         publish(payload)
       end
 
@@ -57,6 +58,7 @@ module PubSubModelSync
       # @param settings (Hash: @see PayloadBuilder.settings)
       def publish_model(model, action, settings = {})
         payload = PubSubModelSync::PayloadBuilder.new(model, action, settings).call
+        define_transaction_key(payload)
         transaction(payload.headers[:ordering_key]) do # catch and group all :ps_before_publish syncs
           publish(payload) { model.ps_after_publish(action, payload) } if ensure_model_publish(model, action, payload)
         end
@@ -99,7 +101,6 @@ module PubSubModelSync
       end
 
       def ordering_key_for(payload)
-        current_transaction&.key ||= payload.headers[:ordering_key]
         payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
       end
 
@@ -114,6 +115,10 @@ module PubSubModelSync
         info = [payload, exception.message, exception.backtrace]
         res = config.on_error_publish.call(exception, { payload: payload })
         log("Error publishing: #{info}", :error) if res != :skip_log
+      end
+
+      def define_transaction_key(payload)
+        current_transaction&.key ||= payload.headers[:ordering_key]
       end
     end
   end

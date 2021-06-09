@@ -64,14 +64,14 @@ RSpec.describe PublisherUser, truncate: true do
     end
     let(:key) { "PublisherUser/#{user.id}" }
 
-    it 'publishes correct ordering when created' do
+    it 'publishes correct ordering-key when created' do
       calls = capture_notifications { user.save! }
       expect(calls[0]).to include({ klass: 'PublisherUser', action: :create, ordering_key: key, id: user.id })
       expect(calls[1]).to include({ klass: 'Post', action: :create, ordering_key: key, id: user.posts.first.id })
       expect(calls[2]).to include({ klass: 'Post', action: :create, ordering_key: key, id: user.posts.second.id })
     end
 
-    it 'publishes correct ordering when updated' do
+    it 'publishes correct ordering-key when updated' do
       user.save!
       changed_data = { name: 'Changed', posts_attributes: [{ id: user.posts.first.id, title: 'P1 changed' },
                                                            { id: user.posts.second.id, title: 'P2 changed' }] }
@@ -81,9 +81,10 @@ RSpec.describe PublisherUser, truncate: true do
       expect(calls[2]).to include({ klass: 'Post', action: :update, ordering_key: key, id: user.posts.second.id })
     end
 
-    it 'publishes correct ordering when destroyed' do
+    it 'publishes correct ordering-key when destroyed (inverted)' do
       user.save!
       posts_ids = user.posts.pluck(:id)
+      key = "Post/#{posts_ids.first}"
       calls = capture_notifications { user.destroy! }
       expect(calls[0]).to include({ klass: 'Post', action: :destroy, ordering_key: key, id: posts_ids.first })
       expect(calls[1]).to include({ klass: 'Post', action: :destroy, ordering_key: key, id: posts_ids.second })
