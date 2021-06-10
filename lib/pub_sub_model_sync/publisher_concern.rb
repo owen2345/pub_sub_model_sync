@@ -96,8 +96,8 @@ module PubSubModelSync
         before_create start_transaction, prepend: true
         before_update start_transaction, prepend: true
         before_destroy start_transaction, prepend: true
-        after_commit { @ps_transaction.finish }
-        after_rollback(prepend: true) { @ps_transaction.rollback }
+        after_commit { @ps_transaction&.finish }
+        after_rollback(prepend: true) { @ps_transaction&.rollback }
       end
     end
   end

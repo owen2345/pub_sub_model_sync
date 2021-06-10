@@ -42,7 +42,7 @@ module PubSubModelSync
     end
 
     def rollback
-      log("rollback #{payloads.count} notifications", :warn) if children.any? && debug?
+      log("Rollback #{payloads.count} notifications", :warn) if children.any? && debug?
       self.children = []
       root&.rollback
       clean_publisher
