@@ -71,7 +71,9 @@ RSpec.describe PubSubModelSync::RunSubscriber do
         allow_any_instance_of(described_class).to receive(:find_model).and_call_original
         allow(model_klass).to receive(:where).and_return(double(first_or_initialize: model))
       end
-      after { described_class.new(subscriber, payload).call }
+      after do |spec|
+        described_class.new(subscriber, payload).call unless spec.metadata[:skip_after]
+      end
 
       it 'single attribute' do
         subscriber.settings[:id] = :email
@@ -91,6 +93,11 @@ RSpec.describe PubSubModelSync::RunSubscriber do
       it 'calls :ps_find_model for a custom finder' do
         allow(model_klass).to receive(:respond_to?).with(:ps_find_model).and_return(true)
         expect(model_klass).to receive(:ps_find_model).and_return(model)
+      end
+
+      it 'raises error when no values provided for identifiers', skip_after: true do
+        subscriber.settings[:id] = :attr_not_in_payload
+        expect { described_class.new(subscriber, payload).call }.to raise_error(/No values provided for identifiers/)
       end
     end
 

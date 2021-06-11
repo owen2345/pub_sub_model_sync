@@ -75,6 +75,9 @@ module PubSubModelSync
       model_class = subscriber.klass.constantize
       return model_class.ps_find_model(payload.data) if model_class.respond_to?(:ps_find_model)
 
+      error_msg = 'No values provided for identifiers:'
+      raise(StandardError, "#{error_msg} #{[settings[:id], payload]}") if model_identifiers.empty?
+
       model_class.where(model_identifiers).first_or_initialize
     end
 

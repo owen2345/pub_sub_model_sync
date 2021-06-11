@@ -23,9 +23,9 @@ module PubSubModelSync
     #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,
     #     even withing transactions. Default nil.
     def initialize(data, info, headers = {})
-      @data = data
-      @info = { mode: :model }.merge(info)
-      @headers = headers
+      @data = data.deep_symbolize_keys
+      @info = { mode: :model }.merge(info).deep_symbolize_keys
+      @headers = headers.deep_symbolize_keys
       build_headers
       validate!
     end
@@ -78,7 +78,7 @@ module PubSubModelSync
     # convert payload data into Payload
     # @param data [Hash]: payload data (:data, :info, :headers)
     def self.from_payload_data(data)
-      data = data.deep_symbolize_keys
+      data = data.symbolize_keys
       new(data[:data], data[:info], data[:headers])
     end
 
