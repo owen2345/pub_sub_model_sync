@@ -6,16 +6,16 @@ module PubSubModelSync
     SERVICE_KEY = 'service_model_sync'
 
     def listen_messages
-      raise 'method :listen_messages must be defined in service'
+      raise NoMethodError, 'method :listen_messages must be defined in service'
     end
 
     # @param _payload (Payload)
     def publish(_payload)
-      raise 'method :publish must be defined in service'
+      raise NoMethodError, 'method :publish must be defined in service'
     end
 
     def stop
-      raise 'method :stop must be defined in service'
+      raise NoMethodError, 'method :stop must be defined in service'
     end
 
     private

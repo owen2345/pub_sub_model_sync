@@ -51,13 +51,13 @@ module PubSubModelSync
     def call_action(object)
       callback = settings[:to_action]
       callback.is_a?(Proc) ? object.instance_exec(payload.data, &callback) : call_action_method(object)
-      raise(object.errors) if object.respond_to?(:errors) && object.errors.any?
     end
 
     def call_action_method(object)
       method_name = settings[:to_action]
-      method_name = :save if %i[create update].include?(method_name.to_sym)
-      is_crud_action = %i[save destroy].include?(method_name)
+      method_name = :save! if %i[create update].include?(method_name.to_sym)
+      method_name = :destroy! if method_name.to_sym == :destroy
+      is_crud_action = %i[save! destroy!].include?(method_name)
       is_crud_action ? object.send(method_name) : object.send(method_name, payload.data)
     end
 

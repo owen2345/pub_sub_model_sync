@@ -40,7 +40,7 @@ module PubSubModelSync
     # @param action (Symbol, default: :create) Only :create|:update|:destroy
     def ps_perform_publish(action = :create)
       items = self.class.ps_cache_publish_callbacks.select { |item| item[:actions].include?(action) }
-      raise("No callback found for action :#{action}") if items.empty?
+      raise(StandardError, "No callback found for action :#{action}") if items.empty?
 
       items.each { |item| instance_exec(action, &item[:callback]) }
     end

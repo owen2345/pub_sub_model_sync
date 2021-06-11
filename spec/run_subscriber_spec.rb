@@ -119,27 +119,32 @@ RSpec.describe PubSubModelSync::RunSubscriber do
         expect(model).to receive(action).with(payload.data)
       end
 
-      it 'calls provided custom method' do
+      it 'calls provided custom method with payload data' do
         custom_method = :print_full_name
         expect(model).to receive(custom_method).with(payload.data)
         subscriber.settings[:to_action] = custom_method
       end
 
-      it 'calls provided Proc as action' do
+      it 'calls provided Proc as action with payload data' do
         mock = double('Proc', call: true)
         proc_callback = ->(*args) { mock.call(*args) }
         subscriber.settings[:to_action] = proc_callback
         expect(mock).to receive(:call).with(payload.data)
       end
 
-      it 'calls :save when action is create' do
+      it 'calls :save! when action is create' do
         subscriber.settings[:to_action] = :create
-        expect(model).to receive(:save)
+        expect(model).to receive(:save!).with(no_args)
       end
 
-      it 'calls :save when action is update' do
+      it 'calls :save! when action is update' do
         subscriber.settings[:to_action] = :update
-        expect(model).to receive(:save)
+        expect(model).to receive(:save!).with(no_args)
+      end
+
+      it 'calls :destroy! when action is update' do
+        subscriber.settings[:to_action] = :destroy
+        expect(model).to receive(:destroy!).with(no_args)
       end
 
       it 'raises errors when failed saving model data', skip_after: true do

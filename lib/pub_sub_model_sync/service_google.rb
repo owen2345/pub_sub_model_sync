@@ -37,7 +37,7 @@ module PubSubModelSync
       message_topics = p_topic_names.map(&method(:find_topic))
       message_topics.each do |topic|
         topic.publish_async(encode_payload(payload), message_headers(payload)) do |res|
-          raise 'Failed to publish the message.' unless res.succeeded?
+          raise StandardError, 'Failed to publish the message.' unless res.succeeded?
         end
       end
     end
