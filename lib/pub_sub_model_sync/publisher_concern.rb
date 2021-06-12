@@ -43,6 +43,7 @@ module PubSubModelSync
       raise(StandardError, "No callback found for action :#{action}") if items.empty?
 
       items.each { |item| instance_exec(action, &item[:callback]) }
+      self
     end
 
     module ClassMethods

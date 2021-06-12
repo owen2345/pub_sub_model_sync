@@ -60,7 +60,7 @@ And then execute: $ bundle install
     # initializers/pub_sub_config.rb
     PubSubModelSync::Config.service_name = :google
     PubSubModelSync::Config.project = 'google-project-id'
-    PubSubModelSync::Config.credentials = 'path-to-google-config.json_or_json_content'
+    PubSubModelSync::Config.credentials = 'path-to-google-config.json'
     PubSubModelSync::Config.topic_name = 'sample-topic' 
     PubSubModelSync::Config.subscription_name = 'my-app1'
     ```
@@ -280,7 +280,7 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
   - `as_klass:` (String, default current class name): Class name of the notification
   - `headers:` (Hash, optional): header settings (More in Payload.headers)
 
-- `ps_perform_publish(action = :create)` Permits to perform manually the callback for a specific action
+- `ps_perform_publish(action = :create)` Permits to perform manually the callback of a specific `ps_after_action`
   - `action` (Symbol, default: :create) Only :create|:update|:destroy
   
 #### **Publisher helpers**
