@@ -44,7 +44,7 @@ module PubSubModelSync
     end
 
     def mode
-      info[:mode].to_sym
+      (info[:mode] || :model).to_sym
     end
 
     # Process payload data
@@ -79,7 +79,7 @@ module PubSubModelSync
     # @param data [Hash]: payload data (:data, :info, :headers)
     def self.from_payload_data(data)
       data = data.symbolize_keys
-      new(data[:data], data[:info], data[:headers])
+      new(data[:data], data[:info] || data[:attributes], data[:headers])
     end
 
     private
