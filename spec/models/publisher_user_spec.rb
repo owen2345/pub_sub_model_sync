@@ -7,14 +7,14 @@ RSpec.describe PublisherUser, truncate: true do
   describe 'callbacks' do
     it '.create' do
       expect_publish_model([be_a(described_class), :create, any_args])
-      mock_publisher_callback(%i[ps_after_commit create], { name: 'name' }, :create!) do
+      mock_publisher_callback(%i[ps_after_action create], { name: 'name' }, :create!) do
         ps_publish(:create, mapping: %i[id name email])
       end
     end
 
     it '.update' do
       expect_publish_model([be_a(PublisherUser), :update, any_args])
-      model = mock_publisher_callback(%i[ps_after_commit update], { name: 'name' }, :create!) do
+      model = mock_publisher_callback(%i[ps_after_action update], { name: 'name' }, :create!) do
         ps_publish(:update, mapping: %i[id name email])
       end
       model.update!(name: 'changed name')
@@ -22,7 +22,7 @@ RSpec.describe PublisherUser, truncate: true do
 
     it '.destroy' do
       expect_publish_model([be_a(PublisherUser), :destroy, any_args])
-      model = mock_publisher_callback(%i[ps_after_commit destroy], { name: 'name' }, :create!) do
+      model = mock_publisher_callback(%i[ps_after_action destroy], { name: 'name' }, :create!) do
         ps_publish(:destroy, mapping: %i[id])
       end
       model.destroy!
@@ -38,19 +38,19 @@ RSpec.describe PublisherUser, truncate: true do
   describe 'when performing notifications manually' do
     it 'calls the correct callback' do
       mock = -> {}
-      model = mock_publisher_callback(%i[ps_after_commit update], {}, :create!) { mock.call }
+      model = mock_publisher_callback(%i[ps_after_action update], {}, :create!) { mock.call }
       expect(mock).to receive(:call)
       model.ps_perform_publish(:update)
     end
 
     it 'calls the correct method' do
-      model = mock_publisher_callback(%i[ps_after_commit update sync_update], {}, :create!)
+      model = mock_publisher_callback(%i[ps_after_action update sync_update], {}, :create!)
       expect(model).to receive(:sync_update)
       model.ps_perform_publish(:update)
     end
 
     it 'raises error if no action found' do
-      model = mock_publisher_callback(%i[ps_after_commit update], {}, :create!) {}
+      model = mock_publisher_callback(%i[ps_after_action update], {}, :create!) {}
       expect { model.ps_perform_publish(:create) }.to raise_error
     end
   end
@@ -58,7 +58,7 @@ RSpec.describe PublisherUser, truncate: true do
   describe 'when ensuring notifications order' do
     let(:user_data) { { name: 'name', posts_attributes: [{ title: 'P1' }, { title: 'P2' }] } }
     let(:user) do
-      mock_publisher_callback([:ps_after_commit, %i[create update destroy]], user_data) do |action|
+      mock_publisher_callback([:ps_after_action, %i[create update destroy]], user_data) do |action|
         ps_publish(action, mapping: %i[id name email])
       end
     end

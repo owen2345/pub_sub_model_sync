@@ -3,7 +3,7 @@
 ![Ruby badge](https://img.shields.io/badge/Ruby-2.4+-success.png)
 ![Production badge](https://img.shields.io/badge/Production-ready-success.png)
 
-This gem permits to sync automatically model data, send custom notifications between multiple Rails applications by publishing notifications via pubsub (Google PubSub, RabbitMQ, or Apache Kafka). Out of the scope this gem includes transactions to keep Data consistency by processing notifications in the order they were delivered. 
+This gem permits to sync automatically models and custom data between multiple Rails applications by publishing notifications via pubsub (Google PubSub, RabbitMQ, or Apache Kafka) and automatically processed by all connected applications. Out of the scope, this gem includes transactions to keep Data consistency by processing notifications in the order they were delivered. 
 These notifications use JSON format to easily be decoded by subscribers (Rails applications and even other languages) 
 
 - [**PubSubModelSync**](#pubsubmodelsync)
@@ -33,12 +33,12 @@ These notifications use JSON format to easily be decoded by subscribers (Rails a
   - [**Code of Conduct**](#code-of-conduct)
 
 ## **Features**
-- Sync model data between Rails apps: All changes made on App1, will be immediately reflected on App2, App3, etc.
+- Sync model data between Rails apps: All changes made on App1, will be immediately reflected on App2, App3, etc.    
     Example: If User is created on App1, this user will be created on App2, App3 too with the accepted attributes.
-- Ability to send class level communications
+- Ability to send instance and class level notifications    
     Example: If App1 wants to send emails to multiple users, this can be listened on App2, to deliver corresponding emails
 - Change pub/sub service at any time: Switch between rabbitmq, kafka, google pubsub  
-- Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered.
+- Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered (auto attached to models transactions).
 - Ability to send notifications to a specific topic (single application) or multiple topics (multiple applications)
 
 ## **Installation**
@@ -60,7 +60,7 @@ And then execute: $ bundle install
     # initializers/pub_sub_config.rb
     PubSubModelSync::Config.service_name = :google
     PubSubModelSync::Config.project = 'google-project-id'
-    PubSubModelSync::Config.credentials = 'path-to-the-config'
+    PubSubModelSync::Config.credentials = 'path-to-google-config.json_or_json_content'
     PubSubModelSync::Config.topic_name = 'sample-topic' 
     PubSubModelSync::Config.subscription_name = 'my-app1'
     ```
@@ -89,12 +89,14 @@ And then execute: $ bundle install
 
 - Start subscribers to listen for publishers (Only in the app that has subscribers)
     ```bash
-    DB_POOL=20 bundle exec rake pub_sub_model_sync:start
+      DB_POOL=20 bundle exec rake pub_sub_model_sync:start
     ```
     Note: You need more than 15 DB pools to avoid "could not obtain a connection from the pool within 5.000 seconds". https://devcenter.heroku.com/articles/concurrency-and-database-connections
 
 - Check the service status with:
-  ```PubSubModelSync::MessagePublisher.publish_data('Test message', {sample_value: 10}, :create)```
+  ```ruby
+    PubSubModelSync::Payload.new({ my_data: 'here' }, { klass: 'MyClass', action: :sample_action }).publish!
+  ```
 
 - More configurations: [here](#extra-configurations)
 
@@ -107,9 +109,9 @@ And then execute: $ bundle install
 # App 1 (Publisher)
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_after_commit(:create) { ps_publish(:create, mapping: %i[id name email]) }
-  ps_after_commit(:update) { ps_publish(:update, mapping: %i[id name email]) }
-  ps_after_commit(:destroy) { ps_publish(:destroy, mapping: %i[id]) }  
+  ps_after_action(:create) { ps_publish(:create, mapping: %i[id name email]) }
+  ps_after_action(:update) { ps_publish(:update, mapping: %i[id name email]) }
+  ps_after_action(:destroy) { ps_publish(:destroy, mapping: %i[id]) }  
 end
 
 # App 2 (Subscriber)
@@ -119,9 +121,9 @@ class User < ActiveRecord::Base
 end
 
 # CRUD syncs
-my_user = User.create(name: 'test user', email: 'sample@gmail.com') # Publishes `:create` notification (App 2 syncs the new user)
-my_user.update(name: 'changed user') # Publishes `:update` notification (App2 updates changes)
-my_user.destroy # Publishes `:destroy` notification (App2 destroys the corresponding user)
+my_user = User.create!(name: 'test user', email: 'sample@gmail.com') # Publishes `:create` notification (App 2 syncs the new user)
+my_user.update!(name: 'changed user') # Publishes `:update` notification (App2 updates changes on user with the same id)
+my_user.destroy! # Publishes `:destroy` notification (App2 destroys the corresponding user)
 ```
 
 ### **Advanced Example**
@@ -129,14 +131,16 @@ my_user.destroy # Publishes `:destroy` notification (App2 destroys the correspon
 # App 1 (Publisher)
 class User < ActiveRecord::Base
   include PubSubModelSync::PublisherConcern
-  ps_after_commit([:create, :update]) { ps_publish(:save, mapping: %i[id name:full_name email], as_klass: 'App1User', headers: { topic_name: %i[topic1 topic2] }) }
+  ps_after_action([:create, :update]) do |action| 
+    ps_publish(action, mapping: %i[name:full_name email], as_klass: 'App1User', headers: { topic_name: %i[topic1 topic2] })
+  end
 end
 
 # App 2 (Subscriber)
 class User < ActiveRecord::Base
   include PubSubModelSync::SubscriberConcern
-  ps_subscribe(:save, %i[full_name:customer_name], id: [:id, :email], from_klass: 'App1User')  
-  ps_subscribe(:send_welcome, %i[email], to_action: :send_email, if: ->(model) { model.email.present? })
+  ps_subscribe([:create, :update], %i[full_name:customer_name], id: :email, from_klass: 'App1User')  
+  ps_subscribe(:send_welcome, %i[email], id: :email, to_action: :send_email, if: ->(model) { model.email.present? })
   ps_class_subscribe(:batch_disable) # class subscription
   
   def send_email
@@ -147,9 +151,9 @@ class User < ActiveRecord::Base
     puts "disabling users: #{data[:ids]}"
   end
 end
-my_user = User.create(name: 'test user', email: 's@gmail.com') # Publishes `:save` notification as class name `App1User` (App2 syncs the new user)
+my_user = User.create!(name: 'test user', email: 's@gmail.com') # Publishes `:create` notification with classname `App1User` (App2 syncs the new user)
 my_user.ps_publish(:send_welcome, mapping: %i[id email]) # Publishes `:send_welcome` notification (App2 prints "sending email to...")
-PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :batch_disable) # Publishes class notification (App2 prints "disabling users..")
+PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :batch_disable, mode: :klass }).publish! # Publishes class notification (App2 prints "disabling users..")
 ```
 
 ## **API**
@@ -209,20 +213,20 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 #### **Subscription helpers**
 - List all configured subscriptions
   ```ruby
-  PubSubModelSync::Config.subscribers
+    PubSubModelSync::Config.subscribers
   ```
-- Manually process or reprocess a notification (useful when failed)
+- Process or reprocess a notification
   ```ruby
-  payload = PubSubModelSync::Payload.new(data, attributes, headers)
-  payload.process!
+    payload = PubSubModelSync::Payload.new(data, attributes, headers)
+    payload.process!
   ```
 
 
 ### **Publishers**
 ```ruby
   class MyModel < ActiveRecord::Base
-    ps_after_commit([:create, :update, :destroy], :method_publisher_name) # using method callback
-    ps_after_commit([:create, :update, :destroy]) do |action| # using block callback
+    ps_after_action([:create, :update, :destroy], :method_publisher_name) # using method callback
+    ps_after_action([:create, :update, :destroy]) do |action| # using block callback
       ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: nil)
       ps_class_publish({}, action: :my_action, as_klass: nil, headers: {})
     end
@@ -235,7 +239,7 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
 
 #### **Publishing notifications**
 
-- `ps_after_commit(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
+- `ps_after_action(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
   - `crud_actions` (Symbol|Array<Symbol>) Crud event(s) to be observed (Allowed: `:create, :update, :destroy`)
   - `method_name` (Symbol, optional) method to be called to process action callback, sample: `def my_method(action) ... end`
   - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`
@@ -280,17 +284,10 @@ PubSubModelSync::MessagePublisher.publish_data(User, { ids: [my_user.id] }, :bat
   - `action` (Symbol, default: :create) Only :create|:update|:destroy
   
 #### **Publisher helpers**
-- Publish a class notification from anywhere
-  ```ruby 
-    PubSubModelSync::MessagePublisher.publish_data(klass, data, action, headers: )
-  ```
-  - `klass`: (String) Class name to be used
-  - Refer to `ps_class_publish` except `as_klass:`
-
-- Manually publish or republish a notification (useful when failed)
+- Publish or republish a notification
   ```ruby
-  payload = PubSubModelSync::Payload.new(data, attributes, headers)
-  payload.publish!
+    payload = PubSubModelSync::Payload.new(data, attributes, headers)
+    payload.publish!
   ```
 
 #### **Publisher callbacks**
@@ -344,20 +341,38 @@ Any notification before delivering is transformed as a Payload for a better port
   * Crud syncs auto includes transactions which works as the following:
     ```ruby
     class User
-      ps_after_commit(:create) { ps_publish(:create, mapping: %i[id name]) }
-      has_many :posts
+      ps_after_action([:create, :update, :destroy]) { |action| ps_publish(action, mapping: %i[id name]) }
+      has_many :posts, dependent: :destroy
       accepts_nested_attributes_for :posts
     end
     
     class Post
       belongs_to :user
-      ps_after_commit(:create) { ps_publish(:create, mapping: %i[id title]) }
+      ps_after_action([:create, :update, :destroy]) { |action| ps_publish(action, mapping: %i[id user_id title]) }
     end
-    
-    User.create!(name: 'test', posts_attributes: [{ title: 'Post 1' }, { title: 'Post 2' }])
     ```
-    When user is created, `User`:`:save` notification is published with the ordering_key = `User/<user_id>`.   
-    Posts created together with the user model publishes `Post`:`:save` notification each one using its parents (user model) `ordering_key`.   
+    - When created (all notifications use the same ordering key to be processed in the same order)
+      ```ruby
+        user = User.create!(name: 'test', posts_attributes: [{ title: 'Post 1' }, { title: 'Post 2' }])
+        # notification #1 => <Payload data: {id: 1, name: 'sample'}, info: { klass: 'User', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
+        # notification #2 => <Payload data: {id: 1, title: 'Post 1', user_id: 1}, info: { klass: 'Post', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
+        # notification #3 => <Payload data: {id: 2, title: 'Post 2', user_id: 1}, info: { klass: 'Post', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
+      ```
+    - When updated (all notifications use the same ordering key to be processed in the same order)
+      ```ruby
+        user.update!(name: 'changed', posts_attributes: [{ id: 1, title: 'Post 1C' }, { id: 2, title: 'Post 2C' }])
+        # notification #1 => <Payload data: {id: 1, name: 'changed'}, info: { klass: 'User', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
+        # notification #2 => <Payload data: {id: 1, title: 'Post 1C', user_id: 1}, info: { klass: 'Post', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
+        # notification #3 => <Payload data: {id: 2, title: 'Post 2C', user_id: 1}, info: { klass: 'Post', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
+      ```
+    - When destroyed (all notifications use the same ordering key to be processed in the same order)   
+      **Note**: The notifications order were reordered in order to avoid inconsistency in other apps 
+      ```ruby
+      user.destroy!
+      # notification #1 => <Payload data: {id: 1, title: 'Post 1C', user_id: 1}, info: { klass: 'Post', action: :destroy, mode: :model }>
+      # notification #2 => <Payload data: {id: 2, title: 'Post 2C', user_id: 1}, info: { klass: 'Post', action: :destroy, mode: :model }>
+      # notification #3 => <Payload data: {id: 1, name: 'changed'}, info: { klass: 'User', action: :destroy, mode: :model }>
+      ```
     By this way parent notification and all inner notifications are processed in the same order they were published (includes notifications from callbacks like `ps_before_publish`).
         
     **Note**: When any error is raised when saving user or posts, the transaction is cancelled and thus all notifications wont be delivered (customizable by `PubSubModelSync::Config.transactions_use_buffer`).    
@@ -373,7 +388,7 @@ Any notification before delivering is transformed as a Payload for a better port
       PubSubModelSync::MessagePublisher::transaction('my-custom-key') do
         user = User.create(name: 'test') # `User`:`:create` notification
         post = Post.create(title: 'sample') # `Post`:`:create` notification
-        PubSubModelSync::MessagePublisher.publish_data(User, { ids: [user.id] }, :send_welcome) # `User`:`:send_welcome` notification
+        PubSubModelSync::Payload.new({ ids: [user.id] }, { klass: 'User', action: :send_welcome, mode: :klass }).publish! # `User`:`:send_welcome` notification
       end
     ```
     All notifications uses `ordering_key: 'my-custom-key'` and will be processed in the same order they were published.
@@ -423,61 +438,98 @@ Any notification before delivering is transformed as a Payload for a better port
 - Examples:
   - **Publisher**
     ```ruby
+      # Do not forget to include 'sync: true' to enable publishing pubsub notifications
       describe 'When publishing sync', truncate: true, sync: true do
-          it 'publishes user notification when created' do
-            expect_publish_notification(:create, klass: 'User')
-            create(:user)
-          end
-          
-          it 'publishes user notification with all defined data' do
-            user = build(:user)
-            data = PubSubModelSync::PayloadBuilder.parse_mapping_for(user, %i[id name:full_name email])
-            data[:id] = be_a(Integer)
-            expect_publish_notification(:create, klass: 'User', data: data)
-            user.save!
-          end
-          
-          it 'publishes user notification when created' do
-            email = 'Newemail@gmail.com'
-            user = create(:user)
-            expect_publish_notification(:update, klass: 'User', data: { id: user.id, email: email })
-            user.update!(email: email)
-          end
-          
-          it 'publishes user notification when created' do
-            user = create(:user)
-            expect_publish_notification(:destroy, klass: 'User', data: { id: user.id })
-            user.destroy!
-          end
-          
-          private
-      
-          def expect_publish_notification(action, klass: described_class.to_s, data: {}, info: {}, headers: {})
-            publisher = PubSubModelSync::MessagePublisher
-            exp_data = have_attributes(data: hash_including(data),
-                                       info: hash_including(info.merge(klass: klass, action: action)),
-                                       headers: hash_including(headers))
-            allow(publisher).to receive(:publish!).and_call_original
-            expect(publisher).to receive(:publish!).with(exp_data)
-          end
+        it 'publishes user notification when created' do
+          expect_publish_notification(:create, klass: 'User')
+          create(:user)
+        end
+        
+        it 'publishes user notification with all defined data' do
+          user = build(:user)
+          data = PubSubModelSync::PayloadBuilder.parse_mapping_for(user, %i[id name:full_name email])
+          data[:id] = be_a(Integer)
+          expect_publish_notification(:create, klass: 'User', data: data)
+          user.save!
+        end
+        
+        it 'publishes user notification when created' do
+          email = 'Newemail@gmail.com'
+          user = create(:user)
+          expect_publish_notification(:update, klass: 'User', data: { id: user.id, email: email })
+          user.update!(email: email)
+        end
+        
+        it 'publishes user notification when created' do
+          user = create(:user)
+          expect_publish_notification(:destroy, klass: 'User', data: { id: user.id })
+          user.destroy!
+        end
+        
+        private
+        
+        # @param action (Symbol)
+        # @param klass (String, default described_class name)
+        # @param data (Hash, optional) notification data
+        # @param info (Hash, optional) notification info
+        # @param headers (Hash, optional) notification headers
+        def expect_publish_notification(action, klass: described_class.to_s, data: {}, info: {}, headers: {})
+          publisher = PubSubModelSync::MessagePublisher
+          exp_data = have_attributes(data: hash_including(data),
+                                     info: hash_including(info.merge(klass: klass, action: action)),
+                                     headers: hash_including(headers))
+          allow(publisher).to receive(:publish!).and_call_original
+          expect(publisher).to receive(:publish!).with(exp_data)
+        end
       end
     ```   
   - **Subscriber**    
   ```ruby
-    it 'receive model notification', sync: true do
-      data = { name: 'name', id: 999 }
+  
+  describe 'when syncing data from other apps' do
+    it 'creates user when received :create notification' do
+      user = build(:user)
+      data = user.as_json(only: %i[name email]).merge(id: 999)
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :create })
-      payload.process!
-      expect(User.find(data[:id])).not_to be_nil
+      expect { payload.process! }.to change(described_class, :count)
     end
 
-    it 'receive class notification', sync: true do
+    it 'updates user when received :update notification' do
+      user = create(:user)
+      name = 'new name'
+      data = user.as_json(only: %i[id email]).merge(name: name)
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :update })
+      payload.process!
+      expect(user.reload.name).to eq(name)
+    end
+
+    it 'destroys user when received :destroy notification' do
+      user = create(:user)
+      data = user.as_json(only: %i[id])
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: :destroy })
+      payload.process!
+      expect { user.reload }.to raise_error(ActiveRecord::RecordNotFound)
+    end
+  
+    
+    it 'receive custom model notification' do
+      user = create(:user)  
+      data = { id: user.id, custom_data: {} }
+      custom_action = :say_hello
+      expect_any_instance_of(User).to receive(custom_action).with(data)
+      payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: custom_action })
+      payload.process!
+    end
+
+    it 'receive class notification' do
       data = { msg: 'hello' }
       action = :greeting
+      expect(User).to receive(action).with(data)
+      # Do not forget to include `mode: :klass` for class notifications
       payload = PubSubModelSync::Payload.new(data, { klass: 'User', action: action, mode: :klass })
       payload.process!
-      expect(User).to receive(action).with(data)
     end
+  end
   ```
 
 ## **Extra configurations**
@@ -511,7 +563,7 @@ config.debug = true
     (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
 - ```.transactions_max_buffer = 100``` (Integer) Once this quantity of notifications is reached, then all notifications will immediately be delivered.    
     Note: There is no way to rollback delivered notifications if current transaction fails
-- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` (used in `ps_after_commit(...)`) which will not rollback sql transactions if failed when publishing pubsub notification.
+- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` (used in `ps_after_action(...)`) which will not rollback sql transactions if failed when publishing pubsub notification.
 
 ## **TODO**
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)

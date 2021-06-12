@@ -46,7 +46,7 @@ end
 class Post < ActiveRecord::Base
   belongs_to :publisher_user
   include PubSubModelSync::PublisherConcern
-  ps_after_commit(%i[create update destroy]) { |action| ps_publish(action, mapping: %i[id title]) }
+  ps_after_action(%i[create update destroy]) { |action| ps_publish(action, mapping: %i[id title]) }
 end
 
 class SubscriberUser < ActiveRecord::Base

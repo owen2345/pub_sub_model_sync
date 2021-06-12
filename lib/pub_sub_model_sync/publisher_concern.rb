@@ -58,7 +58,7 @@ module PubSubModelSync
 
       # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
       # @param method_name (Symbol, optional) method to be called
-      def ps_after_commit(crud_actions, method_name = nil, &block)
+      def ps_after_action(crud_actions, method_name = nil, &block)
         actions = Array(crud_actions).map(&:to_sym)
         callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
         ps_cache_publish_callbacks({ actions: actions, callback: callback })
