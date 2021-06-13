@@ -1,0 +1,20 @@
+version: "3.7"
+
+networks:
+  shared_app_services:
+    external: true
+
+services:
+  app: &app
+    build:
+      context: .
+    volumes:
+      - .:/app
+    external_links:
+      - pubsub
+    networks: # required to connect to pubsub
+      - shared_app_services
+
+  listener:
+    <<: *app
+    command: bash -c "DB_POOL=20 rails db:migrate && bundle exec rake pub_sub_model_sync:start"
