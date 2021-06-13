@@ -242,22 +242,10 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
 - `ps_after_action(crud_actions, method_name = nil, &block)` Listens for CRUD events and calls provided `block` or `method` to process event callback
   - `crud_actions` (Symbol|Array<Symbol>) Crud event(s) to be observed (Allowed: `:create, :update, :destroy`)
   - `method_name` (Symbol, optional) method to be called to process action callback, sample: `def my_method(action) ... end`
-  - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`
-  **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications order, sample:
-    ```ruby
-      user = User.create(name: 'asasas', posts_attributes: [{ title: 't1' }, { title: 't2' }])
-    ```
-    Notification 1: User notification     
-    Notification 2: First post notification     
-    Notification 3: Second post notification
-           
-  **Note2**: Due to rails callback ordering, this method uses `after_destroy` callback when destroying models to ensure the expected notifications order.
-    ```ruby
-      user.destroy
-    ```   
-    Notification 1: Second post notification     
-    Notification. 2: First post notification     
-    Notification 3: User notification
+  - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`     
+  
+  **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications order (More details [**here**](#transactions)).    
+  **Note2**: Due to rails callback ordering, this method uses `after_destroy` callback when destroying models to ensure the expected notifications order.    
    
 - `ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: nil)` Delivers an instance notification via pubsub
   - `action` (Sym|String) Action name of the instance notification. Sample: create|update|destroy|<any_other_key>
@@ -572,7 +560,6 @@ config.debug = true
 - Add DB table to use as a shield to prevent publishing similar notifications and publish partial notifications (similar idea when processing notif)
 - Last notification is not being delivered immediately in google pubsub (maybe force with timeout 10secs and service.deliver_messages)
 - Update folder structure
-- Support for blocks in ps_publish and ps_subscribe
 - Services support to deliver multiple payloads from transactions
 
 ## **Q&A**
