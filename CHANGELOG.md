@@ -1,6 +1,7 @@
 # Change Log
 
-# 1.0.beta (May 13, 2021)
+# 1.0 (June 13, 2021)
+This version includes many changes that was refactored from previous version, and thus it needs manual changes to migrate into this version. 
 - Refactor: Subscribers param renamed `from_action` into `to_action` and added support for block or lambda 
 - Feat: Improved `ps_subscribe` to accept new arguments and support for property mappings
 - Refactor: Refactored `ps_publish` to be called manually (removes notification assumptions) and accept for new arguments
