@@ -56,7 +56,7 @@ module PubSubModelSync
     end
 
     def settings_data
-      { klass: as_klass, action: action, mode: :model }
+      { klass: as_klass, action: action }
     end
   end
 end

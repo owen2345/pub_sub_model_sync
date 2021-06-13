@@ -24,7 +24,7 @@ module PubSubModelSync
     #     even withing transactions. Default nil.
     def initialize(data, info, headers = {})
       @data = data.deep_symbolize_keys
-      @info = { mode: :model }.merge(info).deep_symbolize_keys
+      @info = info.deep_symbolize_keys
       @headers = headers.deep_symbolize_keys
       build_headers
       validate!
@@ -32,7 +32,7 @@ module PubSubModelSync
 
     # @return Hash: payload data
     def to_h
-      { data: data, info: info, headers: headers }
+      { data: data.clone, info: info.clone, headers: headers.clone }
     end
 
     def klass

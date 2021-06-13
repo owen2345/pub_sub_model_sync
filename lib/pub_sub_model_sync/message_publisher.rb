@@ -47,9 +47,9 @@ module PubSubModelSync
       # @refer PublisherConcern.ps_class_publish
       # @return Payload
       def publish_data(klass, data, action, headers: {})
-        attrs = { klass: klass.to_s, action: action.to_sym, mode: :klass }
-        log("Building payload for: #{[klass, action].inspect}") if config.debug
-        payload = PubSubModelSync::Payload.new(data, attrs, headers)
+        info = { klass: klass.to_s, action: action.to_sym, mode: :klass }
+        log("Building payload for: #{info.inspect}") if config.debug
+        payload = PubSubModelSync::Payload.new(data, info, headers)
         define_transaction_key(payload)
         publish(payload)
       end
