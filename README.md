@@ -38,7 +38,7 @@ These notifications use JSON format to easily be decoded by subscribers (Rails a
 - Ability to send instance and class level notifications    
     Example: If App1 wants to send emails to multiple users, this can be listened on App2, to deliver corresponding emails
 - Change pub/sub service at any time: Switch between rabbitmq, kafka, google pubsub  
-- Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered (auto attached to models transactions).
+- Support for transactions: Permits to keep data consistency between applications by processing notifications in the same order they were delivered (auto included in models transactions).
 - Ability to send notifications to a specific topic (single application) or multiple topics (multiple applications)
 
 ## **Installation**
