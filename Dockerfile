@@ -1,6 +1,6 @@
-FROM ruby:2.7-buster
+FROM ruby:2.5
 RUN apt-get update -qq
-WORKDIR /myapp
-COPY . /myapp
+WORKDIR /app
+COPY . /app
 RUN gem update bundler
-RUN bundle install
+RUN bundle update

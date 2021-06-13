@@ -8,7 +8,7 @@ end
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
     QUEUE_SETTINGS = { durable: true, auto_delete: false }.freeze
-    LISTEN_SETTINGS = { manual_ack: true }.freeze
+    LISTEN_SETTINGS = { manual_ack: false }.freeze
     PUBLISH_SETTINGS = {}.freeze
 
     # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
@@ -73,6 +73,7 @@ module PubSubModelSync
           queue = channel.queue(config.subscription_key, QUEUE_SETTINGS)
           queue.bind(exchange)
           @channels << channel
+          log("Subscribed to topic: #{topic_name} as #{queue.name}")
           block.call(queue)
         end
       end
@@ -89,7 +90,7 @@ module PubSubModelSync
     end
 
     def deliver_data(payload)
-      message_topics = Array(payload.headers[:topic_name] || topic_names.first)
+      message_topics = Array(payload.headers[:topic_name] || config.default_topic_name)
       message_topics.each do |topic_name|
         subscribe_to_exchange(topic_name) do |_channel, exchange|
           exchange.publish(encode_payload(payload), message_settings(payload))

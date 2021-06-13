@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
 module StubListeners
-  def stub_subscriber(subscriber, &block)
+  def stub_with_subscriber(action, mapping: [], settings: {}, &block)
+    subscriber = PubSubModelSync::Subscriber.new('SubscriberUser', action, mapping: mapping, settings: settings)
     PubSubModelSync::Config.subscribers.push(subscriber)
-    block.call
+    block.call(subscriber)
     PubSubModelSync::Config.subscribers.pop
   end
 end

@@ -33,10 +33,11 @@ module PubSubModelSync
 
     # @param payload (PubSubModelSync::Payload)
     def publish(payload)
-      message_topics = Array(payload.headers[:topic_name] || '').map(&method(:find_topic))
+      p_topic_names = Array(payload.headers[:topic_name] || config.default_topic_name)
+      message_topics = p_topic_names.map(&method(:find_topic))
       message_topics.each do |topic|
         topic.publish_async(encode_payload(payload), message_headers(payload)) do |res|
-          raise 'Failed to publish the message.' unless res.succeeded?
+          raise StandardError, 'Failed to publish the message.' unless res.succeeded?
         end
       end
     end

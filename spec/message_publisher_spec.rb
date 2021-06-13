@@ -6,7 +6,7 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   let(:connector) { inst.connector }
   let(:payload_klass) { PubSubModelSync::Payload }
 
-  let(:model) { PublisherUser2.new(id: 1, name: 'name', email: 'email', age: 10) }
+  let(:model) { PublisherUser.new(id: 1, name: 'name', email: 'email', age: 10) }
   let(:action) { :update }
 
   it 'does not publish payload if :on_before_publish returns :cancel' do
@@ -33,22 +33,6 @@ RSpec.describe PubSubModelSync::MessagePublisher do
     end
   end
 
-  describe '.publish_model_data: Publishes custom model actions (non crud actions)' do
-    let(:data) { { message: 'hello' } }
-    let(:action) { :greeting }
-
-    it 'includes model info in the header' do
-      expect_headers(key: [model.class.name, action, model.id].join('/'))
-      inst.publish_model_data(model, data, action)
-    end
-
-    it 'includes provided header header' do
-      headers = { key: 'custom key' }
-      expect_headers(headers)
-      inst.publish_model_data(model, data, action, headers: headers)
-    end
-  end
-
   describe '.publish_model' do
     describe '#publish' do
       it 'publishes payload to connector' do
@@ -58,37 +42,23 @@ RSpec.describe PubSubModelSync::MessagePublisher do
     end
 
     describe 'callbacks' do
-      describe '#ps_before_sync' do
+      describe '#ps_before_publish' do
         it 'calls callback method before publishing model' do
-          expect(model).to receive(:ps_before_sync).with(action, anything)
+          expect(model).to receive(:ps_before_publish).with(action, anything)
           inst.publish_model(model, action)
         end
 
         it 'does not publish if callback returns :cancel' do
-          allow(model).to receive(:ps_before_sync).and_return(:cancel)
+          allow(model).to receive(:ps_before_publish).and_return(:cancel)
           expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_after_sync)
+          expect(model).not_to receive(:ps_after_publish)
           inst.publish_model(model, action)
         end
       end
 
-      describe '#ps_skip_sync?' do
-        it 'calls callback method before publishing' do
-          expect(model).to receive(:ps_skip_sync?).with(action)
-          inst.publish_model(model, action)
-        end
-
-        it 'skips publishing when callback method returns :cancel' do
-          allow(model).to receive(:ps_skip_sync?).and_return(true)
-          expect(connector).not_to receive(:publish)
-          expect(model).not_to receive(:ps_before_sync)
-          inst.publish_model(model, action)
-        end
-      end
-
-      describe '#ps_after_sync' do
+      describe '#ps_after_publish' do
         it 'calls callback method after publishing' do
-          expect(model).to receive(:ps_after_sync).with(action, any_args)
+          expect(model).to receive(:ps_after_publish).with(action, any_args)
           inst.publish_model(model, action)
         end
       end
@@ -117,13 +87,23 @@ RSpec.describe PubSubModelSync::MessagePublisher do
       end
     end
 
-    it 'uses the same ordering_key when publishing from :ps_before_sync callback' do
+    it 'uses the same ordering_key when publishing from :ps_before_publish callback' do
       key = 'model-key'
-      allow(model).to receive(:ps_before_sync) do
+      allow(model).to receive(:ps_before_publish) do
         inst.publish_data(publisher_klass, {}, action)
       end
       expect_publish_with_headers({ ordering_key: key }, times: 2) do
-        inst.publish_model(model, action, custom_headers: { ordering_key: key })
+        inst.publish_model(model, action, data: {}, headers: { ordering_key: key })
+      end
+    end
+
+    it 'uses first payload\'s ordering_key if transaction key is empty' do
+      key = 'trans_key'
+      expect_publish_with_headers({ ordering_key: key }, times: 2) do
+        described_class.transaction(nil) do
+          inst.publish_data('Sample', {}, :sample_action, headers: { ordering_key: key })
+          inst.publish_data('Sample', {}, :sample2, headers: { ordering_key: 'any' })
+        end
       end
     end
   end

@@ -1,0 +1,43 @@
+on:
+  push:
+    tags: # triggered once a git tag is published
+      - '*'
+
+name: Create Release
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Changelog action adaptations
+      - name: Create required package.json
+        run: test -f package.json || echo '{}' >package.json
+      - name: Detect Previous Tag (action not detecting very well)
+        run: echo "::set-output name=previous_tag::$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)"
+        id: tag_checker
+
+      - name: Generate Changelog
+        uses: scottbrenner/generate-changelog-action@master
+        id: Changelog
+        with:
+          from-tag: ${{steps.tag_checker.outputs.previous_tag}}
+          to-tag: HEAD
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ${{ steps.Changelog.outputs.changelog }}
+          draft: false
+          prerelease: false

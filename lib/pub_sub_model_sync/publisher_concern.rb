@@ -2,90 +2,103 @@
 
 module PubSubModelSync
   module PublisherConcern
-    def self.included(base)
-      base.extend(ClassMethods)
-      base.send(:ps_init_transaction_callbacks)
-    end
+    extend ActiveSupport::Concern
 
-    # Before initializing sync service (callbacks: after create/update/destroy)
-    def ps_skip_callback?(_action)
-      false
-    end
-
-    # before preparing data to sync
-    def ps_skip_sync?(_action)
-      false
+    included do
+      extend ClassMethods
+      ps_init_transaction_callbacks if self <= ActiveRecord::Base
     end
 
     # before delivering data (return :cancel to cancel sync)
-    def ps_before_sync(_action, _payload); end
+    def ps_before_publish(_action, _payload); end
+    alias ps_before_sync ps_before_publish # @deprecated
 
     # after delivering data
-    def ps_after_sync(_action, _payload); end
+    def ps_after_publish(_action, _payload); end
+    alias ps_after_sync ps_after_publish # @deprecated
 
-    # To perform sync on demand
-    # @param action (Sym): CRUD action name
-    # @param custom_data (nil|Hash) If present custom_data will be used as the payload data. I.E.
-    #   data generator will be ignored
-    # @param custom_headers (Hash, optional): refer Payload.headers
-    def ps_perform_sync(action = :create, custom_data: nil, custom_headers: {})
+    # Delivers a notification via pubsub
+    # @param action (Sym|String) Sample: create|update|save|destroy|<any_other_key>
+    # @param mapping? (Array<String>) If present will generate data using the mapping and added to the payload.
+    #   Sample: ["id", "full_name:name"]
+    # @param data? (Hash|Symbol|Proc)
+    #   Hash: Data to be added to the payload
+    #   Symbol: Method name to be called to retrieve payload data (must return a hash value, receives :action name)
+    #   Proc: Block to be called to retrieve payload data
+    # @param headers? (Hash|Symbol|Proc): (All available attributes in Payload.headers)
+    #   Hash: Data that will be merged with default header values
+    #   Symbol: Method name that will be called to retrieve header values (must return a hash, receives :action name)
+    #   Proc: Block to be called to retrieve header values
+    # @param as_klass? (String): Output class name used instead of current class name
+    def ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: self.class.name)
       p_klass = PubSubModelSync::MessagePublisher
-      p_klass.publish_model(self, action, custom_data: custom_data, custom_headers: custom_headers)
+      p_klass.publish_model(self, action, data: data, mapping: mapping, headers: headers, as_klass: as_klass)
+    end
+    delegate :ps_class_publish, to: :class
+
+    # Permits to perform manually the callback for a specific action
+    # @param action (Symbol, default: :create) Only :create|:update|:destroy
+    def ps_perform_publish(action = :create)
+      items = self.class.ps_cache_publish_callbacks.select { |item| item[:actions].include?(action) }
+      raise(StandardError, "No callback found for action :#{action}") if items.empty?
+
+      items.each { |item| instance_exec(action, &item[:callback]) }
+      self
     end
 
     module ClassMethods
-      # Permit to configure to publish crud actions (:create, :update, :destroy)
-      # @param headers (Hash, optional): Refer Payload.headers
-      def ps_publish(attrs, actions: %i[create update destroy], as_klass: nil, headers: {})
-        klass = PubSubModelSync::Publisher
-        publisher = klass.new(attrs, name, actions, as_klass: as_klass, headers: headers)
-        PubSubModelSync::Config.publishers << publisher
-        actions.each do |action|
-          ps_register_callback(action.to_sym)
-        end
-      end
-
-      # Klass level notification
-      # @deprecated this method was deprecated in favor of:
-      #   PubSubModelSync::MessagePublisher.publish_data(...)
+      # Publishes a class level notification via pubsub
+      # @param data (Hash): Data of the notification
+      # @param action (Symbol): action  name of the notification
+      # @param as_klass (String, default current class name): Class name of the notification
+      # @param headers (Hash, optional): header settings (More in Payload.headers)
       def ps_class_publish(data, action:, as_klass: nil, headers: {})
         klass = PubSubModelSync::MessagePublisher
         klass.publish_data((as_klass || name).to_s, data, action.to_sym, headers: headers)
       end
 
-      # Publisher info for specific action
-      def ps_publisher(action = :create)
-        PubSubModelSync::Config.publishers.find do |publisher|
-          publisher.klass == name && publisher.actions.include?(action)
+      # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
+      # @param method_name (Symbol, optional) method to be called
+      def ps_after_action(crud_actions, method_name = nil, &block)
+        actions = Array(crud_actions).map(&:to_sym)
+        callback = ->(action) { method_name ? send(method_name, action) : instance_exec(action, &block) }
+        ps_cache_publish_callbacks({ actions: actions, callback: callback })
+        actions.each do |action|
+          if action == :destroy
+            after_destroy { instance_exec(action, &callback) }
+          else
+            ps_define_commit_action(action, callback)
+          end
         end
+      end
+
+      def ps_cache_publish_callbacks(new_value = nil)
+        @ps_cache_publish_callbacks ||= []
+        @ps_cache_publish_callbacks << new_value if new_value
+        @ps_cache_publish_callbacks
       end
 
       private
 
-      # TODO: skip all enqueued notifications after_rollback (when failed)
+      def ps_define_commit_action(action, callback)
+        if PubSubModelSync::Config.enable_rails4_before_commit # rails 4 compatibility
+          define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
+        else
+          commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
+          send(commit_name, on: action) { instance_exec(action, &callback) }
+        end
+      end
+
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
       def ps_init_transaction_callbacks
         start_transaction = lambda do
-          key = PubSubModelSync::Publisher.ordering_key_for(self)
-          @ps_old_transaction_key = PubSubModelSync::MessagePublisher.init_transaction(key)
+          @ps_transaction = PubSubModelSync::MessagePublisher.init_transaction(nil)
         end
-        end_transaction = -> { PubSubModelSync::MessagePublisher.end_transaction(@ps_old_transaction_key) }
-        after_create start_transaction, prepend: true # wait for ID
+        before_create start_transaction, prepend: true
         before_update start_transaction, prepend: true
         before_destroy start_transaction, prepend: true
-        after_commit end_transaction
-        after_rollback end_transaction
-      end
-
-      # Configure specific callback and execute publisher when called callback
-      def ps_register_callback(action)
-        after_commit(on: action) do |model|
-          disabled = PubSubModelSync::Config.disabled_callback_publisher.call(model, action)
-          if !disabled && !model.ps_skip_callback?(action)
-            klass = PubSubModelSync::MessagePublisher
-            klass.publish_model(model, action.to_sym)
-          end
-        end
+        after_commit { @ps_transaction&.finish }
+        after_rollback(prepend: true) { @ps_transaction&.rollback }
       end
     end
   end

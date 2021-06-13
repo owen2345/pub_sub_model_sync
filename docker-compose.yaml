@@ -5,7 +5,7 @@ services:
     build: .
     command: sh -c 'bundle exec rspec'
     volumes:
-      - .:/myapp
+      - .:/app
       - bundler_gems:/usr/local/bundle/
 
 volumes:
