@@ -6,7 +6,7 @@ This is a sample to sync information between rails applications using RabbitMQ
   ```docker network create shared_app_services```
   
 * Start RabbitMQ server   
-  ```docker-compose up pubsub```
+  ```cd samples/app1 && docker-compose up pubsub```
 
 * In another tab access to App1 to publish notifications (Wait for step 2)  
   - Access to the application    

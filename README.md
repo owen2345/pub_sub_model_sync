@@ -104,6 +104,7 @@ And then execute: $ bundle install
 ![Diagram](/docs/notifications-diagram.png?raw=true)
 
 ## **Examples**
+See sample apps in [/samples](/samples/)   
 ### **Basic Example**
 ```ruby
 # App 1 (Publisher)
