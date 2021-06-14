@@ -4,7 +4,7 @@ module PubSubModelSync
   class PayloadBuilder < PubSubModelSync::Base
     attr_accessor :model, :action, :data, :mapping, :headers, :as_klass
 
-    # @param model (ActiveRecord::Base)
+    # @param model (ActiveRecord::Base,PubSubModelSync::PublisherConcern)
     # @param action (@see PublishConcern::ps_publish)
     # @param settings (@see PublishConcern::ps_publish): { data:, mapping:, headers:, as_klass: }
     def initialize(model, action, settings = {})

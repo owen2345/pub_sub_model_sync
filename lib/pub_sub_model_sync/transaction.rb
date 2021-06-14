@@ -5,7 +5,7 @@ module PubSubModelSync
     PUBLISHER_KLASS = PubSubModelSync::MessagePublisher
     attr_accessor :key, :payloads, :max_buffer, :root, :children, :finished
 
-    # @param key (String|nil) Transaction key, if empty will use the ordering_key from first payload
+    # @param key (String,Null) Transaction key, if empty will use the ordering_key from first payload
     # @param max_buffer (Integer) Once this quantity of notifications is reached, then all notifications
     #   will immediately be delivered.
     #   Note: There is no way to rollback delivered notifications if current transaction fails

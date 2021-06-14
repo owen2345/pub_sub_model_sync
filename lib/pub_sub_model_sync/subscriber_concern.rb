@@ -9,16 +9,16 @@ module PubSubModelSync
     end
 
     module ClassMethods
-      # @param actions (Symbol|Array<Symbol>) Notification.action name: save|create|update|destroy|<any_other_action>
+      # @param actions (Symbol,Array<Symbol>) Notification.action name: save|create|update|destroy|<any_other_action>
       # @param mapping (Array<String,Symbol>) Attributes mapping with aliasing support, sample: ["id", "full_name:name"]
       # @param settings (Hash<:from_klass, :to_action, :id, :if, :unless>)
       #   from_klass (String) Notification.class name
-      #   to_action (Symbol|Proc):
+      #   to_action (Symbol,Proc):
       #     Symbol: Method to process the notification
       #     Proc: Block to process the notification
-      #   id (Symbol|Array<Symbol|String>) attribute(s) DB primary identifier(s). Supports for mapping format.
-      #   if (Symbol|Proc|Array<Symbol>) Method or block called as the conformation before calling the callback
-      #   unless (Symbol|Proc|Array<Symbol>) Method or block called as the negation before calling the callback
+      #   id (Symbol,Array<Symbol,String>) attribute(s) DB primary identifier(s). Supports for mapping format.
+      #   if (Symbol,Proc,Array<Symbol>) Method or block called as the conformation before calling the callback
+      #   unless (Symbol,Proc,Array<Symbol>) Method or block called as the negation before calling the callback
       def ps_subscribe(actions, mapping = [], settings = {}, &block)
         settings[:to_action] ||= block if block
         Array(actions).map do |action|

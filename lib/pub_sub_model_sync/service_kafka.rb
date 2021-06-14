@@ -76,8 +76,8 @@ module PubSubModelSync
     end
 
     # Check topic existence, create if missing topic
-    # @param names (Array<String>|String)
-    # @return (Array|String) return @param names
+    # @param names (Array<String>,String)
+    # @return (Array,String) return @param names
     def ensure_topics(names)
       missing_topics = Array(names) - (@known_topics || service.topics)
       missing_topics.each do |name|

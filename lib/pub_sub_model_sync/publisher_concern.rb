@@ -18,14 +18,14 @@ module PubSubModelSync
     alias ps_after_sync ps_after_publish # @deprecated
 
     # Delivers a notification via pubsub
-    # @param action (Sym|String) Sample: create|update|save|destroy|<any_other_key>
+    # @param action (Symbol,String) Sample: create|update|save|destroy|<any_other_key>
     # @param mapping? (Array<String>) If present will generate data using the mapping and added to the payload.
     #   Sample: ["id", "full_name:name"]
-    # @param data? (Hash|Symbol|Proc)
+    # @param data? (Hash,Symbol,Proc)
     #   Hash: Data to be added to the payload
     #   Symbol: Method name to be called to retrieve payload data (must return a hash value, receives :action name)
     #   Proc: Block to be called to retrieve payload data
-    # @param headers? (Hash|Symbol|Proc): (All available attributes in Payload.headers)
+    # @param headers? (Hash,Symbol,Proc): (All available attributes in @Payload.headers)
     #   Hash: Data that will be merged with default header values
     #   Symbol: Method name that will be called to retrieve header values (must return a hash, receives :action name)
     #   Proc: Block to be called to retrieve header values
@@ -57,7 +57,7 @@ module PubSubModelSync
         klass.publish_data((as_klass || name).to_s, data, action.to_sym, headers: headers)
       end
 
-      # @param crud_actions (Symbol|Array<Symbol>): :create, :update, :destroy
+      # @param crud_actions (Symbol,Array<Symbol>): :create, :update, :destroy
       # @param method_name (Symbol, optional) method to be called
       def ps_after_action(crud_actions, method_name = nil, &block)
         actions = Array(crud_actions).map(&:to_sym)

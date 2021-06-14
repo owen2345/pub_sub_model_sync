@@ -54,9 +54,9 @@ module PubSubModelSync
         publish(payload)
       end
 
-      # @param model (ActiveRecord::Base)
-      # @param action (Symbol: @see PublishConcern::ps_publish)
-      # @param settings (Hash: @see PayloadBuilder.settings)
+      # @param model (ActiveRecord::Base,PubSubModelSync::PublisherConcern)
+      # @param action (Symbol,String @see PublishConcern::ps_publish)
+      # @param settings (Hash @see PayloadBuilder.settings)
       def publish_model(model, action, settings = {})
         log("Building payload for: #{[model, action].inspect}") if config.debug
         payload = PubSubModelSync::PayloadBuilder.new(model, action, settings).call
