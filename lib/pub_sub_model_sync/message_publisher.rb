@@ -80,7 +80,7 @@ module PubSubModelSync
       end
 
       def connector_publish(payload)
-        log("Publishing message #{payload.inspect}...") if config.debug
+        log("Publishing message #{[payload]}...") if config.debug
         connector.publish(payload)
         log("Published message: #{[payload]}")
         config.on_after_publish.call(payload)
@@ -99,7 +99,7 @@ module PubSubModelSync
 
       def ensure_publish(payload)
         cancelled = config.on_before_publish.call(payload) == :cancel
-        log("Publish cancelled by config.on_before_publish: #{payload}") if config.debug && cancelled
+        log("Publish cancelled by config.on_before_publish: #{[payload]}") if config.debug && cancelled
         !cancelled
       end
 
@@ -110,7 +110,7 @@ module PubSubModelSync
       def ensure_model_publish(model, action, payload)
         res_before = model.ps_before_publish(action, payload)
         cancelled = res_before == :cancel
-        log("Publish cancelled by model.ps_before_publish: #{payload}") if config.debug && cancelled
+        log("Publish cancelled by model.ps_before_publish: #{[payload]}") if config.debug && cancelled
         !cancelled
       end
 
