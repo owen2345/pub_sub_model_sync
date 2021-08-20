@@ -3,7 +3,6 @@
 require 'active_support/core_ext/module'
 module PubSubModelSync
   class Runner
-    class ShutDown < StandardError; end
     delegate :preload_listeners, to: :class
     attr_accessor :connector
 
@@ -12,11 +11,10 @@ module PubSubModelSync
     end
 
     def run
+      at_exit { connector.stop }
       trap_signals!
       preload_listeners
       start_listeners
-    rescue ShutDown
-      connector.stop
     end
 
     def self.preload_listeners
@@ -32,8 +30,8 @@ module PubSubModelSync
 
     def trap_signals!
       handler = proc do |signal|
-        puts "received #{Signal.signame(signal)}"
-        raise ShutDown
+        puts "PS_MSYNC ==> received #{Signal.signame(signal)}"
+        exit
       end
       %w[INT QUIT TERM].each { |signal| Signal.trap(signal, handler) }
     end

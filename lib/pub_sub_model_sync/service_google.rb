@@ -44,7 +44,7 @@ module PubSubModelSync
 
     def stop
       log('Listener stopping...')
-      subscribers.each(&:stop!)
+      (subscribers || []).each(&:stop!)
     end
 
     private
