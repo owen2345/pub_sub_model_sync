@@ -1,5 +1,8 @@
 # Change Log
 
+# 1.0.1 (August 20, 2021)
+- refactor: improve service exit when running in k8s
+
 # 1.0 (June 13, 2021)
 This version includes many changes that was refactored from previous version, and thus it needs manual changes to migrate into this version. 
 - Refactor: Subscribers param renamed `from_action` into `to_action` and added support for block or lambda 

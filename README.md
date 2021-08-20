@@ -562,6 +562,8 @@ config.debug = true
 - Last notification is not being delivered immediately in google pubsub (maybe force with timeout 10secs and service.deliver_messages)
 - Update folder structure
 - Services support to deliver multiple payloads from transactions
+- Fix deprecation warnings: pub_sub_model_sync/service_google.rb:39: warning: Splitting the last argument into positional and keyword parameters is deprecated
+- Add if/unless to ps_after_action
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?

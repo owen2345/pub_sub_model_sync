@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    pub_sub_model_sync (1.0)
+    pub_sub_model_sync (1.0.1)
       rails
 
 GEM
@@ -157,8 +157,6 @@ GEM
     multipart-post (2.1.1)
     nio4r (2.5.7)
     nokogiri (1.11.3-x86_64-darwin)
-      racc (~> 1.4)
-    nokogiri (1.11.3-x86_64-linux)
       racc (~> 1.4)
     os (1.1.1)
     parallel (1.20.1)
