@@ -13,7 +13,6 @@ module PubSubModelSync
     end
 
     configure do
-      require 'pub_sub_model_sync/initializers/before_commit' if PubSubModelSync::Config.enable_rails4_before_commit
     end
   end
 end

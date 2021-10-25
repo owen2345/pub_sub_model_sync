@@ -67,7 +67,7 @@ module PubSubModelSync
           if action == :destroy
             after_destroy { instance_exec(action, &callback) }
           else
-            ps_define_commit_action(action, callback)
+            send(:after_commit, on: action) { instance_exec(action, &callback) }
           end
         end
       end
@@ -79,15 +79,6 @@ module PubSubModelSync
       end
 
       private
-
-      def ps_define_commit_action(action, callback)
-        if PubSubModelSync::Config.enable_rails4_before_commit # rails 4 compatibility
-          define_method("ps_before_#{action}_commit") { instance_exec(action, &callback) }
-        else
-          commit_name = respond_to?(:before_commit) ? :before_commit : :after_commit
-          send(commit_name, on: action) { instance_exec(action, &callback) }
-        end
-      end
 
       # Initialize calls to start and end pub_sub transactions and deliver all them in the same order
       def ps_init_transaction_callbacks
