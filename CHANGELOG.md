@@ -1,5 +1,9 @@
 # Change Log
 
+# 1.1.0 (October 25, 2021)
+- feat: change `transactions_max_buffer` default value to 1 to deliver notifications once they were called
+- feat: use `after_commit` instead of `before_commit` callback and remove the horrible AR patch for rails 4
+
 # 1.0.1 (August 20, 2021)
 - refactor: improve service exit when running in k8s
 
