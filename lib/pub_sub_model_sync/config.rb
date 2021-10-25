@@ -8,8 +8,7 @@ module PubSubModelSync
     # customizable callbacks
     cattr_accessor(:debug) { false }
     cattr_accessor :logger # LoggerInst
-    cattr_accessor(:transactions_max_buffer) { 100 }
-    cattr_accessor(:enable_rails4_before_commit) { Rails::VERSION::MAJOR == 4 }
+    cattr_accessor(:transactions_max_buffer) { 1 }
 
     cattr_accessor(:on_before_processing) { ->(_payload, _info) {} } # return :cancel to skip
     cattr_accessor(:on_success_processing) { ->(_payload, _info) {} }

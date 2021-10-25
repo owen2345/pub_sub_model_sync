@@ -245,7 +245,7 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
   - `method_name` (Symbol, optional) method to be called to process action callback, sample: `def my_method(action) ... end`
   - `block` (Proc, optional) Block to be called to process action callback, sample: `{ |action| ... }`     
   
-  **Note1**: Due to rails callback ordering, this method uses `before_commit` callback when creating or updating models to ensure expected notifications order (More details [**here**](#transactions)).    
+  **Note1**: Due to rails callback ordering, this method uses `after_commit on: action {...}` callback when creating or updating models to ensure expected notifications order (More details [**here**](#transactions)).    
   **Note2**: Due to rails callback ordering, this method uses `after_destroy` callback when destroying models to ensure the expected notifications order.    
    
 - `ps_publish(action, data: {}, mapping: [], headers: {}, as_klass: nil)` Delivers an instance notification via pubsub
@@ -369,9 +369,7 @@ Any notification before delivering is transformed as a Payload for a better port
   - Manual transactions   
     `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
     - `key` (String|nil) Key used as the ordering key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
-    - `max_buffer:` (Boolean, default: `PubSubModelSync::Config.transactions_max_buffer`)     
-        If true: will save all notifications and deliver all them when transaction has successfully finished. If transaction has failed, then all saved notifications will be discarded (not delivered).    
-        If false: will deliver all notifications immediately (no way to rollback notifications if transaction has failed)  
+    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (more details in #transactions_max_buffer).     
     Sample:
     ```ruby
       PubSubModelSync::MessagePublisher::transaction('my-custom-key') do
@@ -550,9 +548,10 @@ config.debug = true
     (Proc) => called after publishing a message
 - ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```
     (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
-- ```.transactions_max_buffer = 100``` (Integer) Once this quantity of notifications is reached, then all notifications will immediately be delivered.    
-    Note: There is no way to rollback delivered notifications if current transaction fails
-- ```.enable_rails4_before_commit = true``` (true*|false) When false will disable rails 4 hack compatibility and then CRUD notifications will be prepared using `after_commit` callback instead of `before_commit` (used in `ps_after_action(...)`) which will not rollback sql transactions if failed when publishing pubsub notification.
+- ```.transactions_max_buffer = 1``` (Integer, default 1) Controls the maximum quantity of notifications to be enqueued to the transaction-buffer before delivering them and thus adds the ability to rollback notifications if the transaction fails.        
+    Once this quantity of notifications is reached, then all notifications of the current transaction will immediately be delivered (can be customized per transaction).    
+    Note: There is no way to rollback delivered notifications if current transaction fails later.      
+    Note2: Only notifications from the buffer can be rollbacked if the current transaction has failed.     
 
 ## **TODO**
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)
@@ -564,6 +563,8 @@ config.debug = true
 - Services support to deliver multiple payloads from transactions
 - Fix deprecation warnings: pub_sub_model_sync/service_google.rb:39: warning: Splitting the last argument into positional and keyword parameters is deprecated
 - Add if/unless to ps_after_action
+- Add subscription liveness checker using thread without db connection to check periodically pending messages from google pubsub
+- Unify .stop() and 'Listener stopped' 
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?
