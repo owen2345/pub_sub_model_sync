@@ -313,7 +313,7 @@ Any notification before delivering is transformed as a Payload for a better port
   * `headers`: (Hash) Notification settings that defines how the notification will be processed or delivered. 
     - `ordering_key`: (String, optional): notifications with the same `ordering_key` are processed in the same order they were delivered, default: `<model.class.name>/<model.id>` when instance notification and `klass_name` when class notification.    
       Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`         
-    - `key`: (String, optional) Internal identifier of the payload, default: `<model.class.name>/<action>/<model.id>` when model notification and `<klass_name>/<action>` when class notification (Useful for caching techniques).    
+    - `internal_key`: (String, optional) Internal identifier of the payload, default: `<model.class.name>/<action>/<model.id>` when model notification and `<klass_name>/<action>` when class notification (Useful for caching techniques).    
     - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
     - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
     - `app_key`: (Auto calculated): Name of the application who delivered the notification.   
@@ -343,21 +343,21 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
       ps_after_action([:create, :update, :destroy]) { |action| ps_publish(action, mapping: %i[id user_id title]) }
     end
     ```
-    - When created (all notifications use the same ordering key to be processed in the same order)
+    - When created (all notifications use the same ordering_key to be processed in the same order)
       ```ruby
         user = User.create!(name: 'test', posts_attributes: [{ title: 'Post 1' }, { title: 'Post 2' }])
         # notification #1 => <Payload data: {id: 1, name: 'sample'}, info: { klass: 'User', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
         # notification #2 => <Payload data: {id: 1, title: 'Post 1', user_id: 1}, info: { klass: 'Post', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
         # notification #3 => <Payload data: {id: 2, title: 'Post 2', user_id: 1}, info: { klass: 'Post', action: :create, mode: :model }, headers: { ordering_key = `User/1` }>
       ```
-    - When updated (all notifications use the same ordering key to be processed in the same order)
+    - When updated (all notifications use the same ordering_key to be processed in the same order)
       ```ruby
         user.update!(name: 'changed', posts_attributes: [{ id: 1, title: 'Post 1C' }, { id: 2, title: 'Post 2C' }])
         # notification #1 => <Payload data: {id: 1, name: 'changed'}, info: { klass: 'User', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
         # notification #2 => <Payload data: {id: 1, title: 'Post 1C', user_id: 1}, info: { klass: 'Post', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
         # notification #3 => <Payload data: {id: 2, title: 'Post 2C', user_id: 1}, info: { klass: 'Post', action: :update, mode: :model }, headers: { ordering_key = `User/1` }>
       ```
-    - When destroyed (all notifications use the same ordering key to be processed in the same order)   
+    - When destroyed (all notifications use the same ordering_key to be processed in the same order)   
       **Note**: The notifications order were reordered in order to avoid inconsistency in other apps 
       ```ruby
       user.destroy!
@@ -371,7 +371,7 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
   
   - Manual transactions   
     `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
-    - `key` (String|nil) Key used as the ordering key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
+    - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
     - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (more details in #transactions_max_buffer).     
     Sample:
     ```ruby
