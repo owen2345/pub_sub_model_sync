@@ -19,10 +19,11 @@ module PubSubModelSync
     # @param payload (Payload)
     def add_payload(payload)
       payloads << payload
-      log("Payload added to current transaction: #{payload.inspect}") if config.debug
+      print_log = config.debug && max_buffer > 1
+      log("Payload added to current transaction: #{payload.inspect}") if print_log
       return unless payloads.count >= max_buffer
 
-      log("Payloads buffer was filled, delivering current payloads: #{payloads.count}")
+      log("Payloads buffer was filled, delivering current payloads: #{payloads.count}") if print_log
       deliver_payloads
     end
 
@@ -60,14 +61,14 @@ module PubSubModelSync
     private
 
     def deliver_payloads
-      payloads.each do |payload|
-        begin # rubocop:disable Style/RedundantBegin (ruby 2.4 support)
-          PUBLISHER_KLASS.connector_publish(payload)
-        rescue => e
-          PUBLISHER_KLASS.send(:notify_error, e, payload)
-        end
-      end
+      payloads.each(&method(:deliver_payload))
       self.payloads = []
+    end
+
+    def deliver_payload(payload)
+      PUBLISHER_KLASS.connector_publish(payload)
+    rescue => e
+      PUBLISHER_KLASS.send(:notify_error, e, payload)
     end
   end
 end

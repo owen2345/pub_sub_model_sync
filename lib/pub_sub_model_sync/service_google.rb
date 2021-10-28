@@ -77,7 +77,7 @@ module PubSubModelSync
       }.merge(PUBLISH_SETTINGS)
     end
 
-    # @return [Subscriber]
+    # @return [Array<Subscriber>]
     def subscribe_to_topics
       topics.map do |key, topic|
         subs_name = "#{config.subscription_key}_#{key}"

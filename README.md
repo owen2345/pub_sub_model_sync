@@ -557,6 +557,7 @@ config.debug = true
     Note2: Only notifications from the buffer can be rollbacked if the current transaction has failed.     
 
 ## **TODO**
+- add the ability to raise SKIP_ACKNOWLEDGE to auto retry by PubSub
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)
 - Improve transactions to exclude similar notifications by klass and action. Sample:
     ```PubSubModelSync::MessagePublisher.transaction(key, { same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })```
