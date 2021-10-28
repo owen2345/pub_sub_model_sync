@@ -569,6 +569,7 @@ config.debug = true
 - Add if/unless to ps_after_action
 - Add subscription liveness checker using thread without db connection to check periodically pending notifications from google pubsub
 - Unify .stop() and 'Listener stopped' 
+- TODO: Publish new version 1.2.1 (improve logs)
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?

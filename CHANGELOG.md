@@ -1,5 +1,8 @@
 # Change Log
 
+# 1.2.1 (October 28, 2021)
+chore: improve logs
+
 # 1.2.0 (October 28, 2021)
 - feat: rename Payload `:key` into `:internal_key` to avoid confusions while debugging
 
