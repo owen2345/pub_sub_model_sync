@@ -4,7 +4,7 @@
 - feat: rename Payload `:key` into `:internal_key` to avoid confusions while debugging
 
 # 1.1.1 (October 25, 2021)
-- feat: include `ordering_key topic_name` when delivering a notification for debugging purposes
+- feat: do not exclude `ordering_key topic_name` when delivering a notification (required when debugging)
 - doc: improve docs
 
 # 1.1.0 (October 25, 2021)
