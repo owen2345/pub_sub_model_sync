@@ -31,7 +31,7 @@ module PubSubModelSync
       end
 
       # Starts a new transaction
-      # @param key (String|Nil)
+      # @param key (String, Nil)
       # @return (Transaction)
       def init_transaction(key, settings = {})
         new_transaction = PubSubModelSync::Transaction.new(key, settings)
