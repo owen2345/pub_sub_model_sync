@@ -311,11 +311,14 @@ Any notification before delivering is transformed as a Payload for a better port
     - `klass`: (String) Notification class name
     - `mode`: (Symbol: `:model`|`:class`) Kind of notification
   * `headers`: (Hash) Notification settings that defines how the notification will be processed or delivered. 
-    - `key`: (String, optional) identifier of the payload, default: `<klass_name>/<action>` when class message, `<model.class.name>/<action>/<model.id>` when model message (Useful for caching techniques).
-    - `ordering_key`: (String, optional): messages with the same value are processed in the same order they were delivered, default: `klass_name` when class message, `<model.class.name>/<model.id>` when instance message.     
-      Note: Final `ordering_key` is calculated by this way: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`
-    - `topic_name`: (String|Array<String>, optional): Specific topic name (can be seen as a channel) to be used when delivering the message (default first topic from config).
-    - `forced_ordering_key`: (String, optional): Will force to use this value as the `ordering_key`, even withing transactions. Default `nil`.
+    - `ordering_key`: (String, optional): notifications with the same `ordering_key` are processed in the same order they were delivered, default: `<model.class.name>/<model.id>` when instance notification and `klass_name` when class notification.         
+    - `key`: (String, optional) Internal identifier of the payload, default: `<model.class.name>/<action>/<model.id>` when model notification and `<klass_name>/<action>` when class notification (Useful for caching techniques).    
+      Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`
+    - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
+    - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
+    - `app_key`: (Auto calculated): Name of the application who delivered the notification.   
+    - `uuid`: (Auto calculated): Unique notification identifier (Very useful when debugging).   
+  Note: To reduce Payload size, some header info are not delivered (Enable debug mode to deliver all payload info). 
   
 - Actions
   ```ruby
@@ -528,7 +531,7 @@ config.debug = true
     Topic name(s) to be used to listen all notifications from when listening. Additionally first topic name is used as the default topic name when publishing a notification. 
 - `.subscription_name = "my-app-1"`:  (String, default Rails.application.name)     
     Subscriber's identifier which helps to: 
-    * skip self messages
+    * skip self notifications
     * continue the sync from the last synced notification when service was restarted.
 - `.default_topic_name = "my_topic"`: (String|Array<String>, optional(default first topic from `topic_name`))     
     Topic name used as the default topic if not defined in the payload when publishing a notification
@@ -537,17 +540,17 @@ config.debug = true
 - ```.logger = Rails.logger```
     (Logger) => define custom logger
 - ```.on_before_processing = ->(payload, {subscriber:}) { puts payload }```
-    (Proc) => called before processing received message (:cancel can be returned to skip processing)
+    (Proc) => called before processing a received notification (:cancel can be returned to skip processing)
 - ```.on_success_processing = ->(payload, {subscriber:}) { puts payload }```
-    (Proc) => called when a message was successfully processed
+    (Proc) => called when a notification was successfully processed
 - ```.on_error_processing = ->(exception, {payload:, subscriber:}) { payload.delay(...).process! }```
-    (Proc) => called when a message failed when processing (delayed_job or similar can be used for retrying)
+    (Proc) => called when a notification has failed when processing (delayed_job or similar can be used for retrying)
 - ```.on_before_publish = ->(payload) { puts payload }```
-    (Proc) => called before publishing a message (:cancel can be returned to skip publishing)
+    (Proc) => called before publishing a notification (:cancel can be returned to skip publishing)
 - ```.on_after_publish = ->(payload) { puts payload }```
-    (Proc) => called after publishing a message
+    (Proc) => called after publishing a notification
 - ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```
-    (Proc) => called when failed publishing a message (delayed_job or similar can be used for retrying)
+    (Proc) => called when failed publishing a notification (delayed_job or similar can be used for retrying)
 - ```.transactions_max_buffer = 1``` (Integer, default 1) Controls the maximum quantity of notifications to be enqueued to the transaction-buffer before delivering them and thus adds the ability to rollback notifications if the transaction fails.        
     Once this quantity of notifications is reached, then all notifications of the current transaction will immediately be delivered (can be customized per transaction).    
     Note: There is no way to rollback delivered notifications if current transaction fails later.      
@@ -555,7 +558,7 @@ config.debug = true
 
 ## **TODO**
 - Auto publish update only if payload has changed (see ways to compare previous payload vs new payload)
-- Improve transactions to exclude similar messages by klass and action. Sample:
+- Improve transactions to exclude similar notifications by klass and action. Sample:
     ```PubSubModelSync::MessagePublisher.transaction(key, { same_keys: :use_last_as_first|:use_last|:use_first_as_last|:keep*, same_data: :use_last_as_first*|:use_last|:use_first_as_last|:keep })```
 - Add DB table to use as a shield to prevent publishing similar notifications and publish partial notifications (similar idea when processing notif)
 - Last notification is not being delivered immediately in google pubsub (maybe force with timeout 10secs and service.deliver_messages)
@@ -563,7 +566,7 @@ config.debug = true
 - Services support to deliver multiple payloads from transactions
 - Fix deprecation warnings: pub_sub_model_sync/service_google.rb:39: warning: Splitting the last argument into positional and keyword parameters is deprecated
 - Add if/unless to ps_after_action
-- Add subscription liveness checker using thread without db connection to check periodically pending messages from google pubsub
+- Add subscription liveness checker using thread without db connection to check periodically pending notifications from google pubsub
 - Unify .stop() and 'Listener stopped' 
 
 ## **Q&A**
