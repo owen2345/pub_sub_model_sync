@@ -1,5 +1,8 @@
 # Change Log
 
+# 1.2.0 (October 28, 2021)
+- feat: rename Payload `:key` into `:internal_key` to avoid confusions while debugging
+
 # 1.1.1 (October 25, 2021)
 - feat: include `ordering_key topic_name` when delivering a notification for debugging purposes
 - doc: improve docs
