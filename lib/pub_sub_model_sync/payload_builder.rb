@@ -43,8 +43,8 @@ module PubSubModelSync
 
     def headers_data
       klass_name = model.class.name
-      key = [klass_name, action, model.id || SecureRandom.uuid].join('/')
-      def_data = { ordering_key: self.class.ordering_key_for(model), key: key }
+      internal_key = [klass_name, action, model.id || SecureRandom.uuid].join('/')
+      def_data = { ordering_key: self.class.ordering_key_for(model), internal_key: internal_key }
       def_data.merge(compute_value(headers))
     end
 

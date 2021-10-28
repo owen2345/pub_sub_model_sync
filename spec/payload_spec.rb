@@ -18,8 +18,8 @@ RSpec.describe PubSubModelSync::Payload do
     expect(inst.to_h.key?(:headers)).to be_truthy
   end
 
-  it 'includes a key' do
-    expect(inst.headers[:key].present?).to be_truthy
+  it 'includes :internal_key for caching purposes' do
+    expect(inst.headers[:internal_key].present?).to be_truthy
   end
 
   it 'validates for required info' do
