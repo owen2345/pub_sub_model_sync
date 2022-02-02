@@ -2,13 +2,27 @@
 This is a sample to sync information between rails applications using RabbitMQ
 
 ## Installation
-* Create manually the required network to share rabbitMQ accross Rails applications (just if not exist):   
+1. Create manually the required network to share rabbitMQ accross Rails applications (just if not exist):   
   ```docker network create shared_app_services```
   
-* Start RabbitMQ server   
+2. Start RabbitMQ server   
   ```cd samples/app1 && docker-compose up pubsub```
 
-* In another tab access to App1 to publish notifications (Wait for step 2)  
+3. In another tab access to App2 to listen notifications (Wait for step 2)      
+  - Access to the folder
+    `cd samples/app2`
+  
+  - Build docker and start listener (Received notifications will be printed here)       
+    ```docker-compose run listener```
+  
+  - Optional: Open another tab to access application to ensure synced data
+    ```docker-compose run listener bash -c "rails c```
+    ```ruby
+      user = User.last.inspect
+      user.posts.inspect
+    ```
+
+4. In another tab access to App1 to publish notifications (Wait for step 2)  
   - Access to the application    
     `cd samples/app1`    
   
@@ -33,18 +47,4 @@ This is a sample to sync information between rails applications using RabbitMQ
     ```ruby
       user.destroy!
     ```    
-
-* In another tab access to App2 to listen notifications (Wait for step 2)      
-  - Access to the folder
-    `cd samples/app2`
-  
-  - Build docker and start listener (Received notifications will be printed here)       
-    ```docker-compose run listener```
-  
-  - Optional: Open another tab to access application to ensure synced data
-    ```docker-compose run listener bash -c "rails c```
-    ```ruby
-      user = User.last.inspect
-      user.posts.inspect
-    ```
   
