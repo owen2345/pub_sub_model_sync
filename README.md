@@ -410,14 +410,12 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
   
       # disable all models sync by default (reduces testing time) 
       config.before(:each) do
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish_data) # disable class level notif
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish_model) # disable instance level notif
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish!)
       end
     
       # enable all models sync only for tests that includes 'sync: true'
       config.before(:each, sync: true) do
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish_data).and_call_original
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish_model).and_call_original
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish!).and_call_original
       end
       
       # Only when using database cleaner in old versions of rspec (enables after_commit callback)
