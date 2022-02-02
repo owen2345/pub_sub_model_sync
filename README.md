@@ -408,14 +408,15 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
         allow(Kafka).to receive(:new).and_return(kafka_mock)
       end
   
-      # disable all models sync by default (reduces testing time) 
+      # disable all models sync by default (reduces testing time by avoiding to build payload data) 
       config.before(:each) do
         allow(PubSubModelSync::MessagePublisher).to receive(:publish!)
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish_model)
       end
     
       # enable all models sync only for tests that includes 'sync: true'
       config.before(:each, sync: true) do
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish!).and_call_original
+        allow(PubSubModelSync::MessagePublisher).to receive(:publish_model).and_call_original
       end
       
       # Only when using database cleaner in old versions of rspec (enables after_commit callback)
