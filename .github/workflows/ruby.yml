@@ -24,6 +24,8 @@ jobs:
         exclude: # rails 6 requires ruby >= 2.5
           - ruby: 2.4
             rails: 6
+          - ruby: '3.0'
+            rails: 7
 
     steps:
       - uses: actions/checkout@v2
