@@ -82,7 +82,7 @@ RSpec.describe PubSubModelSync::RunSubscriber do
 
       it 'supports for multiple attrs' do
         subscriber.settings[:id] = %i[name email]
-        expect(model_klass).to receive(:where).with(email: message[:email], name: message[:name])
+        expect(model_klass).to receive(:where).with(hash_including(email: message[:email], name: message[:name]))
       end
 
       it 'supports for aliasing' do
