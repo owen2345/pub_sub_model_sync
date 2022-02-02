@@ -17,9 +17,9 @@ jobs:
         include:
           - ruby: 2.7
             rails: 6
-          - ruby: 3.1
+          - ruby: '3.0'
             rails: 6
-          - ruby: 3.1
+          - ruby: '3.0'
             rails: 7
         exclude: # rails 6 requires ruby >= 2.5
           - ruby: 2.4
