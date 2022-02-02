@@ -77,7 +77,7 @@ RSpec.describe PubSubModelSync::RunSubscriber do
 
       it 'single attribute' do
         subscriber.settings[:id] = :email
-        expect(model_klass).to receive(:where).with(email: message[:email])
+        expect(model_klass).to receive(:where).with(hash_including(email: message[:email]))
       end
 
       it 'supports for multiple attrs' do
@@ -87,7 +87,8 @@ RSpec.describe PubSubModelSync::RunSubscriber do
 
       it 'supports for aliasing' do
         subscriber.settings[:id] = %w[email name:full_name]
-        expect(model_klass).to receive(:where).with(full_name: message[:name], email: message[:email])
+        exp_attrs = { full_name: message[:name], email: message[:email] }
+        expect(model_klass).to receive(:where).with(hash_including(exp_attrs))
       end
 
       it 'calls :ps_find_model for a custom finder' do
