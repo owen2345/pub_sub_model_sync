@@ -2,7 +2,7 @@
 This is a sample to sync information between rails applications using RabbitMQ
 
 ## Installation
-* Create manually the required network to share rabbitMQ (just if not exist):   
+* Create manually the required network to share rabbitMQ accross Rails applications (just if not exist):   
   ```docker network create shared_app_services```
   
 * Start RabbitMQ server   
