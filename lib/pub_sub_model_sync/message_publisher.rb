@@ -34,7 +34,7 @@ module PubSubModelSync
       # @param key (String, Nil)
       # @return (Transaction)
       def init_transaction(key, settings = {})
-        new_transaction = PubSubModelSync::Transaction.new(key, settings)
+        new_transaction = PubSubModelSync::Transaction.new(key, **settings)
         if current_transaction
           current_transaction.add_transaction(new_transaction)
         else
