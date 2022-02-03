@@ -386,31 +386,10 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
 ## **Testing with RSpec**
 - Config: (spec/rails_helper.rb)
   ```ruby
-
-      # when using google service
-      require 'pub_sub_model_sync/mock_google_service'
       config.before(:each) do
-        google_mock = PubSubModelSync::MockGoogleService.new
-        allow(Google::Cloud::Pubsub).to receive(:new).and_return(google_mock)
-      end
-
-      # when using rabbitmq service
-      require 'pub_sub_model_sync/mock_rabbit_service'
-      config.before(:each) do
-        rabbit_mock = PubSubModelSync::MockRabbitService.new
-        allow(Bunny).to receive(:new).and_return(rabbit_mock)
-      end
-
-      # when using apache kafka service
-      require 'pub_sub_model_sync/mock_kafka_service'
-      config.before(:each) do
-        kafka_mock = PubSubModelSync::MockKafkaService.new
-        allow(Kafka).to receive(:new).and_return(kafka_mock)
-      end
-  
-      # disable all models sync by default (reduces testing time by avoiding to build payload data) 
-      config.before(:each) do
-        allow(PubSubModelSync::MessagePublisher).to receive(:publish!)
+        # disable delivering notifications to pubsub
+        allow(PubSubModelSync::MessagePublisher).to receive(:connector_publish)
+        # disable all models sync by default (reduces testing time by avoiding to build payload data)
         allow(PubSubModelSync::MessagePublisher).to receive(:publish_model)
       end
     
@@ -425,9 +404,9 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
       # end
   ```
 - Examples:
-  - **Publisher**
+  - **Publisher**    
+    Note: **Do not forget to include 'sync: true'** to enable publishing pubsub notifications
     ```ruby
-      # Do not forget to include 'sync: true' to enable publishing pubsub notifications
       describe 'When publishing sync', truncate: true, sync: true do
         it 'publishes user notification when created' do
           expect_publish_notification(:create, klass: 'User')
