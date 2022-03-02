@@ -1,5 +1,7 @@
 # Change Log
 
+For recent releases list go to: https://github.com/owen2345/pub_sub_model_sync/releases
+
 # 1.2.1 (October 28, 2021)
 chore: improve logs
 
