@@ -313,10 +313,15 @@ Any notification before delivering is transformed as a Payload for a better port
   * `headers`: (Hash) Notification settings that defines how the notification will be processed or delivered. 
     - `ordering_key`: (String, optional): notifications with the same `ordering_key` are processed in the same order they were delivered, default: `<model.class.name>/<model.id>` when instance notification and `klass_name` when class notification.    
       Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`         
-    - `internal_key`: (String, optional) Internal identifier of the payload, default: `<model.class.name>/<action>/<model.id>` when model notification and `<klass_name>/<action>` when class notification (Useful for caching techniques).    
     - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
     - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
-    - `app_key`: (Auto calculated): Name of the application who delivered the notification.   
+    - `cache` (Boolean | Hash, Default false) Cache settings   
+        - `true`: Skip publishing similar payloads
+        - `Hash<required: Array<Symbol>>`: Same as `true` and enables payload optimization to exclude unchanged non important attributes. Sample: `{ required: %i[id email] }`
+    
+    ** Read ONLY **    
+    - `internal_key`: Internal identifier of the payload, default: `<model.class.name>/<action>/<model.id>` when model notification and `<klass_name>/<action>` when class notification (Useful for caching techniques).
+    - `app_key`: (Auto calculated): Name of the application who delivered the notification.
     - `uuid`: (Auto calculated): Unique notification identifier (Very useful when debugging).   
 Note: To reduce Payload size, some header info are not delivered (Enable debug mode to deliver all payload info). 
   
