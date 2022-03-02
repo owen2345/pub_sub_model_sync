@@ -9,12 +9,30 @@ RSpec.describe PubSubModelSync::MessagePublisher do
   let(:model) { PublisherUser.new(id: 1, name: 'name', email: 'email', age: 10) }
   let(:action) { :update }
 
-  it 'does not publish payload if :on_before_publish returns :cancel' do
-    allow(inst).to receive(:log)
-    allow(inst.config.on_before_publish).to receive(:call).and_return(:cancel)
-    expect(inst).to receive(:log).with(include('Publish cancelled by'))
-    expect(connector).not_to receive(:publish)
-    inst.publish_data(publisher_klass, {}, :greeting)
+  describe 'when ensuring if payload can be published' do
+    it 'does not publish payload if :on_before_publish returns :cancel' do
+      allow(inst.config.on_before_publish).to receive(:call).and_return(:cancel)
+      allow(inst).to receive(:log)
+      expect(inst).to receive(:log).with(include('Publish cancelled by'))
+      expect(connector).not_to receive(:publish)
+      inst.publish_data(publisher_klass, {}, :greeting)
+    end
+
+    describe 'when checking previous delivered payload' do
+      let(:headers) { { cache: { required: [:id] } } }
+      let(:checker_klass) { PubSubModelSync::PayloadCacheOptimizer }
+      after { inst.publish_data(publisher_klass, {}, :greeting, headers: headers) }
+
+      it 'does not publish payload if already delivered similar payload' do
+        allow_any_instance_of(checker_klass).to receive(:call).and_return(:already_sent)
+        expect(connector).not_to receive(:publish)
+      end
+
+      it 'publishes payload if not delivered yet' do
+        allow_any_instance_of(checker_klass).to receive(:call, &:payload)
+        expect(connector).to receive(:publish)
+      end
+    end
   end
 
   describe '.publish_data' do

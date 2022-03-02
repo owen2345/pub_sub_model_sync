@@ -19,9 +19,17 @@ module PubSubModelSync
     #        <klass>: when class message
     #        <klass/id>: when model message
     #   topic_name (String|Array<String>): Specific topic name to be used when delivering the
-    #     message (default first topic)
+    #     message (default Config.topic_name)
     #   forced_ordering_key (String, optional): Will force to use this value as the ordering_key,
     #     even withing transactions. Default nil.
+    #   cache (Boolean | Hash, Default false) Cache settings
+    #     true: Skip publishing similar payloads
+    #     Hash<required: Array<Symbol>>: Same as true and enables payload optimization to exclude
+    #       unchanged non important attributes. Sample: { required: %i[id email] }
+    #   --- READ ONLY ----
+    #   app_key: (string) Subscriber-Key of the application who delivered the notification
+    #   internal_key: (String) "<klass>/<action>"
+    #   uuid: Unique notification identifier
     def initialize(data, info, headers = {})
       @data = data.deep_symbolize_keys
       @info = info.deep_symbolize_keys
@@ -73,6 +81,16 @@ module PubSubModelSync
     def publish
       klass = PubSubModelSync::MessagePublisher
       klass.publish(self)
+    end
+
+    # @param attr_keys (Array<Symbol>) List of attributes to be excluded from payload
+    def exclude_data_attrs(attr_keys)
+      @data = data.except(*attr_keys)
+    end
+
+    # Attributes to always be delivered after cache optimization
+    def cache_settings
+      headers[:cache]
     end
 
     # convert payload data into Payload
