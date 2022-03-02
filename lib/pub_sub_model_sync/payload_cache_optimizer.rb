@@ -15,11 +15,12 @@ module PubSubModelSync
 
     # @return (:already_sent|Payload)
     def call
-      Rails.cache&.write(cache_key, payload.data, expires_in: 1.week)
+      backup_data = payload.data.clone
       return payload if cache_disabled?
       return :already_sent if previous_payload_data == payload.data
 
       optimize_payload if optimization_enabled?
+      Rails.cache.write(cache_key, backup_data, expires_in: 1.week)
       payload
     end
 
@@ -42,7 +43,7 @@ module PubSubModelSync
     def optimize_payload # rubocop:disable Metrics/AbcSize
       changed_keys = Hash[(payload.data.to_a - previous_payload_data.to_a)].keys
       invalid_keys = payload.data.keys - (changed_keys + payload.cache_settings[:required])
-      log("Excluding non changed payload attributes: #{[payload, invalid_keys]}") if debug?
+      log("Excluding non changed attributes: #{invalid_keys} from: #{payload.inspect}") if debug?
       payload.exclude_data_attrs(invalid_keys)
     end
   end
