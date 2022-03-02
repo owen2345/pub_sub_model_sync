@@ -98,8 +98,11 @@ module PubSubModelSync
       private
 
       def ensure_publish(payload)
-        cancelled = config.on_before_publish.call(payload) == :cancel
-        log("Publish cancelled by config.on_before_publish: #{[payload]}") if config.debug && cancelled
+        cache_klass = PubSubModelSync::PayloadCacheOptimizer
+        cancelled = payload.cache_settings ? cache_klass.new(payload).call == :already_sent : false
+        cancelled ||= config.on_before_publish.call(payload) == :cancel
+        log_msg = "Publish cancelled by config.on_before_publish or cache checker: #{[payload]}"
+        log(log_msg) if config.debug && cancelled
         !cancelled
       end
 
