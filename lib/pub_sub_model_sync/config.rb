@@ -7,7 +7,7 @@ module PubSubModelSync
 
     # customizable callbacks
     cattr_accessor(:debug) { false }
-    cattr_accessor :logger # LoggerInst
+    cattr_accessor(:logger) { Rails.logger }
     cattr_accessor(:transactions_max_buffer) { 1 }
     cattr_accessor(:skip_cache) { false }
 
