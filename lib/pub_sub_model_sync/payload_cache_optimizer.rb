@@ -41,8 +41,9 @@ module PubSubModelSync
     end
 
     def optimize_payload # rubocop:disable Metrics/AbcSize
-      changed_keys = Hash[(payload.data.to_a - previous_payload_data.to_a)].keys
-      invalid_keys = payload.data.keys - (changed_keys + payload.cache_settings[:required])
+      changed_keys = Hash[(payload.data.to_a - previous_payload_data.to_a)].keys.map(&:to_sym)
+      required_keys = payload.cache_settings[:required].map(&:to_sym)
+      invalid_keys = payload.data.keys - (changed_keys + required_keys)
       log("Excluding non changed attributes: #{invalid_keys} from: #{payload.inspect}") if debug?
       payload.exclude_data_attrs(invalid_keys)
     end
