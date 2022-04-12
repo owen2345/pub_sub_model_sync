@@ -167,7 +167,7 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
     ps_class_subscribe(action, settings)
   end
   ```
-- Instance subscriptions: `ps_subscribe(action, mapping, settings)`     
+- Instance subscriptions: `ps_subscribe(action, mapping, settings, &block)`     
   When model receives the corresponding notification, `action` or `to_action` method will be called on the model. Like: `model.destroy`
   - `action` (Symbol|Array<Symbol>) Only notifications with this action name will be processed by this subscription. Sample: save|create|update|destroy|<any_other_action>    
   - `mapping` (Array<String>) Data mapping from payload data into model attributes, sample: ["email", "full_name:name"] (Note: Only these attributes will be assigned/synced to the current model)    
@@ -182,12 +182,14 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
       Sample: `id: :id` will search for a model like: `model_class.where(id: payload.data[:id])`       
       Sample: `id: [:id, :email:user_email]` will search for a model like: `model_class.where(id: payload.data[:id], user_email: payload.data[:email])`       
     - `if:` (Symbol|Proc|Array<Symbol>) Method(s) or block called for the confirmation before calling the callback    
-    - `unless:` (Symbol|Proc|Array<Symbol>) Method or block called for the negation before calling the callback    
+    - `unless:` (Symbol|Proc|Array<Symbol>) Method or block called for the negation before calling the callback
+  - `&block` Block to be used as the callback method (ignored if `:to_action` is present). Sample: `ps_subscribe(:send_welcome, %i[email]) { |_data| puts model.email }`    
 
-- Class subscriptions: `ps_class_subscribe(action, settings)`     
+- Class subscriptions: `ps_class_subscribe(action, settings, &block)`     
   When current class receives the corresponding notification, `action` or `to_action` method will be called on the Class. Like: `User.hello(data)`
   * `action` (Symbol) Notification.action name
   * `settings` (Hash) refer ps_subscribe.settings except(:id)
+  * `&block` Block to be used as the callback method (ignored if `:to_action` is present). Sample: `ps_class_subscribe(:send_welcome) { |data| puts data }`
 
 - `ps_processing_payload` a class and instance variable that saves the current payload being processed
 
