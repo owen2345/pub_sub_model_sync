@@ -6,6 +6,7 @@
 /pkg/
 /spec/reports/
 /tmp/
-
+/samples/app2/db/**/*
+/samples/app1/db/**/*
 # rspec failure tracking
 .rspec_status
