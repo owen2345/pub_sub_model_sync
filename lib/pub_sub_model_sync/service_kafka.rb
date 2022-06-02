@@ -8,7 +8,7 @@ end
 module PubSubModelSync
   class ServiceKafka < ServiceBase
     QTY_WORKERS = 10
-    LISTEN_SETTINGS = {}.freeze
+    LISTEN_SETTINGS = { automatically_mark_as_processed: false }.freeze
     PUBLISH_SETTINGS = {}.freeze
     PRODUCER_SETTINGS = { delivery_threshold: 200, delivery_interval: 30 }.freeze
     cattr_accessor :producer
@@ -73,6 +73,7 @@ module PubSubModelSync
 
     def process_message(message)
       super(message.value) if message.headers[SERVICE_KEY]
+      consumer.mark_message_as_processed(message)
     end
 
     # Check topic existence, create if missing topic

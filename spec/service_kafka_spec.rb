@@ -14,6 +14,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
   let(:service) { inst.service }
   let(:producer) { inst.send(:producer) }
   let(:config) { PubSubModelSync::Config }
+  let(:consumer) { PubSubModelSync::MockKafkaService::MockConsumer.new }
   before do
     allow(config).to receive(:kafka_connection).and_return([[8080], { log: nil }])
     allow(Process).to receive(:exit!)
@@ -26,7 +27,6 @@ RSpec.describe PubSubModelSync::ServiceKafka do
   end
 
   describe '.listen_messages' do
-    let(:consumer) { PubSubModelSync::MockKafkaService::MockConsumer.new }
     before { allow(service).to receive(:consumer).and_return(consumer) }
     after { inst.listen_messages }
     it 'starts consumer' do
@@ -48,21 +48,41 @@ RSpec.describe PubSubModelSync::ServiceKafka do
 
   describe '.process_message' do
     let(:message_processor) { PubSubModelSync::MessageProcessor }
-    before { allow(inst).to receive(:log) }
+    before do
+      allow(inst).to receive(:log)
+      allow(inst).to receive(:consumer).and_return(consumer)
+    end
+
     it 'ignores unknown message' do
       expect(message_processor).not_to receive(:new)
       inst.send(:process_message, invalid_message)
     end
-    it 'sends payload to message processor' do
-      expect(message_processor)
-        .to receive(:new).with(be_kind_of(payload.class)).and_call_original
-      inst.send(:process_message, message)
+
+    describe 'when processing a valid message' do
+      it 'sends payload to message processor' do
+        expect(message_processor)
+          .to receive(:new).with(be_kind_of(payload.class)).and_call_original
+        inst.send(:process_message, message)
+      end
+
+      it 'acks the message to mark as processed' do
+        expect(inst.consumer).to receive(:mark_message_as_processed).with(message)
+        inst.send(:process_message, message)
+      end
     end
-    it 'prints error message when failed processing' do
-      error_msg = 'Invalid params'
-      allow(message_processor).to receive(:new).and_raise(error_msg)
-      expect(inst).to receive(:log).with(include(error_msg), :error)
-      inst.send(:process_message, message)
+
+    describe 'when failed processing a valid message' do
+      let(:error_msg) { 'error message' }
+      before { allow(message_processor).to receive(:new).and_raise(error_msg) }
+
+      it 'raises the error' do
+        expect { inst.send(:process_message, message) }.to raise_error(error_msg)
+      end
+
+      it 'does not ack the message to be retried by pubsub' do
+        expect(inst.consumer).not_to receive(:mark_message_as_processed)
+        inst.send(:process_message, message) rescue nil
+      end
     end
   end
 
