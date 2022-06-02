@@ -33,25 +33,29 @@ module PubSubModelSync
     # @param (String: Payload in json format)
     def process_message(payload_info)
       payload = decode_payload(payload_info)
-      return payload.process unless same_app_message?(payload)
+      return unless payload
+      return if same_app_message?(payload)
 
-      log("Skipping message from same origin: #{[payload]}") if config.debug
-    rescue => e
-      error_payload = [payload, e.message, e.backtrace]
-      log("Error while starting to process a message: #{error_payload}", :error)
+      payload.process
     end
 
-    # @return Payload
+    # @return [Payload,Nil]
     def decode_payload(payload_info)
       payload = ::PubSubModelSync::Payload.from_payload_data(JSON.parse(payload_info))
       log("Received message: #{[payload]}") if config.debug
       payload
+    rescue => e
+      error_payload = [payload_info, e.message, e.backtrace]
+      log("Error while parsing payload: #{error_payload}", :error)
+      nil
     end
 
     # @param payload (Payload)
     def same_app_message?(payload)
       key = payload.headers[:app_key]
-      key && key == config.subscription_key
+      res = key && key == config.subscription_key
+      log("Skipping message from same origin: #{[payload]}") if res && config.debug
+      res
     end
   end
 end

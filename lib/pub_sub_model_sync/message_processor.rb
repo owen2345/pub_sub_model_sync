@@ -49,9 +49,14 @@ module PubSubModelSync
 
     # @param error (StandardError)
     def notify_error(error)
-      info = [payload, error.message, error.backtrace]
+      error_msg = 'Error processing message: '
+      error_details = [payload, error.message, error.backtrace]
       res = config.on_error_processing.call(error, { payload: payload })
-      log("Error processing message: #{info}", :error) if res != :skip_log
+      log("#{error_msg} #{error_details}", :error) if res != :skip_log
+    rescue => e
+      error_details = [payload, e.message, e.backtrace]
+      log("#{error_msg} #{error_details}", :error)
+      raise(e)
     end
 
     def lost_db_connection?(error)

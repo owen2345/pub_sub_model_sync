@@ -49,15 +49,18 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       expect(topic).to receive(:subscription)
       inst.listen_messages
     end
+
     it 'listens for new messages' do
       expect(topic.subscription).to receive(:listen).and_call_original
       inst.listen_messages
     end
+
     it 'starts subscriber' do
       subscriber = topic.subscription.listen
       expect(subscriber).to receive(:start)
       inst.listen_messages
     end
+
     it 'awaits for messages' do
       expect(inst).to receive(:sleep)
       inst.listen_messages
@@ -71,15 +74,31 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       expect(message_processor).not_to receive(:new)
       inst.send(:process_message, mock_service_unknown_message)
     end
-    it 'sends payload to message processor' do
-      expect(message_processor).to receive(:new).and_call_original
-      inst.send(:process_message, mock_service_message)
+
+    describe 'when received a valid message' do
+      it 'sends payload to message processor' do
+        expect(message_processor).to receive(:new).and_call_original
+        inst.send(:process_message, mock_service_message)
+      end
+
+      it 'acknowledges the message to mark as processed' do
+        expect(mock_service_message).to receive(:acknowledge!)
+        inst.send(:process_message, mock_service_message)
+      end
     end
-    it 'prints error processing when failed' do
-      error_msg = 'Invalid params'
-      allow(message_processor).to receive(:new).and_raise(error_msg)
-      expect(inst).to receive(:log).with(include(error_msg), :error)
-      inst.send(:process_message, mock_service_message)
+
+    describe 'when failed processing a message' do
+      let(:error_msg) { 'Invalid params' }
+      before { allow(message_processor).to receive(:new).and_raise(error_msg) }
+
+      it 'raises the error' do
+        expect { inst.send(:process_message, mock_service_message) }.to raise_error(error_msg)
+      end
+
+      it 'does not acknowledge the message to auto retry by pubsub' do
+        expect(mock_service_message).not_to receive(:acknowledge!)
+        inst.send(:process_message, mock_service_message) rescue nil # rubocop:disable Style/RescueModifier
+      end
     end
 
     describe 'mark as received message' do

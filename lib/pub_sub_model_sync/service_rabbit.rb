@@ -8,7 +8,7 @@ end
 module PubSubModelSync
   class ServiceRabbit < ServiceBase
     QUEUE_SETTINGS = { durable: true, auto_delete: false }.freeze
-    LISTEN_SETTINGS = { manual_ack: false }.freeze
+    LISTEN_SETTINGS = { manual_ack: true }.freeze
     PUBLISH_SETTINGS = {}.freeze
 
     # @!attribute topic_names (Array): ['Topic 1', 'Topic 2']
@@ -25,7 +25,9 @@ module PubSubModelSync
 
     def listen_messages
       log('Listener starting...')
-      subscribe_to_queues { |queue| queue.subscribe(LISTEN_SETTINGS, &method(:process_message)) }
+      subscribe_to_queues do |queue|
+        queue.subscribe(LISTEN_SETTINGS) { |info, meta, payload| process_message(queue, info, meta, payload) }
+      end
       log('Listener started')
       loop { sleep 5 }
     rescue PubSubModelSync::Runner::ShutDown
@@ -62,8 +64,9 @@ module PubSubModelSync
       }.merge(PUBLISH_SETTINGS)
     end
 
-    def process_message(_delivery_info, meta_info, payload)
+    def process_message(queue, delivery_info, meta_info, payload)
       super(payload) if meta_info[:type] == SERVICE_KEY
+      queue.channel.ack(delivery_info.delivery_tag)
     end
 
     def subscribe_to_queues(&block)
