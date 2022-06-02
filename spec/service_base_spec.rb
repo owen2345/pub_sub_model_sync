@@ -32,6 +32,7 @@ RSpec.describe PubSubModelSync::ServiceBase do
       before do
         allow_any_instance_of(described_class).to receive(:same_app_message?).and_call_original
       end
+
       it 'does not process if message is coming from same app' do
         msg = 'Skipping message from same origin'
         payload.headers[:app_key] = 'test_app'
@@ -46,6 +47,18 @@ RSpec.describe PubSubModelSync::ServiceBase do
         expect_any_instance_of(PubSubModelSync::MessageProcessor)
           .to receive(:process)
         inst.send(:process_message, payload.to_json)
+      end
+    end
+
+    describe 'when parsing message payload' do
+      it 'parses payload' do
+        res = inst.send(:decode_payload, payload.to_json)
+        expect(res).to be_a(PubSubModelSync::Payload)
+      end
+
+      it 'prints error if payload data is not valid' do
+        expect(inst).to receive(:log).with(include('Error while parsing payload'), anything)
+        inst.send(:decode_payload, 'invalid payload data')
       end
     end
   end
