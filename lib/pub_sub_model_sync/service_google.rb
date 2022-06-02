@@ -92,7 +92,6 @@ module PubSubModelSync
     def process_message(received_message)
       message = received_message.message
       super(message.data) if message.attributes[SERVICE_KEY]
-    ensure
       received_message.acknowledge!
     end
   end
