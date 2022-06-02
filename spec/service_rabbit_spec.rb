@@ -3,13 +3,14 @@
 RSpec.describe PubSubModelSync::ServiceRabbit do
   let(:meta_info) { { type: 'service_model_sync' } }
   let(:invalid_meta_info) { { type: 'unknown' } }
-  let(:delivery_info) { {} }
+  let(:delivery_info) { double(delivery_tag: true) }
   let(:payload_attrs) { { klass: 'Tester', action: :test } }
   let(:payload) { PubSubModelSync::Payload.new({}, payload_attrs) }
   let(:inst) { described_class.new }
   let(:service) { inst.service }
   let(:channel) { service.channel }
   let(:queue_klass) { PubSubModelSync::MockRabbitService::MockQueue }
+  let(:queue) { instance_double(queue_klass, channel: channel) }
   let(:channel_klass) { PubSubModelSync::MockRabbitService::MockChannel }
 
   before do
@@ -58,23 +59,38 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
 
     it 'ignores unknown message' do
       expect(message_processor).not_to receive(:new)
-      args = [delivery_info, invalid_meta_info, payload.to_json]
+      args = [queue, delivery_info, invalid_meta_info, payload.to_json]
       inst.send(:process_message, *args)
     end
 
-    it 'sends payload to message processor' do
-      expect(message_processor)
-        .to receive(:new).with(be_kind_of(payload.class)).and_call_original
-      args = [delivery_info, meta_info, payload.to_json]
-      inst.send(:process_message, *args)
+    describe 'when received a valid message' do
+      let(:args) { [queue, delivery_info, meta_info, payload.to_json] }
+
+      it 'sends payload to message processor' do
+        expect(message_processor)
+          .to receive(:new).with(be_kind_of(payload.class)).and_call_original
+        inst.send(:process_message, *args)
+      end
+
+      it 'acks the message once processed the message to mark as processed' do
+        expect(channel).to receive(:ack)
+        inst.send(:process_message, *args)
+      end
     end
 
-    it 'prints error message when failed processing' do
-      error_msg = 'Invalid params'
-      allow(message_processor).to receive(:new).and_raise(error_msg)
-      expect(inst).to receive(:log).with(include(error_msg), :error)
-      args = [delivery_info, meta_info, payload.to_json]
-      inst.send(:process_message, *args)
+    describe 'when failed' do
+      let(:args) { [queue, delivery_info, meta_info, payload.to_json] }
+      let(:error_msg) { 'Error syncing data' }
+      before { allow(message_processor).to receive(:new).and_raise(error_msg) }
+
+      it 'raises the error' do
+        expect { inst.send(:process_message, *args) }.to raise_error(error_msg)
+      end
+
+      it 'does not ack the message to auto retry by pubsub' do
+        expect(channel).not_to receive(:ack)
+        inst.send(:process_message, *args) rescue nil
+      end
     end
   end
 

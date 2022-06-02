@@ -24,6 +24,10 @@ module PubSubModelSync
       def publish(*_args)
         true
       end
+
+      def channel
+        MockChannel.new
+      end
     end
 
     class MockChannel
@@ -37,6 +41,10 @@ module PubSubModelSync
       end
 
       def close
+        true
+      end
+
+      def ack(_delivery_tag)
         true
       end
     end
