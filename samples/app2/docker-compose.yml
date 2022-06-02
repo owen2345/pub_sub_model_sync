@@ -3,6 +3,8 @@ version: "3.7"
 networks:
   shared_app_services:
     external: true
+volumes:
+  bundler_gems:
 
 services:
   app: &app
@@ -10,6 +12,7 @@ services:
       context: .
     volumes:
       - .:/app
+      - bundler_gems:/usr/local/bundle/
     external_links:
       - pubsub
     networks: # required to connect to pubsub
@@ -17,4 +20,4 @@ services:
 
   listener:
     <<: *app
-    command: bash -c "DB_POOL=20 rails db:migrate && bundle exec rake pub_sub_model_sync:start"
+    command: bash -c "DB_POOL=20 bundle install && rails db:migrate && bundle exec rake pub_sub_model_sync:start"

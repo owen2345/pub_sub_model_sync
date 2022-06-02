@@ -13,7 +13,7 @@ class Post < ApplicationRecord
   belongs_to :user
 
   include PubSubModelSync::PublisherConcern
-  ps_after_commit(%i[create update destroy]) do |action|
+  ps_after_action(%i[create update destroy]) do |action|
     ps_publish(action, mapping: %i[id title description user_id])
   end
 end

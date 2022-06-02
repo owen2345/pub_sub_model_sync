@@ -10,6 +10,9 @@
 #
 class Customer < ApplicationRecord
   include PubSubModelSync::SubscriberConcern
+
+  has_many :posts
+
   ps_subscribe(%i[create update destroy], %i[name:full_name email], id: :id, from_klass: 'User')
   ps_subscribe(:send_email, [], from_klass: 'User') # instance subscription
   ps_class_subscribe(:send_emails, from_klass: 'User') # class subscription

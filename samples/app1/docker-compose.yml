@@ -5,6 +5,7 @@ networks:
     external: true
 volumes:
   shared-pubsub-data:
+  bundler_gems:
 
 services:
   pubsub:
@@ -24,6 +25,7 @@ services:
       context: .
     volumes:
       - ./:/app
+      - bundler_gems:/usr/local/bundle/
     depends_on:
       - pubsub
     external_links:
