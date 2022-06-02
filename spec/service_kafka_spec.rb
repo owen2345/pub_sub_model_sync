@@ -81,7 +81,7 @@ RSpec.describe PubSubModelSync::ServiceKafka do
 
       it 'does not ack the message to be retried by pubsub' do
         expect(inst.consumer).not_to receive(:mark_message_as_processed)
-        inst.send(:process_message, message) rescue nil
+        inst.send(:process_message, message) rescue nil # rubocop:disable Style/RescueModifier
       end
     end
   end

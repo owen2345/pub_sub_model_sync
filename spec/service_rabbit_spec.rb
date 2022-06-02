@@ -89,7 +89,7 @@ RSpec.describe PubSubModelSync::ServiceRabbit do
 
       it 'does not ack the message to auto retry by pubsub' do
         expect(channel).not_to receive(:ack)
-        inst.send(:process_message, *args) rescue nil
+        inst.send(:process_message, *args) rescue nil # rubocop:disable Style/RescueModifier
       end
     end
   end

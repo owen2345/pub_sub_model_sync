@@ -97,7 +97,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
 
       it 'does not acknowledge the message to auto retry by pubsub' do
         expect(mock_service_message).not_to receive(:acknowledge!)
-        inst.send(:process_message, mock_service_message) rescue nil
+        inst.send(:process_message, mock_service_message) rescue nil # rubocop:disable Style/RescueModifier
       end
     end
 
