@@ -93,7 +93,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
     describe 'when notifying' do
       let(:subscriber) { subscriber_klass.new('SubscriberUser', action) }
       before { allow(inst).to receive(:filter_subscribers).and_return([subscriber]) }
-      after { inst.process }
+      after { |test| inst.process unless test.metadata[:skip_after] }
 
       it 'notifies #on_before_processing hook before processing' do
         args = [payload, hash_including(subscriber: be_kind_of(subscriber_klass))]
@@ -105,20 +105,26 @@ RSpec.describe PubSubModelSync::MessageProcessor do
         expect(inst.config.on_success_processing).to receive(:call).with(*args)
       end
 
-      describe 'when failed' do
+      describe '#on_error_processing: when failed' do
+        let(:error_msg) { 'error processing' }
         before do
-          allow(s_processor).to receive(:call).and_raise('error processing')
+          allow(s_processor).to receive(:call).and_raise(error_msg)
           allow(inst.config).to receive(:log)
         end
 
-        it 'notifies #on_error_processing hook when failed' do
+        it 'calls #on_error_processing hook for a custom retrying (like auto-retry via sidekiq)' do
           exp_info = hash_including(payload: payload)
           expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), exp_info)
         end
 
         it 'skips error logs when #on_error_processing returns :skip_log' do
           allow(inst.config.on_error_processing).to receive(:call).and_return(:skip_log)
-          expect(inst.config).not_to receive(:log).with(include('Error processing message'))
+          expect(inst.config).not_to receive(:log).with(include(error_msg))
+        end
+
+        it '#on_error_processing hook raises exception-error by default to auto-retry by pubsub', skip_after: true do
+          allow(inst.config.on_error_processing).to receive(:call).and_call_original
+          expect { inst.process }.to raise_error(error_msg)
         end
       end
     end
