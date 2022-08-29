@@ -11,8 +11,11 @@ Gem::Specification.new do |spec|
   spec.authors       = ['Owen']
   spec.email         = ['owenperedo@gmail.com']
 
-  spec.summary       = 'Permit to sync models between apps through pub/sub'
-  spec.description   = 'Permit to sync models between apps through pub/sub'
+  spec.summary       = 'This gem permits to sync automatically models and custom data between multiple Rails
+    applications by publishing notifications via pubsub (Google PubSub, RabbitMQ, or Apache Kafka) and automatically
+    processed by all connected applications. Out of the scope, this gem includes transactions to keep Data consistency
+    by processing notifications in the order they were delivered.'
+  spec.description   = spec.summary
   spec.homepage      = 'https://github.com/owen2345/pub_sub_model_sync'
   spec.license       = 'MIT'
 

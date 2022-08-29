@@ -536,6 +536,8 @@ config.debug = true
     (Proc) => called after publishing a notification
 - ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```
     (Proc) => called when failed publishing a notification (delayed_job or similar can be used for retrying)
+- ```.skip_cache = false```
+    (true/false*) => Allow to skip payload optimization (cache settings)
 - ```.transactions_max_buffer = 1``` (Integer, default 1) Controls the maximum quantity of notifications to be enqueued to the transaction-buffer before delivering them and thus adds the ability to rollback notifications if the transaction fails.        
     Once this quantity of notifications is reached, then all notifications of the current transaction will immediately be delivered (can be customized per transaction).    
     Note: There is no way to rollback delivered notifications if current transaction fails later.      
