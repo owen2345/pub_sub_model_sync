@@ -380,16 +380,17 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
   - Manual transactions   
     `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
     - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
-    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (more details in #transactions_max_buffer).     
+    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (DEPRECATED).     
+    - `headers:` (Hash) Header settings to be added to each Payload's header inside this transaction     
     Sample:
     ```ruby
-      PubSubModelSync::MessagePublisher::transaction('my-custom-key') do
+      PubSubModelSync::MessagePublisher::transaction('my-custom-key', headers: { key: 'my-key' }) do
         user = User.create(name: 'test') # `User`:`:create` notification
         post = Post.create(title: 'sample') # `Post`:`:create` notification
         PubSubModelSync::Payload.new({ ids: [user.id] }, { klass: 'User', action: :send_welcome, mode: :klass }).publish! # `User`:`:send_welcome` notification
       end
     ```
-    All notifications uses `ordering_key: 'my-custom-key'` and will be processed in the same order they were published.
+    All notifications uses `ordering_key: 'my-custom-key'` and will be processed in the same order they were published (Payload headers will include `key="my-key"`).
 
 ## **Testing with RSpec**
 - Config: (spec/rails_helper.rb)
