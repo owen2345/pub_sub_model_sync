@@ -58,9 +58,9 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
       it 'reconnects DB if DB connection lost' do
         stub_with_subscriber(action) do
-          allow(s_processor).to receive(:call).and_raise('lost connection')
+          allow(s_processor).to receive(:call).and_raise('Lost connection to MySQL server')
           expect(ActiveRecord::Base.connection).to receive(:reconnect!).exactly(times).times
-          suppress(Exception) { inst.process }
+          suppress(Exception) { inst.send(:run_subscriber, s_processor) }
         end
       end
 
@@ -75,7 +75,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
       it 'exits the system when retried 5 times' do
         stub_with_subscriber(action) do
-          allow(s_processor).to receive(:call).and_raise('lost connection')
+          allow(s_processor).to receive(:call).and_raise('Lost connection to MySQL server')
           expect(Process).to receive(:exit!)
           suppress(Exception) { inst.process }
         end

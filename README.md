@@ -271,8 +271,10 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
   - `as_klass:` (String, default current class name): Class name of the notification
   - `headers:` (Hash, optional): header settings (More in Payload.headers)
 
-- `ps_perform_publish(action = :create)` Permits to perform manually the callback of a specific `ps_after_action`
+- `ps_perform_publish(action = :create, parents_actions: false)` Permits to perform manually the callback of a specific `ps_after_action`
   - `action` (Symbol, default: :create) Only :create|:update|:destroy
+  - `parents_actions` (Boolean, default: false) When `true`, includes inherited PubSub-callbacks from parent classes
+    
   
 #### **Publisher helpers**
 - Publish or republish a notification
@@ -317,6 +319,7 @@ Any notification before delivering is transformed as a Payload for a better port
       Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`         
     - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
     - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
+    - `target_app_key`: (String, optional): Allows to send the notification to a specific app (includes the application key, separated by comma when multiple apps). Default `nil`.
     - `cache` (Boolean | Hash, Default false) Cache settings   
         - `true`: Skip publishing similar payloads
         - `Hash<required: Array<Symbol>>`: Same as `true` and enables payload optimization to exclude unchanged non important attributes. Sample: `{ required: %i[id email] }`
@@ -379,16 +382,17 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
   - Manual transactions   
     `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
     - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
-    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (more details in #transactions_max_buffer).     
+    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (DEPRECATED).     
+    - `headers:` (Hash) Header settings to be added to each Payload's header inside this transaction     
     Sample:
     ```ruby
-      PubSubModelSync::MessagePublisher::transaction('my-custom-key') do
+      PubSubModelSync::MessagePublisher::transaction('my-custom-key', headers: { key: 'my-key' }) do
         user = User.create(name: 'test') # `User`:`:create` notification
         post = Post.create(title: 'sample') # `Post`:`:create` notification
         PubSubModelSync::Payload.new({ ids: [user.id] }, { klass: 'User', action: :send_welcome, mode: :klass }).publish! # `User`:`:send_welcome` notification
       end
     ```
-    All notifications uses `ordering_key: 'my-custom-key'` and will be processed in the same order they were published.
+    All notifications uses `ordering_key: 'my-custom-key'` and will be processed in the same order they were published (Payload headers will include `key="my-key"`).
 
 ## **Testing with RSpec**
 - Config: (spec/rails_helper.rb)

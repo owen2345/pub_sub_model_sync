@@ -94,6 +94,16 @@ RSpec.describe PubSubModelSync::MessagePublisher do
       end
     end
 
+    it 'includes the provided payload headers for each payload' do
+      payload_key = 'my-key'
+      expect_publish_with_headers({ key: payload_key }, times: 2) do
+        described_class.transaction('any-key', headers: { key: payload_key }) do
+          inst.publish_model(model, action)
+          inst.publish_data(publisher_klass, {}, action)
+        end
+      end
+    end
+
     it 'resets transaction key when finished' do
       key = 'trans_key'
       custom_key = 'custom_key'

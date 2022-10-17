@@ -4,7 +4,7 @@ lib = File.expand_path('lib', __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'pub_sub_model_sync/version'
 
-Gem::Specification.new do |spec|
+Gem::Specification.new do |spec| # rubocop:disable Metrics/BlockLength
   spec.required_ruby_version = '>= 2.4' # rubocop:disable Gemspec/RequiredRubyVersion
   spec.name          = 'pub_sub_model_sync'
   spec.version       = PubSubModelSync::VERSION

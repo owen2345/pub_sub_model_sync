@@ -38,10 +38,10 @@ module PubSubModelSync
 
     # Permits to perform manually the callback for a specific action
     # @param action (Symbol, default: :create) Only :create|:update|:destroy
-    def ps_perform_publish(action = :create)
-      items = self.class.ps_cache_publish_callbacks.select { |item| item[:actions].include?(action) }
-      raise(StandardError, "No callback found for action :#{action}") if items.empty?
-
+    def ps_perform_publish(action = :create, parents_actions: false)
+      callbacks = self.class.ps_cache_publish_callbacks
+      callbacks = self.class.ancestors.map { |p| p.try(:ps_cache_publish_callbacks) }.compact.flatten if parents_actions
+      items = callbacks.select { |item| item[:actions].include?(action) }
       items.each { |item| instance_exec(action, &item[:callback]) }
       self
     end

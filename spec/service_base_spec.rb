@@ -48,6 +48,26 @@ RSpec.describe PubSubModelSync::ServiceBase do
           .to receive(:process)
         inst.send(:process_message, payload.to_json)
       end
+
+      describe 'when targeted message' do
+        before { allow(config).to receive(:subscription_key).and_return('test_app') }
+        after { inst.send(:process_message, payload.to_json) }
+
+        it 'does not process if message was targeted other app' do
+          payload.headers[:target_app_key] = 'unknown_app'
+          expect_any_instance_of(PubSubModelSync::MessageProcessor).not_to receive(:process)
+        end
+
+        it 'does process if message was targeted current app' do
+          payload.headers[:target_app_key] = 'test_app'
+          expect_any_instance_of(PubSubModelSync::MessageProcessor).to receive(:process)
+        end
+
+        it 'does process if message was not targeted' do
+          payload.headers[:target_app_key] = nil
+          expect_any_instance_of(PubSubModelSync::MessageProcessor).to receive(:process)
+        end
+      end
     end
 
     describe 'when parsing message payload' do

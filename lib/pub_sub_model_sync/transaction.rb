@@ -3,17 +3,18 @@
 module PubSubModelSync
   class Transaction < Base
     PUBLISHER_KLASS = PubSubModelSync::MessagePublisher
-    attr_accessor :key, :payloads, :max_buffer, :root, :children, :finished
+    attr_accessor :key, :payloads, :max_buffer, :root, :children, :finished, :headers
 
     # @param key (String,Nil) Transaction key, if empty will use the ordering_key from first payload
     # @param max_buffer (Integer) Once this quantity of notifications is reached, then all notifications
     #   will immediately be delivered.
     #   Note: There is no way to rollback delivered notifications if current transaction fails
-    def initialize(key, max_buffer: config.transactions_max_buffer)
+    def initialize(key, max_buffer: config.transactions_max_buffer, headers: {})
       @key = key
       @max_buffer = max_buffer
       @children = []
       @payloads = []
+      @headers = headers
     end
 
     # @param payload (Payload)

@@ -23,15 +23,15 @@ module PubSubModelSync
     end
 
     def process
-      retries ||= 0
       process!
     rescue => e
-      retry_process?(e, retries += 1) ? retry : notify_error(e)
+      notify_error(e)
     end
 
     private
 
-    def run_subscriber(subscriber)
+    def run_subscriber(subscriber) # rubocop:disable Metrics/AbcSize
+      retries ||= 0
       processor = PubSubModelSync::RunSubscriber.new(subscriber, payload)
       return unless processable?(subscriber)
 
@@ -39,6 +39,8 @@ module PubSubModelSync
       processor.call
       res = config.on_success_processing.call(payload, { subscriber: subscriber })
       log "processed message with: #{payload.inspect}" if res != :skip_log
+    rescue => e
+      retry_process?(e, retries += 1) ? retry : raise(e)
     end
 
     def processable?(subscriber)
@@ -47,7 +49,7 @@ module PubSubModelSync
       !cancel
     end
 
-    # @param error (StandardError)
+    # @param error (StandardError, Exception)
     def notify_error(error)
       error_msg = 'Error processing message: '
       error_details = [payload, error.message, error.backtrace]
@@ -59,9 +61,10 @@ module PubSubModelSync
       raise(e)
     end
 
+    # @param error [StandardError]
     def lost_db_connection?(error)
-      connection_lost_classes = %w[ActiveRecord::ConnectionTimeoutError PG::UnableToSend]
-      connection_lost_classes.include?(error.class.name) || error.message.match?(/lost connection/i)
+      classes = %w[ActiveRecord::ConnectionTimeoutError PG::UnableToSend ActiveRecord::ConnectionNotEstablished]
+      classes.include?(error.class.name) || error.message.match?(/Lost connection to MySQL server/i)
     end
 
     def retry_process?(error, retries) # rubocop:disable Metrics/MethodLength

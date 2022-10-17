@@ -18,6 +18,9 @@ module PubSubModelSync
       #   worker/thread.
       # @see Transaction.new(...)
       # @param key (String|Nil)
+      # @param settings (Hash<:headers, :max_buffer>)
+      #   @option headers [Hash] Headers to be merged for each payload inside this transaction
+      #   @option max_buffer [Integer] Deprecated
       # @param block (Yield) block to be executed
       def transaction(key, settings = {}, &block)
         t = init_transaction(key, settings)
@@ -71,7 +74,7 @@ module PubSubModelSync
       # @return Payload
       # Raises error if exist
       def publish!(payload, &block)
-        payload.headers[:ordering_key] = ordering_key_for(payload)
+        add_transaction_headers(payload)
         return unless ensure_publish(payload)
 
         current_transaction ? current_transaction.add_payload(payload) : connector_publish(payload)
@@ -106,8 +109,10 @@ module PubSubModelSync
         !cancelled
       end
 
-      def ordering_key_for(payload)
-        payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
+      def add_transaction_headers(payload)
+        key = payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
+        payload.headers[:ordering_key] = key
+        payload.headers.merge!(current_transaction.headers) if current_transaction
       end
 
       def ensure_model_publish(model, action, payload)
