@@ -59,8 +59,8 @@ module PubSubModelSync
     end
 
     def target_app_message?(payload)
-      key = payload.headers[:target_app_key]
-      key == config.subscription_key || !key.present?
+      key = payload.headers[:target_app_key].to_s
+      !key.present? || key.split(',').include?(config.subscription_key)
     end
   end
 end

@@ -317,6 +317,7 @@ Any notification before delivering is transformed as a Payload for a better port
       Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`         
     - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
     - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
+    - `target_app_key`: (String, optional): Allows to send the notification to a specific app (includes the application key, separated by comma when multiple apps). Default `nil`.
     - `cache` (Boolean | Hash, Default false) Cache settings   
         - `true`: Skip publishing similar payloads
         - `Hash<required: Array<Symbol>>`: Same as `true` and enables payload optimization to exclude unchanged non important attributes. Sample: `{ required: %i[id email] }`
