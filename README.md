@@ -271,8 +271,10 @@ PubSubModelSync::Payload.new({ ids: [my_user.id] }, { klass: 'User', action: :ba
   - `as_klass:` (String, default current class name): Class name of the notification
   - `headers:` (Hash, optional): header settings (More in Payload.headers)
 
-- `ps_perform_publish(action = :create)` Permits to perform manually the callback of a specific `ps_after_action`
+- `ps_perform_publish(action = :create, parents_actions: false)` Permits to perform manually the callback of a specific `ps_after_action`
   - `action` (Symbol, default: :create) Only :create|:update|:destroy
+  - `parents_actions` (Boolean, default: false) When `true`, includes inherited PubSub-callbacks from parent classes
+    
   
 #### **Publisher helpers**
 - Publish or republish a notification
