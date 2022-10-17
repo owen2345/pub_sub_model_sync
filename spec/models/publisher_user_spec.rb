@@ -49,9 +49,13 @@ RSpec.describe PublisherUser, truncate: true do
       model.ps_perform_publish(:update)
     end
 
-    it 'raises error if no action found' do
-      model = mock_publisher_callback(%i[ps_after_action update], {}, :create!) {}
-      expect { model.ps_perform_publish(:create) }.to raise_error
+    it 'uses parents callbacks if expected' do
+      performed_callback = false
+      model = mock_publisher_callback(%i[ps_after_action update sync_update], {}, :create!)
+      callback_action = { actions: %i[update], callback: ->(_action) { performed_callback = true } }
+      allow(model.class.superclass).to receive(:ps_cache_publish_callbacks).and_return([callback_action])
+      model.ps_perform_publish(:update, parents_actions: true)
+      expect(performed_callback).to be_truthy
     end
   end
 
