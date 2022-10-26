@@ -63,8 +63,11 @@ module PubSubModelSync
 
     # @param error [StandardError]
     def lost_db_connection?(error)
-      classes = %w[ActiveRecord::ConnectionTimeoutError PG::UnableToSend ActiveRecord::ConnectionNotEstablished]
-      classes.include?(error.class.name) || error.message.match?(/Lost connection to MySQL server/i)
+      classes = %w[ActiveRecord::ConnectionTimeoutError PG::Error ActiveRecord::ConnectionNotEstablished]
+      classes.include?(error.class.name) ||
+        error.message.match?(/Lost connection to MySQL server/i) ||
+        error.message.start_with?('PG::ConnectionBad:') ||
+        error.message.start_with?('PG::UnableToSend:')
     end
 
     def retry_process?(error, retries) # rubocop:disable Metrics/MethodLength
