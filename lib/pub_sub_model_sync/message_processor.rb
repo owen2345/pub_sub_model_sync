@@ -57,7 +57,6 @@ module PubSubModelSync
       res = config.on_error_processing.call(error, { payload: payload })
       log("#{error_msg} #{error_details}", :error) if res != :skip_log
     rescue => e
-      error_details = [payload, e.message, e.backtrace]
       log("#{error_msg} #{error_details}", :error)
       raise(e)
     end

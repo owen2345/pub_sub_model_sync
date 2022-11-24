@@ -56,23 +56,23 @@ RSpec.describe PubSubModelSync::Payload do
     describe 'when processing' do
       before do
         klass = PubSubModelSync::MessageProcessor
-        allow_any_instance_of(klass).to receive(:process!).and_raise('Invalid data')
+        allow_any_instance_of(klass).to receive(:filter_subscribers).and_raise('Invalid data')
+      end
+
+      it 'calls #on_error_processing when failed' do
+        expect(config.on_error_processing).to receive(:call)
+        suppress(Exception) { inst.process }
       end
 
       describe '#process!' do
         it 'raises error' do
           expect { inst.process! }.to raise_error
         end
-        it 'does not call #on_error_processing' do
-          expect(config.on_error_processing).not_to receive(:call)
-          suppress(Exception) { inst.process! }
-        end
       end
 
       describe '#process' do
-        it 'calls #on_error_processing when failed' do
-          expect(config.on_error_processing).to receive(:call)
-          suppress(Exception) { inst.process }
+        it 'does not raise the exception when failed' do
+          expect { inst.process }.not_to raise_error
         end
       end
     end

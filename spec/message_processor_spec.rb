@@ -124,7 +124,7 @@ RSpec.describe PubSubModelSync::MessageProcessor do
 
         it '#on_error_processing hook raises exception-error by default to auto-retry by pubsub', skip_after: true do
           allow(inst.config.on_error_processing).to receive(:call).and_call_original
-          expect { inst.process }.to raise_error(error_msg)
+          expect { inst.process! }.to raise_error(error_msg)
         end
       end
     end
