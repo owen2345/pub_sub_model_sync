@@ -20,12 +20,13 @@ module PubSubModelSync
       payload_info = { klass: payload.klass, action: payload.action, mode: payload.mode }
       log("No subscribers found for #{payload_info}", :warn) if config.debug && subscribers.empty?
       subscribers.each(&method(:run_subscriber))
+    rescue => e
+      notify_error(e)
+      raise
     end
 
     def process
-      process!
-    rescue => e
-      notify_error(e)
+      process! rescue nil # rubocop:disable Style/RescueModifier
     end
 
     private

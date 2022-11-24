@@ -380,7 +380,7 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
     **Note**: When any error is raised when saving user or posts, the transaction is cancelled and thus all notifications wont be delivered (customizable by `PubSubModelSync::Config.transactions_use_buffer`).    
   
   - Manual transactions   
-    `PubSubModelSync::MessagePublisher::transaction(key, max_buffer: , &block)`
+    `PubSubModelSync::MessagePublisher::transaction(key, headers: { target_app_key: 'my_other_app_key' } &block)`
     - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
     - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (DEPRECATED).     
     - `headers:` (Hash) Header settings to be added to each Payload's header inside this transaction     
