@@ -318,7 +318,7 @@ Any notification before delivering is transformed as a Payload for a better port
     - `ordering_key`: (String, optional): notifications with the same `ordering_key` are processed in the same order they were delivered, default: `<model.class.name>/<model.id>` when instance notification and `klass_name` when class notification.    
       Note: Final `ordering_key` is calculated as: `payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]`         
     - `topic_name`: (String|Array<String>, optional): Specific topic name where to deliver the notification (default `PubSubModelSync::Config.topic_name`).
-    - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil`.
+    - `forced_ordering_key`: (String, optional): Overrides `ordering_key` with the provided value even withing transactions. Default `nil` (if `true`, prevails the payload's `ordering_key`).
     - `target_app_key`: (String, optional): Allows to send the notification to a specific app (includes the application key, separated by comma when multiple apps). Default `nil`.
     - `cache` (Boolean | Hash, Default false) Cache settings   
         - `true`: Skip publishing similar payloads

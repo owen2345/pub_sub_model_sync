@@ -110,7 +110,9 @@ module PubSubModelSync
       end
 
       def add_transaction_headers(payload)
-        key = payload.headers[:forced_ordering_key] || current_transaction&.key || payload.headers[:ordering_key]
+        force_key = payload.headers[:forced_ordering_key]
+        key = force_key || current_transaction&.key || payload.headers[:ordering_key]
+        key = payload.headers[:ordering_key] if force_key == true
         payload.headers[:ordering_key] = key
         payload.headers.merge!(current_transaction.headers) if current_transaction
       end
