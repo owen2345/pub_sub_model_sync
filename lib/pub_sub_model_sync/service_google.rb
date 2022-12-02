@@ -35,11 +35,7 @@ module PubSubModelSync
     def publish(payload)
       p_topic_names = Array(payload.headers[:topic_name] || config.default_topic_name)
       message_topics = p_topic_names.map(&method(:find_topic))
-      message_topics.each do |topic|
-        topic.publish_async(encode_payload(payload), message_headers(payload)) do |res|
-          raise StandardError, 'Failed to publish the message.' unless res.succeeded?
-        end
-      end
+      message_topics.each { |topic| publish_to_topic(topic, payload) }
     end
 
     def stop
@@ -54,6 +50,19 @@ module PubSubModelSync
       return topics.values.first unless topic_name.present?
 
       topics[topic_name] || publish_topics[topic_name] || init_topic(topic_name, only_publish: true)
+    end
+
+    def publish_to_topic(topic, payload)
+      retries ||= 0
+      topic.publish_async(encode_payload(payload), message_headers(payload)) do |res|
+        raise StandardError, "Failed to publish the message. #{res.error}" unless res.succeeded?
+      end
+    rescue Google::Cloud::PubSub::OrderingKeyError => e
+      raise if (retries += 1) > 1
+
+      log("Resuming ordering_key and retrying OrderingKeyError for #{payload.headers[:uuid]}: #{e.message}")
+      topic.resume_publish(message_headers(payload)[:ordering_key])
+      retry
     end
 
     # @param only_publish (Boolean): if false is used to listen and publish messages

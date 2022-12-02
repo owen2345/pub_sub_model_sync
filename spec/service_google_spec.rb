@@ -146,6 +146,28 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       end
       inst.publish(payload)
     end
+
+    # https://github.com/googleapis/google-cloud-ruby/blob/main/google-cloud-pubsub/OVERVIEW.md#handling-errors-with-ordered-keys
+    describe 'when failed because of OrderingKeyError (Ordered messages that fail to publish to the Pub/Sub API due
+              to error will put the ordering_key in a failed state)' do
+      before do
+        error = Google::Cloud::PubSub::OrderingKeyError.new('some error')
+        calls = 0
+        allow(topic).to receive(:publish_async) do
+          (calls += 1) == 1 ? raise(error) : true
+        end
+      end
+
+      it 'calls #resume_publish on topic to re-enable publish for the ordering_key' do
+        expect(topic).to receive(:resume_publish).with(payload.headers[:ordering_key])
+        inst.publish(payload)
+      end
+
+      it 'retries 1 time' do
+        expect(topic).to receive(:publish_async).exactly(2)
+        inst.publish(payload)
+      end
+    end
   end
 
   describe '.stop' do
