@@ -43,6 +43,10 @@ module PubSubModelSync
         yield(OpenStruct.new(succeeded?: true)) if block_given?
       end
 
+      def resume_publish(_ordering_key)
+        true
+      end
+
       def enable_message_ordering!
         true
       end

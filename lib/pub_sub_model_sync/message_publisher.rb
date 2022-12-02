@@ -80,6 +80,15 @@ module PubSubModelSync
         current_transaction ? current_transaction.add_payload(payload) : connector_publish(payload)
         block&.call
         payload
+      rescue => e
+        notify_error(e, payload)
+        raise
+      end
+
+      # Similar to :publish! method but ignores the error if failed
+      # @return Payload
+      def publish(payload, &block)
+        publish!(payload, &block) rescue nil # rubocop:disable Style/RescueModifier
       end
 
       def connector_publish(payload)
@@ -89,22 +98,13 @@ module PubSubModelSync
         config.on_after_publish.call(payload)
       end
 
-      # Similar to :publish! method
-      # Notifies error via :on_error_publish instead of raising error
-      # @return Payload
-      def publish(payload, &block)
-        publish!(payload, &block)
-      rescue => e
-        notify_error(e, payload)
-      end
-
       private
 
       def ensure_publish(payload)
         cache_klass = PubSubModelSync::PayloadCacheOptimizer
-        cancelled = payload.cache_settings ? cache_klass.new(payload).call == :already_sent : false
-        cancelled ||= config.on_before_publish.call(payload) == :cancel
-        log_msg = "Publish cancelled by config.on_before_publish or cache checker: #{[payload]}"
+        cancelled_cache = payload.cache_settings ? cache_klass.new(payload).call == :already_sent : false
+        cancelled = cancelled_cache || config.on_before_publish.call(payload) == :cancel
+        log_msg = "Publish cancelled by #{cancelled_cache ? 'cache checker' : 'config.on_before_publish'}: #{[payload]}"
         log(log_msg) if config.debug && cancelled
         !cancelled
       end

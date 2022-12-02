@@ -72,15 +72,18 @@ module PubSubModelSync
     # Publish payload to pubsub
     #   (If error will raise exception and wont call on_error_publish callback)
     def publish!
-      klass = PubSubModelSync::MessagePublisher
-      klass.publish!(self)
+      PubSubModelSync::MessagePublisher.publish!(self)
     end
 
     # Publish payload to pubsub
     #   (If error will call on_error_publish callback)
     def publish
-      klass = PubSubModelSync::MessagePublisher
-      klass.publish(self)
+      PubSubModelSync::MessagePublisher.publish(self)
+    end
+
+    # allows to retry publishing a failed payload
+    def retry_publish!
+      PubSubModelSync::MessagePublisher.connector_publish(self)
     end
 
     # @param attr_keys (Array<Symbol>) List of attributes to be excluded from payload

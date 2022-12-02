@@ -19,14 +19,14 @@ module PubSubModelSync
       return payload if cache_disabled?
       return :already_sent if previous_payload_data == payload.data
 
-      optimize_payload if optimization_enabled?
+      optimize_payload if optimization_allowed?
       Rails.cache.write(cache_key, backup_data, expires_in: 1.week)
       payload
     end
 
     private
 
-    def optimization_enabled?
+    def optimization_allowed?
       previous_payload_data && payload.cache_settings.is_a?(Hash)
     end
 

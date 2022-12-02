@@ -335,7 +335,8 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
     payload.publish! # publishes notification data. It raises exception if fails and does not call ```:on_error_publishing``` callback
     payload.publish # publishes notification data. On error does not raise exception but calls ```:on_error_publishing``` callback
     payload.process! # process a notification data. It raises exception if fails and does not call ```.on_error_processing``` callback
-    payload.publish # process a notification data. It does not raise exception if fails but calls ```.on_error_processing``` callback
+    payload.process # process a notification data. It does not raise exception if fails but calls ```.on_error_processing``` callback
+    payload.retry_publish! # allows to retry publishing a failed payload (All callbacks are ignored)
   ```
 
 ## **Transactions**   
@@ -538,7 +539,7 @@ config.debug = true
     (Proc) => called before publishing a notification (:cancel can be returned to skip publishing)
 - ```.on_after_publish = ->(payload) { puts payload }```
     (Proc) => called after publishing a notification
-- ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).publish! }```
+- ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).retry_publish! }```
     (Proc) => called when failed publishing a notification (delayed_job or similar can be used for retrying)
 - ```.skip_cache = false```
     (true/false*) => Allow to skip payload optimization (cache settings)
@@ -581,7 +582,7 @@ config.debug = true
     end
 
     PubSubModelSync::Config.on_error_publish = lambda do |_e, data|
-      PubSubRecovery.perform_async(data[:payload].to_h, :publish!)
+      PubSubRecovery.perform_async(data[:payload].to_h, :retry_publish!)
     end
     PubSubModelSync::Config.on_error_processing = lambda do |_e, data|
       PubSubRecovery.perform_async(data[:payload].to_h, :process!)
