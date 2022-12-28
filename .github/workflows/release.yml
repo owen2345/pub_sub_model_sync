@@ -1,43 +1,23 @@
 on:
+  # Any pull request merged into master (hotfixes, releases)
+  #   should publish the corresponding github release + git tag
   push:
-    tags: # triggered once a git tag is published
-      - '*'
+    branches:
+      - main
+      - master
+
+  workflow_dispatch: # build a new release manually (create release branch pointing to master branch)
+    inputs:
+      version_name:
+        # Edit release_builder.json#base_branches to support other branches
+        description: 'Release version name, sample: 1.0.0 (Only "develop" branch is supported)'
+        required: true
 
 name: Create Release
 
 jobs:
-  build:
-    name: Create Release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-
-      # Changelog action adaptations
-      - name: Create required package.json
-        run: test -f package.json || echo '{}' >package.json
-      - name: Detect Previous Tag (action not detecting very well)
-        run: echo "::set-output name=previous_tag::$(git describe --abbrev=0 --tags `git rev-list --tags --skip=1 --max-count=1`)"
-        id: tag_checker
-
-      - name: Generate Changelog
-        uses: scottbrenner/generate-changelog-action@master
-        id: Changelog
-        with:
-          from-tag: ${{steps.tag_checker.outputs.previous_tag}}
-          to-tag: HEAD
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ${{ steps.Changelog.outputs.changelog }}
-          draft: false
-          prerelease: false
+  release-builder:
+    uses: owen2345/reusable-ci-cd-actions/.github/workflows/release_builder.yml@main
+    with:
+      commit_mode: true
+      create_release_pr: ${{ github.event.inputs && github.event.inputs.version_name || '' }}
