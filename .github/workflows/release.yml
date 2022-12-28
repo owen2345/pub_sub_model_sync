@@ -1,23 +1,11 @@
+name: Create release from tag
 on:
-  # Any pull request merged into master (hotfixes, releases)
-  #   should publish the corresponding github release + git tag
   push:
-    branches:
-      - main
-      - master
-
-  workflow_dispatch: # build a new release manually (create release branch pointing to master branch)
-    inputs:
-      version_name:
-        # Edit release_builder.json#base_branches to support other branches
-        description: 'Release version name, sample: 1.0.0 (Only "develop" branch is supported)'
-        required: true
-
-name: Create Release
+    tags: # Create a release once a git tag is published
+      - '*'
 
 jobs:
   release-builder:
-    uses: owen2345/reusable-ci-cd-actions/.github/workflows/release_builder.yml@main
+    uses: owen2345/reusable-ci-cd-actions/.github/workflows/release_builder_from_tag.yml@main
     with:
-      commit_mode: true
-      create_release_pr: ${{ github.event.inputs && github.event.inputs.version_name || '' }}
+      commit_mode: true # If true, then fetches all commit titles from all changes. If false, then fetches only the PR titles from all changes.
