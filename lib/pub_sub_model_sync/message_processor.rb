@@ -21,12 +21,14 @@ module PubSubModelSync
       log("No subscribers found for #{payload_info}", :warn) if config.debug && subscribers.empty?
       subscribers.each(&method(:run_subscriber))
     rescue => e
-      notify_error(e)
+      print_error(e)
       raise
     end
 
     def process
-      process! rescue nil # rubocop:disable Style/RescueModifier
+      process!
+    rescue => e
+      config.on_error_processing.call(e, { payload: payload })
     end
 
     private
@@ -51,14 +53,10 @@ module PubSubModelSync
     end
 
     # @param error (StandardError, Exception)
-    def notify_error(error)
-      error_msg = 'Error processing message: '
+    def print_error(error)
+      error_msg = 'Error processing message:'
       error_details = [payload, error.message, error.backtrace]
-      res = config.on_error_processing.call(error, { payload: payload })
-      log("#{error_msg} #{error_details}", :error) if res != :skip_log
-    rescue => e
       log("#{error_msg} #{error_details}", :error)
-      raise(e)
     end
 
     # @param error [StandardError]

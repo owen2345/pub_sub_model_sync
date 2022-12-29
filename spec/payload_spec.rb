@@ -86,8 +86,9 @@ RSpec.describe PubSubModelSync::Payload do
         it 'raises error' do
           expect { inst.publish! }.to raise_error
         end
-        it 'calls #on_error_publish callback' do
-          expect(config.on_error_publish).to receive(:call)
+
+        it 'does not call #on_error_publish callback' do
+          expect(config.on_error_publish).not_to receive(:call)
           suppress(Exception) { inst.publish! }
         end
       end
@@ -95,7 +96,7 @@ RSpec.describe PubSubModelSync::Payload do
       describe '#publish' do
         it 'calls #on_error_publish when failed' do
           expect(config.on_error_publish).to receive(:call)
-          suppress(Exception) { inst.publish }
+          inst.publish
         end
       end
     end

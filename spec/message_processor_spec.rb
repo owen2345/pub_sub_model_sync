@@ -84,8 +84,8 @@ RSpec.describe PubSubModelSync::MessageProcessor do
       it 'notifies error message when failed processing notification' do
         stub_with_subscriber(action) do
           allow(s_processor).to receive(:call).and_raise('any error')
-          expect(inst).to receive(:notify_error).once
-          suppress(Exception) { inst.process }
+          expect(inst).to receive(:log).with(/Error processing message:/, :error).once
+          inst.process
         end
       end
     end
@@ -93,38 +93,56 @@ RSpec.describe PubSubModelSync::MessageProcessor do
     describe 'when notifying' do
       let(:subscriber) { subscriber_klass.new('SubscriberUser', action) }
       before { allow(inst).to receive(:filter_subscribers).and_return([subscriber]) }
-      after { |test| inst.process unless test.metadata[:skip_after] }
 
-      it 'notifies #on_before_processing hook before processing' do
-        args = [payload, hash_including(subscriber: be_kind_of(subscriber_klass))]
-        expect(inst.config.on_before_processing).to receive(:call).with(*args)
+      describe 'when success' do
+        after { inst.process }
+
+        it 'notifies #on_before_processing hook before processing' do
+          args = [payload, hash_including(subscriber: be_kind_of(subscriber_klass))]
+          expect(inst.config.on_before_processing).to receive(:call).with(*args)
+        end
+
+        it 'notifies #on_success_processing hook when success' do
+          args = [payload, hash_including(subscriber: be_kind_of(subscriber_klass))]
+          expect(inst.config.on_success_processing).to receive(:call).with(*args)
+        end
       end
 
-      it 'notifies #on_success_processing hook when success' do
-        args = [payload, hash_including(subscriber: be_kind_of(subscriber_klass))]
-        expect(inst.config.on_success_processing).to receive(:call).with(*args)
-      end
-
-      describe '#on_error_processing: when failed' do
+      describe 'when failed' do
         let(:error_msg) { 'error processing' }
         before do
           allow(s_processor).to receive(:call).and_raise(error_msg)
           allow(inst.config).to receive(:log)
         end
 
-        it 'calls #on_error_processing hook for a custom retrying (like auto-retry via sidekiq)' do
-          exp_info = hash_including(payload: payload)
-          expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), exp_info)
+        describe '#process' do
+          after { |test| inst.process unless test.metadata[:skip_after] }
+
+          it 'prints the error message' do
+            expect(inst).to receive(:log).with(/Error processing message:/, :error)
+          end
+
+          it 'calls #on_error_processing hook for a custom retrying (like auto-retry via sidekiq)' do
+            exp_info = hash_including(payload: payload)
+            expect(inst.config.on_error_processing).to receive(:call).with(be_kind_of(StandardError), exp_info)
+          end
+
+          it '#on_error_processing hook by default raises the error to auto-retry via pubsub', skip_after: true do
+            allow(inst.config.on_error_processing).to receive(:call).and_call_original
+            expect { inst.process }.to raise_error
+          end
         end
 
-        it 'skips error logs when #on_error_processing returns :skip_log' do
-          allow(inst.config.on_error_processing).to receive(:call).and_return(:skip_log)
-          expect(inst.config).not_to receive(:log).with(include(error_msg))
-        end
+        describe '#process!' do
+          after { inst.process! rescue nil } # rubocop:disable Style/RescueModifier
 
-        it '#on_error_processing hook raises exception-error by default to auto-retry by pubsub', skip_after: true do
-          allow(inst.config.on_error_processing).to receive(:call).and_call_original
-          expect { inst.process! }.to raise_error(error_msg)
+          it 'prints the error message' do
+            expect(inst).to receive(:log).with(/Error processing message/, :error)
+          end
+
+          it 'does not call #on_error_processing hook to avoid infinite loop' do
+            expect(inst.config.on_error_processing).not_to receive(:call)
+          end
         end
       end
     end
