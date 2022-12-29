@@ -138,35 +138,51 @@ RSpec.describe PubSubModelSync::MessagePublisher do
 
   describe 'when notifying' do
     let(:config) { inst.config }
-    let(:action) { :test_action }
-    before do
-      allow(config).to receive(:log)
+    let(:payload) { payload_klass.new({}, { klass: 'User', action: :update }) }
+    before { allow(inst).to receive(:log) }
+
+    describe 'when success' do
+      after { inst.publish!(payload) }
+
+      it 'notifies #on_before_publish before publish' do
+        expect(config.on_before_publish).to receive(:call).with(payload)
+      end
+
+      it 'notifies #on_after_publish after published' do
+        expect(config.on_after_publish).to receive(:call).with(payload)
+      end
+
+      it 'prints the success message' do
+        expect(inst).to receive(:log).with(/Published message/)
+      end
     end
-    it 'notifies #on_before_publish before publish' do
-      expect(config.on_before_publish).to receive(:call).with(be_kind_of(payload_klass))
-      inst.publish_data(publisher_klass, {}, action)
-    end
-    it 'notifies #on_after_publish after published' do
-      expect(config.on_after_publish).to receive(:call).with(be_kind_of(payload_klass))
-      inst.publish_data(publisher_klass, {}, action)
-    end
-    describe 'when failed sending message' do
+
+    describe 'when failed' do
       before { allow(connector).to receive(:publish).and_raise('Error sending msg') }
-      it 'notifies #on_error_publish when error publishing' do
-        args = [be_kind_of(StandardError), hash_including(payload: be_kind_of(payload_klass))]
-        expect(config.on_error_publish).to receive(:call).with(*args)
-        inst.publish_data(publisher_klass, {}, action)
+
+      describe '#publish' do
+        after { inst.publish(payload) }
+
+        it 'calls #on_error_publish callback' do
+          args = [be_kind_of(StandardError), hash_including(payload: be_kind_of(payload_klass))]
+          expect(config.on_error_publish).to receive(:call).with(*args)
+        end
+
+        it 'prints the error message' do
+          expect(inst).to receive(:log).with(/Error publishing/, :error)
+        end
       end
 
-      it 'prints error message when failed publishing message' do
-        expect(config).to receive(:log).with(include('Error publishing'), :error)
-        inst.publish_data(publisher_klass, {}, action)
-      end
+      describe '#publish!' do
+        after { inst.publish!(payload) rescue nil } # rubocop:disable Style/RescueModifier
 
-      it 'skips error log when #on_error_publish returns :skip_log' do
-        allow(config.on_error_publish).to receive(:call).and_return(:skip_log)
-        expect(config).not_to receive(:log).with(include('Error publishing'), :error)
-        inst.publish_data(publisher_klass, {}, action)
+        it 'does not call #on_error_publish callback to avoid infinite loop' do
+          expect(config.on_error_publish).not_to receive(:call)
+        end
+
+        it 'prints the error message' do
+          expect(inst).to receive(:log).with(/Error publishing/, :error)
+        end
       end
     end
   end

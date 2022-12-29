@@ -81,14 +81,16 @@ module PubSubModelSync
         block&.call
         payload
       rescue => e
-        notify_error(e, payload)
+        print_error(e, payload)
         raise
       end
 
       # Similar to :publish! method but ignores the error if failed
       # @return Payload
       def publish(payload, &block)
-        publish!(payload, &block) rescue nil # rubocop:disable Style/RescueModifier
+        publish!(payload, &block)
+      rescue => e
+        config.on_error_publish.call(e, { payload: payload })
       end
 
       def connector_publish(payload)
@@ -124,10 +126,11 @@ module PubSubModelSync
         !cancelled
       end
 
-      def notify_error(exception, payload)
-        info = [payload, exception.message, exception.backtrace]
-        res = config.on_error_publish.call(exception, { payload: payload })
-        log("Error publishing: #{info}", :error) if res != :skip_log
+      # @param error (StandardError, Exception)
+      def print_error(error, payload)
+        error_msg = 'Error publishing:'
+        error_details = [payload, error.message, error.backtrace]
+        log("#{error_msg} #{error_details}", :error)
       end
 
       def define_transaction_key(payload)
