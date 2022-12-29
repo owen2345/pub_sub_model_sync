@@ -52,6 +52,11 @@ RSpec.configure do |config|
     kafka_mock = PubSubModelSync::MockKafkaService.new
     allow(Kafka).to receive(:new).and_return(kafka_mock)
   end
+
+  # silence default exception from on_error_processing hook
+  config.before(:each) do
+    allow(PubSubModelSync::Config.on_error_processing).to receive(:call)
+  end
 end
 
 # database cleaner
