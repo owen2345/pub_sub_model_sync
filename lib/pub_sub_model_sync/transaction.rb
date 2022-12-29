@@ -68,8 +68,6 @@ module PubSubModelSync
 
     def deliver_payload(payload)
       PUBLISHER_KLASS.connector_publish(payload)
-    rescue => e
-      PUBLISHER_KLASS.send(:notify_error, e, payload)
     end
   end
 end
