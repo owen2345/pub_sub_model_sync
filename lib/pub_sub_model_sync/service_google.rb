@@ -54,7 +54,7 @@ module PubSubModelSync
 
     def publish_to_topic(topic, payload)
       retries ||= 0
-      config.async ? publish_async(topic, payload) : topic.publish(*message_params(payload))
+      config.sync_mode ? topic.publish(*message_params(payload)) : publish_async(topic, payload)
     rescue Google::Cloud::PubSub::OrderingKeyError => e
       raise if (retries += 1) > 1
 
@@ -64,14 +64,13 @@ module PubSubModelSync
     end
 
     def publish_async(topic, payload)
-      topic.publish_async(*message_params(payload)) do |res|
-        log_delivered_payload(res, payload)
+      topic.publish_async(*message_params(payload)) do |result|
+        log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
+        unless result.succeeded?
+          log("Error publishing: #{[payload, result.error]} (via async)", :error)
+          config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
+        end
       end
-    end
-
-    def log_delivered_payload(result, payload)
-      log "Published #{payload.uuid}" if result.succeeded? && config.debug
-      log("Error publishing: #{[payload, result.error]} (from service)", :error) unless result.succeeded?
     end
 
     # @param only_publish (Boolean): if false is used to listen and publish messages

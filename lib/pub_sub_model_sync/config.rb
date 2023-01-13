@@ -10,7 +10,7 @@ module PubSubModelSync
     cattr_accessor(:logger) { Rails.logger }
     cattr_accessor(:transactions_max_buffer) { 1 }
     cattr_accessor(:skip_cache) { false }
-    cattr_accessor(:async) { ENV['PUBSUB_MODEL_ASYNC'] == 'true' }
+    cattr_accessor(:sync_mode) { ENV['PUBSUB_MODEL_SYNC_MODE'] == 'true' }
 
     cattr_accessor(:on_before_processing) { ->(_payload, _info) {} } # return :cancel to skip
     cattr_accessor(:on_success_processing) { ->(_payload, _info) {} }
