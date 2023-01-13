@@ -42,7 +42,7 @@ module PubSubModelSync
     # @return [Payload,Nil]
     def decode_payload(payload_info)
       payload = ::PubSubModelSync::Payload.from_payload_data(JSON.parse(payload_info))
-      log("Received message: #{[payload]}") if config.debug
+      log("Received message: #{payload.uuid}") if config.debug
       payload
     rescue => e
       error_payload = [payload_info, e.message, e.backtrace]
@@ -54,7 +54,7 @@ module PubSubModelSync
     def same_app_message?(payload)
       key = payload.headers[:app_key]
       res = key && key == config.subscription_key
-      log("Skipping message from same origin: #{[payload]}") if res && config.debug
+      log("Skipping message from same origin: #{payload.uuid}") if res && config.debug
       res
     end
 

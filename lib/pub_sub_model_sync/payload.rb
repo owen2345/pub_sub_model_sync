@@ -55,6 +55,14 @@ module PubSubModelSync
       (info[:mode] || :model).to_sym
     end
 
+    def uuid
+      headers[:uuid]
+    end
+
+    def ordering_key
+      headers[:ordering_key]
+    end
+
     # Process payload data
     #   (If error will raise exception and wont call on_error_processing callback)
     def process!

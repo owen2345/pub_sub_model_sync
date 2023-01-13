@@ -94,7 +94,7 @@ module PubSubModelSync
       end
 
       def connector_publish(payload)
-        log("Publishing message #{[payload]}...") if config.debug
+        log("Publishing message #{[payload.uuid]}...") if config.debug
         connector.publish(payload)
         log("Published message: #{[payload]}")
         config.on_after_publish.call(payload)
