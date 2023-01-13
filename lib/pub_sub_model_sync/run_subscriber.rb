@@ -44,7 +44,7 @@ module PubSubModelSync
       res = true
       res = false if settings[:if] && !parse_condition(settings[:if], object)
       res = false if settings[:unless] && parse_condition(settings[:unless], object)
-      log("Cancelled save sync by subscriber condition : #{[payload]}") if !res && debug?
+      log("Cancelled save sync by subscriber condition : #{[payload.uuid]}") if !res && debug?
       res
     end
 

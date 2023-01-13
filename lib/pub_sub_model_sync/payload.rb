@@ -96,10 +96,7 @@ module PubSubModelSync
 
     # @param attr_keys (Array<Symbol>) List of attributes to be excluded from payload
     def exclude_data_attrs(attr_keys)
-      orig_data = data.clone
-      headers[:excluded_attr_keys] = attr_keys.join(',')
       @data = data.except(*attr_keys)
-      Config.log("Empty payload after payload optimization (original data: #{[self, orig_data]})") if @data == []
     end
 
     # Attributes to always be delivered after cache optimization

@@ -32,7 +32,7 @@ module PubSubModelSync
 
     def cache_disabled?
       res = config.skip_cache || Rails.cache.nil?
-      log("Skipping cache, it was disabled: #{[payload]}") if res && debug?
+      log("Skipping cache, it was disabled: #{[payload.uuid]}") if res && debug?
       res
     end
 
@@ -44,7 +44,7 @@ module PubSubModelSync
       changed_keys = Hash[(payload.data.to_a - previous_payload_data.to_a)].keys.map(&:to_sym)
       required_keys = payload.cache_settings[:required].map(&:to_sym)
       invalid_keys = payload.data.keys - (changed_keys + required_keys)
-      log("Excluding non changed attributes: #{invalid_keys} from: #{payload.inspect}") if debug?
+      log("Excluding non changed attributes: #{invalid_keys} from: #{payload.uuid}") if debug?
       payload.exclude_data_attrs(invalid_keys)
     end
   end
