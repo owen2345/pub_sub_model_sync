@@ -121,14 +121,23 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
 
   describe '.publish' do
     it 'deliveries message' do
-      expect(topic).to receive(:publish_async).with(payload.to_json, anything)
+      expect(topic).to receive(:publish).with(payload.to_json, anything)
       inst.publish(payload)
     end
 
     it 'uses defined ordering_key as the :ordering_key' do
       expected_hash = hash_including(ordering_key: payload.headers[:ordering_key])
-      expect(topic).to receive(:publish_async).with(anything, expected_hash)
+      expect(topic).to receive(:publish).with(anything, expected_hash)
       inst.publish(payload)
+    end
+
+    describe 'when enabled async mode' do
+      before { allow(inst.config).to receive(:async).and_return(true) }
+
+      it 'uses defined ordering_key as the :ordering_key' do
+        expect(topic).to receive(:publish_async).with(payload.to_json, hash_including(:ordering_key))
+        inst.publish(payload)
+      end
     end
 
     it 'uses custom topic if defined' do
@@ -153,7 +162,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       before do
         error = Google::Cloud::PubSub::OrderingKeyError.new('some error')
         calls = 0
-        allow(topic).to receive(:publish_async) do
+        allow(topic).to receive(:publish) do
           (calls += 1) == 1 ? raise(error) : true
         end
       end
@@ -164,7 +173,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       end
 
       it 'retries 1 time' do
-        expect(topic).to receive(:publish_async).exactly(2)
+        expect(topic).to receive(:publish).exactly(2)
         inst.publish(payload)
       end
     end
