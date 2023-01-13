@@ -40,7 +40,7 @@ module PubSubModelSync
       call_action(model)
     end
 
-    def ensure_sync(object)
+    def ensure_sync(object) # rubocop:disable Metrics/AbcSize
       res = true
       res = false if settings[:if] && !parse_condition(settings[:if], object)
       res = false if settings[:unless] && parse_condition(settings[:unless], object)
