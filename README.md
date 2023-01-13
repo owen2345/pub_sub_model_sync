@@ -83,7 +83,9 @@ And then execute: $ bundle install
     PubSubModelSync::Config.topic_name = 'sample-topic'
     PubSubModelSync::Config.subscription_name = 'my-app3'
     ```
-    See details here: https://github.com/zendesk/ruby-kafka
+    See details here: https://github.com/zendesk/ruby-kafka    
+
+    *Important: The `topic_name` must be same for all applications, so that, the apps connect to the same topic*
 
 - Add publishers/subscribers to your models (See examples below)
 
@@ -382,8 +384,7 @@ Note: To reduce Payload size, some header info are not delivered (Enable debug m
   
   - Manual transactions   
     `PubSubModelSync::MessagePublisher::transaction(key, headers: { target_app_key: 'my_other_app_key' } &block)`
-    - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)  
-    - `max_buffer:` (Integer, default: `PubSubModelSync::Config.transactions_max_buffer`) Transaction buffer size (DEPRECATED).     
+    - `key` (String|nil) Key used as the ordering_key for all inner notifications (When nil, will use `ordering_key` of the first notification)
     - `headers:` (Hash) Header settings to be added to each Payload's header inside this transaction     
     Sample:
     ```ruby
@@ -542,7 +543,9 @@ config.debug = true
 - ```.on_error_publish = ->(exception, {payload:}) { payload.delay(...).retry_publish! }```
     (Proc) => called when failed publishing a notification (delayed_job or similar can be used for retrying)
 - ```.skip_cache = false```
-    (true/false*) => Allow to skip payload optimization (cache settings)
+  (true/false*) => Allow to skip payload optimization (cache settings)
+- ```.async = false```
+    (true/false*) => If `true`, the messages are delivered asynchronously, else, they are delivered synchronously (Currently, only GooglePubsub supports it)
 - ```.transactions_max_buffer = 1``` (Integer, default 1) Controls the maximum quantity of notifications to be enqueued to the transaction-buffer before delivering them and thus adds the ability to rollback notifications if the transaction fails.        
     Once this quantity of notifications is reached, then all notifications of the current transaction will immediately be delivered (can be customized per transaction).    
     Note: There is no way to rollback delivered notifications if current transaction fails later.      
@@ -562,6 +565,7 @@ config.debug = true
 - Add subscription liveness checker using thread without db connection to check periodically pending notifications from google pubsub
 - Unify .stop() and 'Listener stopped' 
 - TODO: Publish new version 1.2.1 (improve logs)
+- Enable `async` mode for rabbitMQ and Kafka
 
 ## **Q&A**
 - I'm getting error "could not obtain a connection from the pool within 5.000 seconds"... what does this mean?

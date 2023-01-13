@@ -18,13 +18,9 @@ module PubSubModelSync
     end
 
     # @param payload (Payload)
+    # TODO: remove buffer (already managed by pubsub services when running with config.async = true)
     def add_payload(payload)
       payloads << payload
-      print_log = config.debug && max_buffer > 1
-      log("Payload added to current transaction: #{payload.inspect}") if print_log
-      return unless payloads.count >= max_buffer
-
-      log("Payloads buffer was filled, delivering current payloads: #{payloads.count}") if print_log
       deliver_payloads
     end
 

@@ -11,15 +11,6 @@ RSpec.describe PubSubModelSync::Transaction do
     expect(root_t.children).to include(child_t)
   end
 
-  describe 'when adding payloads' do
-    it 'auto deliveries notifications when reached max_buffer' do
-      root_t = described_class.new(key, max_buffer: 2)
-      expect(root_t).to receive(:deliver_payloads)
-      root_t.add_payload(payload)
-      root_t.add_payload(payload)
-    end
-  end
-
   describe 'when finishing transaction' do
     it 'does not deliver notifications if there are pending sub transactions' do
       add_transaction
