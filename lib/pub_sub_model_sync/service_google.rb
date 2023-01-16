@@ -109,7 +109,11 @@ module PubSubModelSync
 
     def process_message(received_message)
       message = received_message.message
-      super(message.data) if message.attributes[SERVICE_KEY]
+      if message.attributes[SERVICE_KEY]
+        super(message.data)
+      elsif config.debug
+        log("Unknown message (#{SERVICE_KEY}): #{[message, message.attributes]}")
+      end
       received_message.acknowledge!
     end
   end
