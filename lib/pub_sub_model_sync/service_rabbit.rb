@@ -65,7 +65,11 @@ module PubSubModelSync
     end
 
     def process_message(queue, delivery_info, meta_info, payload)
-      super(payload) if meta_info[:type] == SERVICE_KEY
+      if meta_info[:type] == SERVICE_KEY
+        super(payload)
+      elsif config.debug
+        log("Unknown message (#{SERVICE_KEY}): #{[payload, meta_info]}")
+      end
       queue.channel.ack(delivery_info.delivery_tag)
     end
 

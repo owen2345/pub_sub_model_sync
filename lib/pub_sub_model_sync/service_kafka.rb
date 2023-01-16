@@ -72,7 +72,11 @@ module PubSubModelSync
     end
 
     def process_message(message)
-      super(message.value) if message.headers[SERVICE_KEY]
+      if message.headers[SERVICE_KEY]
+        super(message.value)
+      elsif config.debug
+        log("Unknown message (#{SERVICE_KEY}): #{[message, message.headers]}")
+      end
       consumer.mark_message_as_processed(message)
     end
 
