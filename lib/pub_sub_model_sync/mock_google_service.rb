@@ -13,6 +13,10 @@ module PubSubModelSync
         true
       end
 
+      def on_error(&_block)
+        true
+      end
+
       def stop
         @stop ||= MockStop.new
       end
