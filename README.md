@@ -46,7 +46,7 @@ Add this line to your application's Gemfile:
 ```ruby
 gem 'pub_sub_model_sync'
 
-gem 'google-cloud-pubsub', '>= 1.9' # to use google pub/sub service
+gem 'google-cloud-pubsub', '>= 2.14.0' # to use google pub/sub service. For old rails apps ('>= 1.9', '<= 2.9.2')
 gem 'bunny' # to use rabbit-mq pub/sub service
 gem 'ruby-kafka' # to use apache kafka pub/sub service
 ```
@@ -85,7 +85,7 @@ And then execute: $ bundle install
     ```
     See details here: https://github.com/zendesk/ruby-kafka    
 
-    *Important: The `topic_name` must be same for all applications, so that, the apps connect to the same topic*
+  *Important: The `topic_name` must be the same for all applications, so that, the apps connect to the same topic*
 
 - Add publishers/subscribers to your models (See examples below)
 
