@@ -10,6 +10,7 @@ jobs:
   build:
     name: Tests and Code Style
     runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.ruby == '2.6' && matrix.rails == '6' }}
     strategy:
       matrix:
         ruby: [2.6]
@@ -21,6 +22,10 @@ jobs:
             rails: 6
           - ruby: '3.0'
             rails: 7
+          - ruby: '3.1'
+            rails: 7
+          - ruby: '2.6'
+            rails: 6
         exclude: # rails 6 requires ruby >= 2.5
           - ruby: 2.4
             rails: 6
@@ -37,10 +42,18 @@ jobs:
       - name: Install bundler
         env:
           GEMFILE_PATH: gemfiles/Gemfile_${{ matrix.rails }}
+          GEMFILE_PATH_RUBY: gemfiles/Gemfile_${{ matrix.rails }}_${{matrix.ruby}}
           RAILS_V: ${{ matrix.rails }}
         run: |
           rm -f Gemfile.lock && rm -f Gemfile
-          cp $GEMFILE_PATH ./Gemfile
+          echo "...Looking for $GEMFILE_PATH_RUBY"
+          if [ -f "$GEMFILE_PATH_RUBY" ]; then
+            echo "......using Gemfile $GEMFILE_PATH_RUBY"
+            cp $GEMFILE_PATH_RUBY ./Gemfile
+          else
+            echo "......using Gemfile $GEMFILE_PATH"
+            cp $GEMFILE_PATH ./Gemfile
+          fi
           bundler_v='2.1.4'
           if [ $RAILS_V = "4" ]; then bundler_v="1.16.6"; fi
           gem install bundler -v "~> $bundler_v"

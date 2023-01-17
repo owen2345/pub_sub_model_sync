@@ -5,6 +5,7 @@ gem 'bunny' # rabbit-mq
 gem 'google-cloud-pubsub' # google pub/sub
 gem 'ruby-kafka' # kafka pub/sub
 gem 'rails', '~> 6'
+gem 'sqlite3'
 
 group :test do
   gem 'database_cleaner-active_record'
