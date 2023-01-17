@@ -101,6 +101,7 @@ module PubSubModelSync
         subs_name = "#{config.subscription_key}_#{key}"
         subscription = topic.subscription(subs_name) || topic.subscribe(subs_name, **SUBSCRIPTION_SETTINGS)
         subscriber = subscription.listen(**LISTEN_SETTINGS, &method(:process_message))
+        subscriber.on_error { |error| log("Subscriber error: #{error.class} #{error.message}", :error) }
         subscriber.start
         log("Subscribed to topic: #{topic.name} as: #{subs_name}")
         subscriber
