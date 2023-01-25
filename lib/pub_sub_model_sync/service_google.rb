@@ -54,21 +54,26 @@ module PubSubModelSync
 
     def publish_to_topic(topic, payload)
       retries ||= 0
-      config.sync_mode ? topic.publish(*message_params(payload)) : publish_async(topic, payload)
+      publish_message(topic, payload)
     rescue Google::Cloud::PubSub::OrderingKeyError => e
       raise if (retries += 1) > 1
 
       log("Resuming ordering_key and retrying OrderingKeyError for #{payload.uuid}: #{e.message}")
-      topic.resume_publish(payload.ordering_key)
+      topic.resume_publish(payload.ordering_key, ordering_key: payload.ordering_key)
       retry
     end
 
-    def publish_async(topic, payload)
-      topic.publish_async(*message_params(payload)) do |result|
-        log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
-        unless result.succeeded?
-          log("Error publishing: #{[payload, result.error]} (via async)", :error)
-          config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
+    def publish_message(topic, payload)
+      settings = { ordering_key: payload.ordering_key }
+      if config.sync_mode
+        topic.publish(*message_params(payload), **settings)
+      else
+        topic.publish_async(*message_params(payload), **settings) do |result|
+          log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
+          unless result.succeeded?
+            log("Error publishing: #{[payload, result.error]} (via async)", :error)
+            config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
+          end
         end
       end
     end
@@ -91,7 +96,7 @@ module PubSubModelSync
     def message_params(payload)
       [
         encode_payload(payload),
-        { ordering_key: payload.ordering_key, SERVICE_KEY => true }.merge(PUBLISH_SETTINGS)
+        { SERVICE_KEY => true }.merge(PUBLISH_SETTINGS)
       ]
     end
 
