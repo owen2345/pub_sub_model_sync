@@ -74,10 +74,10 @@ module PubSubModelSync
 
     def check_async_result(result, payload)
       log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
-      unless result.succeeded?
-        log("Error publishing: #{[payload, result.error]} (via async)", :error)
-        config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
-      end
+      return if result.succeeded?
+
+      log("Error publishing: #{[payload, result.error]} (via async)", :error)
+      config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
     end
 
     # @param only_publish (Boolean): if false is used to listen and publish messages
