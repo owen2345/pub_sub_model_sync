@@ -7,7 +7,7 @@ gem 'ruby-kafka' # kafka pub/sub
 
 group :test do
   gem 'database_cleaner-active_record'
-  gem 'sqlite3', '<= 1.3.13'
+  gem 'sqlite3', '~> 1.4'
 end
 
 # Specify your gem's dependencies in pub_sub_model_sync.gemspec
