@@ -10,7 +10,7 @@ jobs:
   build:
     name: Tests and Code Style
     runs-on: ubuntu-latest
-    continue-on-error: ${{ matrix.ruby == '2.6' && matrix.rails == '6' }}
+    #continue-on-error: ${{ matrix.ruby == '2.6' && matrix.rails == '6' }}
     strategy:
       matrix:
         ruby: [2.6]
