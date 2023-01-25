@@ -120,14 +120,17 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
   end
 
   describe '.publish' do
+    let(:exp_headers) { hash_including('service_model_sync' => true) }
+    let(:exp_settings) { hash_including(:ordering_key) }
+
     it 'deliveries message' do
-      expect(topic).to receive(:publish_async).with(payload.to_json, anything)
+      expect(topic).to receive(:publish_async).with(payload.to_json, exp_headers, exp_settings)
       inst.publish(payload)
     end
 
     it 'uses defined ordering_key as the :ordering_key' do
-      expected_hash = hash_including(ordering_key: payload.headers[:ordering_key])
-      expect(topic).to receive(:publish_async).with(anything, expected_hash)
+      expected_hash = hash_including(ordering_key: payload.ordering_key)
+      expect(topic).to receive(:publish_async).with(anything, anything, expected_hash)
       inst.publish(payload)
     end
 
@@ -143,7 +146,7 @@ RSpec.describe PubSubModelSync::ServiceGoogle do
       before { allow(inst.config).to receive(:sync_mode).and_return(true) }
 
       it 'uses defined ordering_key as the :ordering_key' do
-        expect(topic).to receive(:publish).with(payload.to_json, hash_including(:ordering_key))
+        expect(topic).to receive(:publish).with(payload.to_json, exp_headers, exp_settings)
         inst.publish(payload)
       end
     end
