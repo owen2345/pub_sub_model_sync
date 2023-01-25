@@ -59,7 +59,7 @@ module PubSubModelSync
       raise if (retries += 1) > 1
 
       log("Resuming ordering_key and retrying OrderingKeyError for #{payload.uuid}: #{e.message}")
-      topic.resume_publish(payload.ordering_key, ordering_key: payload.ordering_key)
+      topic.resume_publish(payload.ordering_key)
       retry
     end
 
