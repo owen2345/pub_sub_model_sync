@@ -68,13 +68,15 @@ module PubSubModelSync
       if config.sync_mode
         topic.publish(*message_params(payload), **settings)
       else
-        topic.publish_async(*message_params(payload), **settings) do |result|
-          log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
-          unless result.succeeded?
-            log("Error publishing: #{[payload, result.error]} (via async)", :error)
-            config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
-          end
-        end
+        topic.publish_async(*message_params(payload), **settings) { |result| check_async_result(result, payload) }
+      end
+    end
+
+    def check_async_result(result, payload)
+      log "Published message: #{payload.uuid} (via async)" if result.succeeded? && config.debug
+      unless result.succeeded?
+        log("Error publishing: #{[payload, result.error]} (via async)", :error)
+        config.on_error_publish.call(StandardError.new(result.error), { payload: payload })
       end
     end
 
