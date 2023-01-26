@@ -44,7 +44,7 @@ These notifications use JSON format to easily be decoded by subscribers (Rails a
 ## **Installation**
 Add this line to your application's Gemfile:
 ```ruby
-gem 'pub_sub_model_sync'
+gem 'pub_sub_model_sync', '>= 1.9.3'
 
 gem 'google-cloud-pubsub', '>= 2.14.0' # to use google pub/sub service. For old rails apps ('>= 1.9', '<= 2.9.2')
 gem 'bunny' # to use rabbit-mq pub/sub service
